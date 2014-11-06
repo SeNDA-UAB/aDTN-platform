@@ -1,0 +1,11 @@
+#! /bin/bash
+
+if [ "$(whoami)" != "root" ]; then
+  echo "This script must be executed as sudo, exiting..."
+  exit 1;
+fi
+
+chown adtn:adtn /usr/bin/adtn-ping
+chmod u+s /usr/bin/adtn-ping
+
+exit 0;
