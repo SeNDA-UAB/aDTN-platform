@@ -1,0 +1,105 @@
+------------------------------------------------------------------------------------------------------------
+1. REQUIREMENTS AND NOTES
+------------------------------------------------------------------------------------------------------------
+
+The active DTN (aDTN) platform has the following dependences listed below:
+
+- make (GNU make utility to mantain groups of programs)
+- cmake (Cross-Platform Makefile Generator)
+- libssl-dev (SSL development libraries, header files and documentation)
+- libsqlite3-dev (C library that implements an SQL database engine)
+- libprocps0-dev or libprocps3-dev (Library for accessing process information)
+
+* Note: The previous packages belongs to debian packages. For detailed
+information about them see https://www.debian.org/distrib/packages
+
+------------------------------------------------------------------------------------------------------------
+2. INSTALLATION
+------------------------------------------------------------------------------------------------------------
+
+Download and extract the aDTN-platform.
+
+The files are available in .tar.gz format and can be extracted using most
+compression tools.
+
+To extract the files, on a typical Unix/Linux command line, use
+the following commands:
+
+tar -zxvf aDTN-platform.tar.gz
+
+This will create a new directory aDTN-platform/ containing all files and
+directories required to run the platform. Then, change to that directory
+
+cd aDTN-platform/
+
+Once inside, it is required to run the following commands in order to be able
+to install the aDTN platform:
+
+cmake ./
+make
+sudo make install
+
+The last command is needed to run with sudo rights. The aDTN platform now should
+be installed in the default directory: /usr/local/
+
+Finally, it is important to update the dynamic libraries cache running the following:
+
+sudo ldconfig
+
+------------------------------------------------------------------------------------------------------------
+3. CONFIGURATION
+------------------------------------------------------------------------------------------------------------
+
+The configuration file, if the installation path is the default, should be in
+/usr/local/etc/adtn.ini
+
+There is a list of the customizable parameters available followed by the default
+values. Is important to update the parameters under the [global] tag with your
+own data:
+
+    ip = 127.0.0.1 # The ip for the aDTN platform
+    port = 4556 # The port used by the paltform
+    data = /var/lib/adtn # The data directory for the aDTN platform process
+    debug = 1 # Debug messages will be anabled (1) or not (0) 
+
+In order to be able to edit this configuration file, you can use the following command:
+
+sudo nano /usr/local/etc/adtn.ini
+
+The data directory must be created and granted with the right permissions.
+
+sudo mkdir -p /var/local/lib/adtn
+sudo chown -R $USER:$USER /var/local/lib/adtn
+sudo chmod 755 /var/local/lib/adtn
+
+Now you have the aDTN-platform successfully installed and configured!
+
+------------------------------------------------------------------------------------------------------------
+4. FAQ
+------------------------------------------------------------------------------------------------------------
+
+Q: I'm getting the following error. What can I do to solve it?
+
+error while loading shared libraries: libadtn.so: cannot open shared object file: No such file or directory
+A: You need to update the dinamic linker run-time bindings. Create or update the file located at
+/etc/ld.so.conf.d/local.conf with sudo rights:
+sudo nano /etc/ld.so.conf.d/local.conf
+And insert the following line
+/usr/local/lib
+(Or the folder destination you set for the adtn platform). Save the file and recompile if necessary.
+Finally run the following code:
+sudo ldconfig
+This will update the dinamic linker.
+
+Q: I'm getting the following error. What can I do to solve it?
+
+-- Could NOT find JNI (missing: JAVA_AWT_LIBRARY JAVA_JVM_LIBRARY JAVA_INCLUDE_PATH JAVA_INCLUDE_PATH2 JAVA_AWT_INCLUDE_PATH)
+CMake Error: The following variables are used in this project, but they are set to NOTFOUND.
+A: You must define the JAVA path doing the following:
+sudo updatedb
+locate jni.h
+Up to here you will get a path similar to:
+/usr/lib/jvm/java-7-openjdk-i386/include/jni.h
+You must export the JAVA_HOME path without including jni.h, like the below:
+export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-i386/
+Now you will be able to run cmake as usual.

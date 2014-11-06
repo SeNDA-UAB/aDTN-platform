@@ -1,0 +1,66 @@
+
+#########
+# HOWTO #
+#########
+
+The platform has 5 sub-process. In order to run the paltform is necessary to run each of the process listed below:
+
+	ritm
+	ritd
+	bundleOutgoing
+	bundleAgent
+	scheduler
+
+or launch the daemon that will manage the sub-proces:
+	adtnd
+
+adtnd can receive as a parameter the path of configuration file. If the configuration file is not located in the default folder (INSTALL_REFIX/etc/adtn.ini) then this parameter is mandatory to put the platform to work.
+
+All this binaries and the adtnd script can be found in INSTALL_PREFIX/bin.
+
+If the processes are launched separately, the execution order is relevant.
+
+#########
+#  API  #
+#########
+
+The functionallity of the developer API of adtn.c is similar to TCP interface. Is necessary to create a socket. Then the socket must be binded with the local IP and port. The bind process initializes some variables that are useful to send an receive bundles. Once the socket is binded any other operation can be performed. 
+
+Simplest mssg over aDTN platform
+
+	char mssg[10] = "hi world"; 
+	int sock = adtn_socket();
+	
+	adtn_sock_addr_t src;
+	src.ip = 127.0.0.1
+	src.port = 1234
+	adnt_bind(sock, &src);
+	
+	atdn_sock_addr dest;
+	dest.ip = 127.0.0.1
+	dest.port = 4321
+	adtn_sendto(sock, dest, mssg);
+	adtn_close(sock);
+
+aDTN platform is designed to work with diferent applications, these applications could have different routing needs, pirority needs and so on. To give functionallity to each need the messages over the platform can carry source code with him that will be executed in each node. The code carried is added to the application and all messages will have the same code until the platform remove it or specifies another one. To add or remove a code the platform has the functions:
+
+	adtn_setcodopt(4)
+	adtn_rmcodopt(2)
+
+See documentation for more info. In "code" folder are some routing codes that can be used to test the platform functionallity. Other codes can be added from files or directly written the program as an argument of the function adtn_setcodopt(4).
+
+The format of the code must be:
+
+	Routing code
+
+	Prioritzaion code
+
+	Lifetime code
+
+###########
+# WARNING #
+###########
+
+The aDTN platform is an oportunistic platform. adtn_sendto(3) will deliver the message to the platform, not to the next node nor destination. This means that the message is not delivered when the call to adtn_sendto(3) is preformed. Message will be delivered when a good neighbour will be available. Validity of neighbours is decided by the routing code carried by message or default routing code if exists some problem with code carried or there is no code.
+
+The adtn_sendto(3) function returns a succes value when the message has been delivered to the platform.

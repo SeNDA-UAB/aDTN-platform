@@ -1,0 +1,15 @@
+Folder with an example of java application running on top of an adtn platform.
+
+It is important to generate this folder from the "adtnlibj" source code executing "bash compileAdtnlibj.sh" for the adtn platform to be used. Otherwise, the native part of the code won't work or the adtn platform won't be found. Using platforms with the same configuration on machines with the same architecture simplifies this job.
+
+Check the platform running the Sender/Receiver example using two platforms:
+
+On platform A (default adtn.ini)
+ ant compile
+ ant runReceiver
+
+On platform B (default adtn.ini)
+ ant compile
+ ant runSender
+
+The same test can be performed using two platforms. In that case it is recommended to install those platforms in different machines so that default installation is possible for both platforms.  

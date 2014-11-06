@@ -1,0 +1,45 @@
+INSTALLING THE ADTN PLATFORM
+============================
+
+The aDTN platform has some dependences that are listed below. These are ubuntu packages:
+
+	make
+	cmake
+	libssl-dev
+	libsqlite3-dev
+	libprocps0-dev / libproc-dev (change procps to proc at watchdog/CMakeLists.txt)
+	gcc
+
+Uthash is a header file that can be found at http://http://troydhanson.github.io/uthash/. It is provided with the code so it doesn't need to be installed. It and can be found in common/include. The license of this file is BSD and can be found in the file uthash.h.
+
+To install in the default directory (/usr/local):
+
+cmake ./
+make 
+make install
+
+---------------------------------------
+To specify the installation path:
+---------------------------------------
+cmake ./ -DCMAKE_INSTALL_PREFIX=<installation path>
+make
+make install
+
+---------------------------------------
+To specify the build type (default release):
+---------------------------------------
+cmake ./ -DBTYPE={Debug, Release, ''}
+
+---------------------------------------
+To set profiling (i.e: Compile tests):
+---------------------------------------
+cmake ./ -DPROF={True, False, ''}
+
+Note: The parameters such as Debug, Release, True, False... ARE NOT case sensitive. So, enjoy! ;)
+
+Once installed, update the dynamic libraries cache (if the library is installed in a non standard path, it have to be added to the LD_LIBRARY_PATH environment variable or included in the ldconfig config files) :
+
+sudo ldconfig
+
+And modify /etc/adtn.ini to specify the data directory, it must be writable to the adtn platform processes.
+

@@ -1,0 +1,11 @@
+#ifndef INC_COMMON_CONSTANTS
+#define INC_COMMON_CONSTANTS
+
+#define STRING_IP_LEN 16
+#define STRING_IP_PORT_LEN 22
+#define MAX_PLATFORM_ID_LEN 255
+
+#define PING_APP 1
+
+
+#endif

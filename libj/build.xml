@@ -1,0 +1,52 @@
+<project name="adtnlibj-0.1" default="compile" basedir=".">
+	<description>
+        Compiles adtn library for java, generates a jar with the distribution for the current architecture,
+		and generates a zip with examples and the necessary content for a java developer to develope an app on this architecture.
+	</description>
+	
+	<!-- set global properties for this build -->
+	<property name="src" location="java"/>
+	<property name="examples" location="examples"/>
+	<property name="bin" location="bin"/>
+	<property name="dist"  location="dist"/>
+	<property name="doc"  location="doc"/>
+	<property name="examplesdist"  location="dist/${ant.project.name}-examples"/>
+	
+	<target name="init">
+		<mkdir dir="${bin}"/>
+		<mkdir dir="${dist}"/>
+		<mkdir dir="${doc}"/>
+	</target>
+	
+	<target name="clean">
+		<delete dir="${bin}"/>
+		<delete dir="${dist}"/>
+		<delete dir="${doc}"/>
+	</target>
+	
+	<target name="compile" depends="init">
+		<javac srcdir="${src}" destdir="${bin}"/>
+		<javah destdir="${bin}" force="yes" class="cat.uab.senda.adtn.adtnlibj.comm.PlatfComm" classpath="${bin}"/>
+	</target>
+	
+	<target name="dist">
+		<jar jarfile="${dist}/${ant.project.name}.jar" basedir="${bin}"/>
+	</target>
+	
+	<target name="javadoc" description="Generates javadoc for AdtnSocket classes only">
+		<javadoc sourcepath="${src}" packagenames="cat.uab.senda.adtn.adtnlibj" destdir="${doc}"/>
+	</target>
+	
+	<target name="examplesdist" depends="dist">
+		<mkdir dir="${examplesdist}"/>
+		<mkdir dir="${examplesdist}/lib"/>
+		<copy file="${dist}/${ant.project.name}.jar" todir="${examplesdist}/lib/"/>
+		<copydir src="${examples}/src" dest="${examplesdist}/src"/>
+		<copy file="${examples}/build.xml" todir="${examplesdist}/"/>
+		<copy file="${examples}/README" todir="${examplesdist}/"/>
+		<zip destfile="${dist}/${ant.project.name}-examples.zip">
+			<fileset dir="${examplesdist}" />
+		</zip>
+	</target>
+	
+</project>

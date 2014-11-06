@@ -1,0 +1,53 @@
+<project name="adtnlibj-0.1-examples" default="compile" basedir=".">
+	<description>
+        Compiles and runs the example
+	</description>
+	
+	<!-- set global properties for this build -->
+	<property name="src" location="src"/>
+	<property name="lib.dir" value="lib"/>
+	
+	<path id="classpath">
+		<fileset dir="${lib.dir}" includes="**/*.jar"/>
+	</path>
+	
+	<property name="bin" location="bin"/>
+	<property name="dist" location="dist"/>
+	
+	<target name="init">
+		<mkdir dir="${bin}"/>
+		<mkdir dir="${dist}"/>
+	</target>
+	
+	<target name="clean">
+		<delete dir="${bin}"/>
+		<delete dir="${dist}"/>
+	</target>
+	
+	<target name="compile" depends="init">
+		<javac srcdir="${src}" destdir="${bin}" classpathref="classpath"/>
+		<jar destfile="${dist}/${project.name}.jar" basedir="bin" />
+	</target>
+	
+	<target name="runReceiver">
+		<java fork="true" classname="cat.uab.senda.adtn.adtnlibj.comm.examples.Receiver">
+			<classpath>
+				<path refid="classpath"/>
+				<path location="${dist}/${project.name}.jar"/>
+			</classpath>
+			<sysproperty key="java.library.path" path="/usr/lib"/>
+		</java>
+	</target>
+	
+	<target name="runSender">
+		<java fork="true"  classname="cat.uab.senda.adtn.adtnlibj.comm.examples.Sender">
+			<classpath>
+				<path refid="classpath"/>
+				<path location="${dist}/${project.name}.jar"/>
+			</classpath>
+			<sysproperty key="java.library.path" path="/usr/lib"/>
+		</java>
+	</target>
+
+	
+</project>

@@ -1,0 +1,10 @@
+
+This is the first release of the library for Java applications to communicate using aDTN platforms.
+
+An aDTN platform installation is required for its correct execution.
+
+Requires Java 1.7 onwards.
+
+Execute "bash compileAdtnlibj.sh" on the same platform machine. Then, use the content of adtnlibj-0.1-examples.zip to run an example and start coding your own application. 
+
+For more information, contact developers@deic.uab.cat.
