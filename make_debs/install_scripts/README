@@ -1,0 +1,20 @@
+The scripts must have a predefined structure and a predefined name in order to
+be able to execute them from dpkg in the deb package.
+
+This predefined structure is:
+
+* Script name must be {pre|post}{install|remove}-pak
+  (i.e: preinstall-pak, preremove-pak, postinstall-pak and postremove-pak)
+
+* The script must return an exiting code. 
+  exit 0 if everything was fine, else exit with something different than 0.
+
+NOTE: In order to be consistent with the constant variables from the installation
+and deinstallation process. A constants file is defined. This is concatenated with
+the corresponding post install in order to have all of them the same constants.
+
+This behaviour is defined in deb_platform.sh and deb_lib.sh scripts. For more information take
+a look at them.
+
+NOTE 1: The folder structure is splitted into platform and lib (adtn api) in order
+to be able to cut out the behaviour of the installation process.

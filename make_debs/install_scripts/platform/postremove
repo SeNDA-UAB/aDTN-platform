@@ -1,0 +1,20 @@
+
+#Remove created data directory where installing deb package
+rm -r  $DATAPATH > /dev/null 2>&1
+
+#Remove created adtn user, if exists, where installing deb package
+if id -u $USER > /dev/null 2>&1; then
+  userdel $USER
+fi 
+groupdel $USER > /dev/null 2>&1
+
+#Remove services from init.d
+update-rc.d -f $MAINSRVC remove
+
+#Remove adtn folder where pids are hosted
+rm -rf $PIDPATH
+
+#Remove remaining shared memory if any
+rm -fr /dev/shm/adtn* > /dev/null 2>&1
+
+exit 0;

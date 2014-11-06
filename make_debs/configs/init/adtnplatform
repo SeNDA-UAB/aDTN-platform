@@ -1,0 +1,204 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          skeleton
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Example initscript
+# Description:       This file should be used to construct scripts to be
+#                    placed in /etc/init.d.
+### END INIT INFO
+
+#Author: Senda DevLab <developers@senda.uab.cat>
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+DESC="active DTN platform"
+NAME=adtnplatform
+DAEMONPATH=/usr/bin
+PIDPATH=/var/run/adtn
+SCRIPTNAME=/etc/init.d/$NAME
+INIPATH=/etc/adtn/adtn.ini
+USER=adtn
+DAEMON_ARGS="-c "
+DAEMON_FARGS="-f "
+CRONTABRULE="* * * * * for inst in ${PIDPATH}/*.path; do service ${NAME} supervise \$(cat \${inst}); done"
+# Load the VERBOSE setting and other rcS variables
+. /lib/init/vars.sh
+
+# Define LSB log_* functions.
+# Depend on lsb-base (>= 3.2-14) to ensure that this file is present
+# and status_of_proc is working.
+. /lib/lsb/init-functions
+
+# Check if different inipath has been provided and exists
+if [ ! -z $2 ] && [ -f $2 ]; then
+	INIPATH=$2
+fi
+pid=`cksum $INIPATH | awk '{print $1}'`
+# Pid path /var/run is tmpfs, and thus it starts empty with each reboot
+if [ ! -d $PIDPATH  ]; then
+	install -m 755 -o $USER -g $USER -d $PIDPATH	
+fi
+
+# Init default config
+idplat=`grep -oP "id \= \K.+" $INIPATH`			#get default id from ini	
+ipplat=`grep -oP "ip \=\s+\K\d*.\d*.\d*.\d*" $INIPATH`	#get default ip from ini
+portplat=`grep -oP "port \=\s+\K\d*" $INIPATH` 		#get default port from ini
+
+#
+# Function that starts the daemons/services
+#
+do_single_start()
+{
+	# Return
+	#   0 if daemon has been started
+	#   1 if daemon was already running
+	#   2 if daemon could not be started
+	start-stop-daemon --start --quiet --background --make-pidfile --pidfile $PIDPATH/${1}-${pid}.d --chuid $USER --exec $DAEMONPATH/$1 --test -- $2 $3 $INIPATH > /dev/null 
+	if [ $? -ne 0 ]; then log_daemon_msg "$DESC $1 process already running "; return 1; fi
+	start-stop-daemon --start --quiet --background --make-pidfile --pidfile $PIDPATH/${1}-${pid}.d --chuid $USER --exec $DAEMONPATH/$1 -- $2 $3 $INIPATH 
+	if [ $? -ne 0 ]; then 
+		#log_daemon_msg "$DESC $1 process could not be started with params $2 $3 $INIPATH" 
+		echo "$DESC $1 process could not be started with params $2 $3 $INIPATH"
+		return 2 
+	else 
+		#log_daemon_msg "$DESC $1 process has been started with params $2 $INIPATH" 
+		echo "$DESC $1 process has been started with params $2 $3 $INIPATH" 
+	fi
+}
+do_single_stop()
+{
+	# Return
+	#   0 if daemon has been stopped
+	#   1 if daemon was already stopped
+	#   2 if daemon could not be stopped
+	#   other if a failure occurred
+
+	start-stop-daemon --stop --quiet --pidfile $PIDPATH/${1}-${pid}.d --test 
+	if [ $? -ne 0 ]; then log_daemon_msg "$DESC $1 process already stopped";  return 1; fi
+	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PIDPATH/${1}-${pid}.d
+	if [ $? -ne 0 ]; then 
+		#log_daemon_msg "$DESC $1 process could not be stopped" 
+		echo "$DESC $1 process could not be stopped"
+		return 2; 
+	else 
+		#log_daemon_msg "$DESC $1 process has been stopped"
+	   	echo "$DESC $1 process has been stopped"
+		rm -f $PIDPATH/${1}-${pid}.d
+	fi
+}
+do_start()
+{
+	do_single_start information_exchange $DAEMON_FARGS $DAEMON_ARGS; statusinformation_exchange=$?
+	do_single_start queueManager $DAEMON_ARGS; statusqueueManager=$?
+	do_single_start processor $DAEMON_ARGS; statusproc=$?
+	do_single_start receiver $DAEMON_ARGS; statusrec=$?
+	do_single_start executor $DAEMON_ARGS; statusexec=$?
+	if [ $statusinformation_exchange -eq 0 ] || [ $statusqueueManager -eq 0 ] || [ $statusproc -eq 0 ] || [ $statusrec -eq 0 ] \
+	    || [ $statusexec -eq 0 ]; then
+		echo "$INIPATH" > $PIDPATH/$NAME-${pid}.path	
+		crontab -l -u root | (grep -Fv "$CRONTABRULE"; echo "$CRONTABRULE") | crontab -u root -
+	fi
+}
+
+#
+# Function that stops the daemons/services
+#
+do_stop()
+{
+	do_single_stop information_exchange; statusinformation_exchange=$?
+	do_single_stop queueManager; statusqueueManager=$?
+	do_single_stop processor; statusproc=$?
+	do_single_stop receiver; statusrec=$?
+	do_single_stop executor; statusexec=$?
+	#if [ $statusinformation_exchange -eq 0 ] || [ $statusqueueManager -eq 0 ] || [ $statusproc -eq 0 ] || [ $statusrec -eq 0 ] \
+	#    || [ $statusexec -eq 0 ]; then
+		crontab -l -u root | grep -Fv "$CRONTABRULE" | crontab -u root -
+		rm -f $PIDPATH/$NAME-${pid}.path
+	#fi
+	#FIXME: It really hurts :(
+	killall -9 information_exchange > /dev/null 2>1&
+	killall -9 queueManager > /dev/null 2>1&
+	killall -9 processor > /dev/null 2>1&
+	killall -9 receiver > /dev/null 2>1&
+	killall -9 executor > /dev/null 2>1&
+
+	rm -fr /var/lib/adtn/* > /dev/null 2>1&
+	rm -fr /var/run/adtn/* > /dev/null 2>1&
+	rm -fr /dev/shm/adtn* > /dev/null 2>1&
+}
+
+do_single_status()
+{
+	start-stop-daemon --status --pidfile $PIDPATH/${1}-${pid}.d
+	val=$?
+	if [ $val -ne 0 ]; then
+		#log_daemon_msg "$DESC $1 process is stopped"
+		echo "$DESC $1 process is stopped"
+	else
+		#log_daemon_msg "$DESC $1 process is running"
+		echo "$DESC $1 process is running"
+	fi
+	return $val
+}
+
+do_status()
+{
+	do_single_status information_exchange
+	do_single_status queueManager
+	do_single_status processor
+	do_single_status receiver
+	do_single_status executor
+}
+
+#
+# Function that sends a SIGHUP to the daemon/service
+#
+
+do_single_supervise()
+{
+	kill -0 $(cat $PIDPATH/${1}-${pid}.d > /dev/null 2>&1) > /dev/null 2>&1 || do_single_start $1 $DAEMON_ARGS > /dev/null 2>&1
+}
+
+do_supervise()
+{
+	do_single_supervise information_exchange
+	do_single_supervise queueManager
+	do_single_supervise processor
+	do_single_supervise receiver
+	do_single_supervise executor
+}
+
+case "$1" in
+  start)
+	echo "Starting $DESC with ID: ${idplat}, IP: ${ipplat} and PORT: ${portplat}"
+	do_start
+	;;
+  stop)
+	echo "Stopping $DESC with ID: ${idplat}, IP: ${ipplat} and PORT: ${portplat}"
+	do_stop
+	;;
+  status)
+	echo "Status $DESC with ID: ${idplat}, IP: ${ipplat} and PORT: ${portplat}"
+	do_status	
+	;;
+  restart|force-reload)
+	echo "Restarting $DESC with ID: ${idplat}, IP: ${ipplat} and PORT: ${portplat}"
+	do_stop > /dev/null 2>&1 
+	sleep 1
+	do_start  
+	;;
+  supervise)
+	echo "Supervising $DESC with ID: ${idplat}, IP: ${ipplat} and PORT: ${portplat}"
+	do_supervise
+	sleep 1
+	do_status
+	;;
+  *)
+	echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload|supervise}" >&2
+	exit 3
+	;;
+esac
+
+:
