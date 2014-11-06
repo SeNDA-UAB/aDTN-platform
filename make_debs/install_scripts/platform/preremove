@@ -1,0 +1,5 @@
+
+#Stop process if there are any running
+for inst in $PIDPATH/*.path; do service $MAINSRVC stop $(cat ${inst}); done > /dev/null 2>&1
+
+exit 0;
