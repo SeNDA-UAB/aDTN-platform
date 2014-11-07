@@ -1,7 +1,3 @@
-/***
-    TODO: THIS FILE DOESN'T SET OR UPDATE STATS ABOUT BUNDLES
-***/
-
 #include <stdlib.h>
 #include <signal.h>
 #include <string.h>
@@ -24,6 +20,7 @@
 #include "common/include/queue.h"
 #include "common/include/executor.h"
 #include "common/include/neighbours.h"
+#include "common/include/utils.h"
 
 /* global vars*/
 volatile sig_atomic_t working = 1;
@@ -73,7 +70,7 @@ static int process_code(int *num_hops, char *hops_list[MAX_HOPS_LEN], char *bund
 
 	p.header.petition_type = EXE;
 	p.header.code_type = ROUTING_CODE;
-	//TODO get real ID
+
 	strncpy(p.header.bundle_id, bundle_id, NAME_MAX);
 	INFO_MSG("Executing routing code for bundle: %s", bundle_id);
 	if (sendto(proc_socket, &p, sizeof(p), 0, (struct sockaddr *)&exec_addr, (socklen_t)sizeof(exec_addr)) < 0) {
@@ -114,19 +111,6 @@ static void delete_bundle(char *name)
 	else
 		info_msg("Bundle %s has been deleted", bundle_file);
 	free(bundle_file);
-}
-
-static int get_file_size(FILE *fd)
-{
-	int total_bytes;
-
-	if (fd == NULL)
-		return 0;
-	fseek(fd, 0L, SEEK_END);
-	total_bytes = (int)ftell(fd);
-	fseek(fd, 0, SEEK_SET);
-
-	return total_bytes;
 }
 
 static ssize_t load_bundle(const char *file, uint8_t **raw_bundle)

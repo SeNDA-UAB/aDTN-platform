@@ -76,6 +76,3 @@ void add_hop(const char *hop)
 		r_result->hops_list_l++;
 	}
 }
-
-// TODO
-// void rm_hop();

@@ -20,12 +20,14 @@
 #include "common/include/log.h"
 #include "common/include/queue.h"
 #include "common/include/rit.h"
+#include "common/include/utils.h"
 
 #define INFO_MSG(...) do {if (DEBUG) info_msg(__VA_ARGS__);} while(0);
 #define QUEUE_SOCKNAME "/rec-queue.sock"
 #define INOTIFY_EVENT_SIZE  ( sizeof (struct inotify_event) + NAME_MAX + 1)
 #define INOTIFY_EVENT_BUF (1*INOTIFY_EVENT_SIZE)
 #define IN_SOCK_TIMEOUT 10
+#define SUBSC_PATH "%s/subscribed"
 
 typedef struct {
 	char *id;
@@ -94,19 +96,6 @@ static int create_paths(const char *data_path)
 	return ret;
 }
 
-static int get_file_size(FILE *fd)
-{
-	int total_bytes;
-
-	if (fd == NULL)
-		return 0;
-	fseek(fd, 0L, SEEK_END);
-	total_bytes = (int)ftell(fd);
-	fseek(fd, 0, SEEK_SET);
-
-	return total_bytes;
-}
-
 static ssize_t load_bundle(const char *file, uint8_t **raw_bundle)
 {
 	FILE *fd = NULL;
@@ -164,61 +153,6 @@ end:
 
 	return ret;
 }
-
-// TODO: replace utils.h
-static char *generate_bundle_name()
-{
-	struct timeval t_now = {0};
-	char *name = NULL;
-
-	if (gettimeofday(&t_now, NULL) < 0)
-		goto end;
-
-	asprintf(&name, "%ld-%ld.bundle", t_now.tv_sec, t_now.tv_usec);
-end:
-
-	return name;
-}
-
-// TODO: replace utils.h
-static int write_bundle_to(const char *path, const char *name, const uint8_t *raw_bundle, const ssize_t raw_bundle_l)
-{
-	FILE *dest = NULL;
-	int ret = 1;
-	char *full_path = NULL;
-
-
-	asprintf(&full_path, "%s%s", path, name);
-
-	if (raw_bundle_l == 0) {
-		err_msg(false, "Trying to write empty bundle %s");
-		goto end;
-	}
-
-	if ((dest = fopen(full_path, "w")) == NULL) {
-		err_msg(true, "Error opening %s", full_path);
-		goto end;
-	}
-
-	if (fwrite(raw_bundle, sizeof(*raw_bundle), raw_bundle_l, dest) != raw_bundle_l) {
-		err_msg(true, "Error writing to %s", full_path);
-		goto end;
-	}
-
-	if (fclose(dest) != 0)
-		err_msg(true, "Error closing %s", full_path);
-
-
-	INFO_MSG("Bundle stored into %s", full_path);
-	ret = 0;
-end:
-	if (full_path)
-		free(full_path);
-
-	return ret;
-}
-
-#define SUBSC_PATH "%s/subscribed"
 
 int get_platform_subscriptions(char **subscribed)
 {
@@ -290,8 +224,9 @@ int delegate_bundle_to_app(const uint8_t *raw_bundle, const int raw_bundle_l, co
 	if ((bundle_name = generate_bundle_name()) == NULL)
 		goto end;
 
-	if (write_bundle_to(bundle_dest_path, bundle_name, raw_bundle, raw_bundle_l) != 0)
+	if (write_to(bundle_dest_path, bundle_name, raw_bundle, raw_bundle_l) != 0)
 		goto end;
+	INFO_MSG("Bundle stored into %s%s", bundle_dest_path, bundle_name);
 
 	ret = 0;
 end:
@@ -311,8 +246,9 @@ int delegate_bundle_to_receiver(const uint8_t *raw_bundle, const int raw_bundle_
 	if ((bundle_name = generate_bundle_name()) == NULL)
 		goto end;
 
-	if (write_bundle_to(g_vars.input_path, bundle_name, raw_bundle, raw_bundle_l) != 0)
+	if (write_to(g_vars.input_path, bundle_name, raw_bundle, raw_bundle_l) != 0)
 		goto end;
+	INFO_MSG("Bundle stored into %s%s", g_vars.input_path, bundle_name);
 
 	ret = 0;
 end:
@@ -330,8 +266,9 @@ int put_bundle_into_queue(const uint8_t *raw_bundle, const int raw_bundle_l)
 	if ((bundle_name = generate_bundle_name()) == NULL)
 		goto end;
 
-	if (write_bundle_to(g_vars.spool_path, bundle_name, raw_bundle, raw_bundle_l) != 0)
+	if (write_to(g_vars.spool_path, bundle_name, raw_bundle, raw_bundle_l) != 0)
 		goto end;
+	INFO_MSG("Bundle stored into %s%s", g_vars.spool_path, bundle_name);
 
 	if (queue(bundle_name, g_vars.queue_conn) != 0)
 		goto end;
