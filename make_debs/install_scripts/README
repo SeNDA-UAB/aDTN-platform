@@ -10,11 +10,12 @@ This predefined structure is:
   exit 0 if everything was fine, else exit with something different than 0.
 
 NOTE: In order to be consistent with the constant variables from the installation
-and deinstallation process. A constants file is defined. This is concatenated with
-the corresponding post install in order to have all of them the same constants.
+and deinstallation process. A constants file is defined where is needed, in this case
+in the platform folder. This is concatenated with the corresponding script in order 
+to have all of them the same constants and hence, be consistent.
 
-This behaviour is defined in deb_platform.sh and deb_lib.sh scripts. For more information take
-a look at them.
+This behaviour is defined in deb_platform.sh script. For more information take
+a look at it.
 
-NOTE 1: The folder structure is splitted into platform and lib (adtn api) in order
-to be able to cut out the behaviour of the installation process.
+NOTE 1: The folder structure is splitted into several parts (platform, lib and examples)
+in order to be able to differentiate the behaviour of the installation process.

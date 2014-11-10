@@ -30,7 +30,7 @@ if [[ $releexm =~ (yes|y)$ ]]; then
   sed -i "s/RELEEXM=\"${RELEEXM}\"/RELEEXM=\"$((${RELEEXM}+1))\"/g" $CONFIG_FILE
 fi
 
-for arch in $ARCHLIST; do
+for arch in $ARCHILIST; do
   if [[ $ARCH == $ARCH32 ]]; then
     sed -i "s/ARCH=\$ARCH32/ARCH=$arch/g" $CONFIG_FILE
   elif [[ $ARCH == $ARCH64 ]]; then
@@ -60,6 +60,9 @@ for arch in $ARCHLIST; do
   if [[ $var =~ (yes|y)$ ]] || [ -z $var ]; then
     echo -e "\e[92mRemoving installed debs...\e[39m"
     sudo dpkg --purge $NAMEEXM $NAMELIB $NAMEPLAT
+  fi
+  if [[ $ARCH == $ARCHARM ]]; then
+    break;
   fi
   ARCH=`eval echo -e "$arch"`
 done;
