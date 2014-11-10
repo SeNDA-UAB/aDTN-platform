@@ -36,14 +36,14 @@ void log_info_message(const int debug_level, const char *file, int line, const c
 	}while(0)
 
 //end wrappers
-#define LOG_MSG(LVL, M, B)                                              \
+#define LOG_MSG(LVL, B, M, ...)                                         \
 	do                                                                  \
 	{                                                                   \
 		if (DEBUG) {                                                    \
 			if (LVL == LOG__ERROR || LVL == LOG__WARNING)               \
-				log_err(LVL, B, M);         		                    \
+				log_err(LVL, B, M, ##__VA_ARGS__);         	            \
 			else                                                        \
-				log_info(LVL, M);			                            \
+				log_info(LVL, M, ##__VA_ARGS__);		                \
 		}                                                               \
 	} while (0)
 

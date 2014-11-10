@@ -14,10 +14,10 @@ static int debug_lvl = 4;
 /*
 Debug levels for log.
 
-LOG__ERROR 0
-LOG__WARNING 1
-LOG__INFO 2
-LOG__DEBUG 3
+LOG__ERROR 0        Error conditions
+LOG__WARNING 1      Warning conditions
+LOG__INFO 2         Informational
+LOG__DEBUG 3        Debug-level messages
 
 */
 
@@ -124,10 +124,16 @@ static void generate_infomsg(char buf[MAX_LOG_MSG],
 {
 	char userMsg[MAX_LOG_MSG];
 	vsnprintf(userMsg, MAX_LOG_MSG, format, ap);
-
 	snprintf(buf, MAX_LOG_MSG, "%s INFO[%s:%d] %s\n", get_formatted_time(), file, line, userMsg);
 }
 
+static void generate_warnmsg(bool useErr, int err,
+                             char buf[MAX_LOG_MSG], const char *format, const char *file, int line, va_list ap)
+{
+	char userMsg[MAX_LOG_MSG];
+	vsnprintf(userMsg, MAX_LOG_MSG, format, ap);
+	snprintf(buf, MAX_LOG_MSG, "%s WARNING[%s:%d] %s\n", get_formatted_time(), file, line, userMsg);
+}
 
 // Writes to error log and stderr
 void err_message(const bool useErr, const char *file, int line, const char *format, ...)
@@ -208,8 +214,11 @@ void log_err_message(const int debug_level, const bool useErr, const char *file,
 
 	if (debug_level <= debug_lvl) {
 		va_start(argList, format);
-		generate_errmsg(useErr, errno, buf, format, file, line, argList);
-		va_end(argList); 
+		if (debug_level == LOG__ERROR)
+			generate_errmsg(useErr, errno, buf, format, file, line, argList);
+		else
+			generate_warnmsg(useErr, errno, buf, format, file, line, argList);
+		va_end(argList);
 
 		fputs(buf, stderr);
 		if (error_log_f != NULL) {
