@@ -9,6 +9,6 @@
 #include "neighbours.h"
 #include "stats.h"
 #include "bundle.h"
-#include "paths.h"
+#include "constants.h"
 
 #endif

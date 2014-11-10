@@ -7,15 +7,9 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include "constants.h"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
-
-#define MAX_SDNV_LENGTH 8 // Bytes
-#define MAX_ID_LEN 255
-#define MIN_ID_LEN 1
-#define MAX_BUNDLE_SIZE 6291456
-#define RFC_DATE_2000 946684800
-#define MAX_BUNDLE_MSG 2048
 
 typedef enum {
 	ROUTING_CODE = 0x01,

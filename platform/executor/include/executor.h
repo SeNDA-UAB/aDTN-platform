@@ -5,16 +5,9 @@
 
 #include "common/include/bundle.h"
 #include "common/include/executor.h"
+#include "common/include/constants.h"
 
 #define DEF_SOCKNAME "executor"
-#define POOL_SIZE 1
-#define BUF_SIZE 255
-#define FWK 1
-
-#ifndef DEBUG
-	#define DEBUG 1
-#endif
-
 
 typedef struct _worker_params {
 	int thread_num;

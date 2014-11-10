@@ -8,11 +8,11 @@ STRING(TOLOWER "${BTYPE}" BTYPE)
 if(BTYPE STREQUAL "debug")
 	MESSAGE("-- [INFO] Compiling lib as debug") 
 	SET(CMAKE_BUILD_TYPE DEBUG)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS_DEBUG} -Wall -ggdb") #-p flag
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS_DEBUG} -Wall -ggdb -lrt") #-p flag
 else()
 	MESSAGE("-- [INFO] Compiling lib as release") 
 	SET(CMAKE_BUILD_TYPE RELEASE)
-	SET(CMAKE_C_FLAGS "-O3")
+	SET(CMAKE_C_FLAGS "-O3 -lrt")
 endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/../platform ${PROJECT_SOURCE_DIR}/../lib)

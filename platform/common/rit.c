@@ -21,9 +21,6 @@ typedef struct list {
 	struct list *next;
 } list_s;
 
-#define SEPARATOR "/"
-#define ROOT "/"
-
 static char rit_path[100] = {0};
 static cJSON *all = NULL;
 static FILE *rit_fd;

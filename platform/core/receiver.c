@@ -14,20 +14,16 @@
 #include <arpa/inet.h>
 #include <linux/limits.h>
 
-#include "common/include/bundle.h"
+#include "common/include/common.h"
 #include "common/include/paths.h"
 #include "common/include/init.h"
-#include "common/include/log.h"
 #include "common/include/queue.h"
-#include "common/include/rit.h"
 #include "common/include/utils.h"
 
 #define INFO_MSG(...) do {if (DEBUG) info_msg(__VA_ARGS__);} while(0);
 #define QUEUE_SOCKNAME "/rec-queue.sock"
 #define INOTIFY_EVENT_SIZE  ( sizeof (struct inotify_event) + NAME_MAX + 1)
 #define INOTIFY_EVENT_BUF (1*INOTIFY_EVENT_SIZE)
-#define IN_SOCK_TIMEOUT 10
-#define SUBSC_PATH "%s/subscribed"
 
 typedef struct {
 	char *id;

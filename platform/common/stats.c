@@ -7,11 +7,8 @@
 #include <float.h>
 
 #include "include/log.h"
+#include "constants.h"
 
-#define SHM_PATH "/dev/shm/"
-#define BASE_PATH "/adtn_stats"
-
-#define PERMISSIONS S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH
 
 typedef enum {READ, WRITE} action_t;
 

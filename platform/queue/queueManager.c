@@ -12,23 +12,16 @@
 #include <sys/un.h>
 #include <pthread.h>
 
-#include "common/include/paths.h"
 #include "common/include/log.h"
 #include "common/include/init.h"
 #include "common/include/bundle.h"
 #include "common/include/executor.h"
+#include "common/include/constants.h"
 
 #define DEF_SOCKNAME "/queue_manager.sock"
-#define MAX_BUFFER 256
-#define EXEC_TIMEOUT 1000000 //This time is in usecs
-#define PROC_TIMEOUT 3000000 //Time in usec
-#define SCHEDULER_TIMER 1000000
-
 #define QUEUE_SOCKNAME "%s/executor_queue.sock"
 #define EXEC_SOCKNAME "%s/executor.sock"
 
-#define LIFE_CODE 0x03
-#define PRIO_CODE 0x02
 #define EXEC_T 0x00
 
 #define INFO_MSG(...) do {if (DEBUG) info_msg(__VA_ARGS__);} while(0);

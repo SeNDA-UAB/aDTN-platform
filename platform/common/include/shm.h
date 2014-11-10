@@ -7,9 +7,6 @@
 
 #include "constants.h"
 
-#define SHM_MEM "adtn"
-#define SHM_ID_LENGTH 11   //Length of crc32 hexadecimal number
-
 //Be careful when using dynamic memory allocation inside the shared memory! All have to be copied into the shared memory section!
 struct common {
 	int initialized;

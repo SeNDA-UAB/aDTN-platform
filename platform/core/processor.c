@@ -13,13 +13,10 @@
 
 #include <openssl/md5.h>
 
+#include "common/include/common.h"
 #include "common/include/init.h"
-#include "common/include/bundle.h"
-#include "common/include/log.h"
-#include "common/include/paths.h"
 #include "common/include/queue.h"
 #include "common/include/executor.h"
-#include "common/include/neighbours.h"
 #include "common/include/utils.h"
 
 /* global vars*/
@@ -31,18 +28,12 @@ char *own_id;
 int proc_socket;
 struct sockaddr_un exec_addr;
 /**/
+
 /* Defines */
+#define INFO_MSG(...) do {if (DEBUG) info_msg(__VA_ARGS__);} while(0);
 #define QUEUE_SOCKNAME "/proc-queue.sock"
 #define PROC_SOCKNAME "/proc-executor.sock"
 #define EXEC_SOCKNAME "/executor.sock"
-#define WAIT_EMPTY_QUEUE 1000000/10 //time in usecs
-#define WAIT_FULL_QUEUE 1000000/10 //time in usecs
-#define NB_TIMEOUT 1200000 //time in usecs
-#define MIN_PORT 1
-#define MAX_PORT 65535
-
-#define INFO_MSG(...) do {if (DEBUG) info_msg(__VA_ARGS__);} while(0);
-
 /**/
 /* Structs*/
 typedef struct {

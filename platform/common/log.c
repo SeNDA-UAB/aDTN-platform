@@ -6,14 +6,6 @@
 
 #include "include/log.h"
 
-#ifndef NOLOG
-    #define NOLOG 0
-#endif
-
-#define ERROR_LOG_FILE "/adtn.err.log"
-#define INFO_LOG_FILE "/adtn.info.log"
-#define MAX_ENAME 133
-
 static int initiated = 0;
 static FILE *error_log_f;
 static FILE *info_log_f;

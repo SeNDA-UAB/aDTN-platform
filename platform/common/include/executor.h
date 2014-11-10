@@ -1,4 +1,4 @@
-#define MAX_HOPS_LEN 1024
+#include "constants.h"
 
 typedef enum {
         ERROR = 0,
