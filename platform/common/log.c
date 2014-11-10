@@ -9,6 +9,17 @@
 static int initiated = 0;
 static FILE *error_log_f;
 static FILE *info_log_f;
+static int debug_lvl = 4;
+
+/*
+Debug levels for log.
+
+LOG__ERROR 0
+LOG__WARNING 1
+LOG__INFO 2
+LOG__DEBUG 3
+
+*/
 
 void init_log(const char *data_path)
 {
@@ -163,6 +174,53 @@ void info_message(const char *file, int line, const char *format, ...)
 	errno = savedErrno;
 }
 
+void log_info_message(const int debug_level, const char *file, int line, const char *format, ...)
+{
+	va_list argList;
+	int savedErrno;
+	char buf[MAX_LOG_MSG];
+
+	savedErrno = errno;       /* In case we change it here */
+
+	if (debug_level <= debug_lvl) {
+		va_start(argList, format);
+		generate_infomsg(buf, format, file, line, argList);
+		va_end(argList);
+
+		printf("%s", buf);
+		fflush(stdout);
+		if (info_log_f != NULL) {
+			fwrite(buf, strlen(buf), 1, info_log_f);
+			fflush(info_log_f);
+		}
+	}
+
+	errno = savedErrno;
+}
+
+void log_err_message(const int debug_level, const bool useErr, const char *file, int line, const char *format, ...)
+{
+	va_list argList;
+	int savedErrno;
+	char buf[MAX_LOG_MSG];
+
+	savedErrno = errno;       /* In case we change it here */
+
+	if (debug_level <= debug_lvl) {
+		va_start(argList, format);
+		generate_errmsg(useErr, errno, buf, format, file, line, argList);
+		va_end(argList); 
+
+		fputs(buf, stderr);
+		if (error_log_f != NULL) {
+			fwrite(buf, strlen(buf), 1, error_log_f);
+			fflush(error_log_f);
+		}
+	}
+
+	errno = savedErrno;
+}
+
 /**/
 
 void end_log()
@@ -171,4 +229,14 @@ void end_log()
 		fclose(error_log_f);
 	if (info_log_f != NULL)
 		fclose(info_log_f);
+}
+
+void set_debug_lvl(const int lvl)
+{
+	if (lvl < 0)
+		debug_lvl = 0;
+	else if (lvl > 4)
+		debug_lvl = 4;
+	else
+		debug_lvl = lvl;
 }

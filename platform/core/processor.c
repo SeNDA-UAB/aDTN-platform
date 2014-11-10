@@ -458,7 +458,8 @@ static int init_processor(int *queue_conn, int argc, char *argv[])
 	int ret = 1;
 
 	if (init_adtn_process(argc, argv, &shm) != 0) {
-		err_msg(false, "Can't init shm");
+		LOG_MSG(LOG__ERROR, "Can't init shm", false);
+		//err_msg(false, "Can't init shm");
 		ret = -1;
 		goto end;
 	}
@@ -478,14 +479,16 @@ static int init_processor(int *queue_conn, int argc, char *argv[])
 
 	*queue_conn = queue_manager_connect(shm->data_path, QUEUE_SOCKNAME);
 	if (*queue_conn <= 0) {
-		err_msg(true, "[Processor] Can't stablish connection with queueManager");
+		LOG_MSG(LOG__ERROR, "[Processor] Can't stablish connection with queueManager", true);
+		//err_msg(true, "[Processor] Can't stablish connection with queueManager");
 		goto end;
 	}
 	if (connect_executor() != 0) {
 		err_msg(true, "Can't connect with executor");
 		goto end;
 	}
-	INFO_MSG("Processor initialized");
+	LOG_MSG(LOG__INFO, "Processor initialized", false);
+	//INFO_MSG("Processor initialized");
 	ret = 0;
 end:
 
@@ -518,7 +521,8 @@ int main(int argc, char *argv[])
 	sa.sa_flags = 0;
 	sa.sa_handler = end_handler;
 	if (sigaction(SIGINT, &sa, NULL) < 0) {
-		err_msg(true, "[Processor] Can't set SIGINT handler");
+		LOG_MSG(LOG__ERROR, "[Processor] Can't set SIGINT handler", true);
+		//err_msg(true, "[Processor] Can't set SIGINT handler");
 		goto end;
 	}
 	bundle_queue = NULL;

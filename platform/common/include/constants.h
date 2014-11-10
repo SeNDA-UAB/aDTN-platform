@@ -41,6 +41,11 @@
 #define INFO_LOG_FILE "/adtn.info.log"
 #define MAX_ENAME 133
 
+#define LOG__ERROR 0
+#define LOG__WARNING 1
+#define LOG__INFO 2
+#define LOG__DEBUG 3
+
 /*
     Neighbours constants
 */
