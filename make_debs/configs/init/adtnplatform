@@ -1,13 +1,13 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          skeleton
+# Provides:          adtnplatform 
 # Required-Start:    $remote_fs $syslog
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Example initscript
-# Description:       This file should be used to construct scripts to be
-#                    placed in /etc/init.d.
+# Short-Description: adtnplatform service
+# Description:       This script should be used to run the adtnplatform from
+#                    the aDTN suite.
 ### END INIT INFO
 
 #Author: Senda DevLab <developers@senda.uab.cat>
