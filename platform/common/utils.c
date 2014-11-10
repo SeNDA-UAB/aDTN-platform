@@ -55,3 +55,17 @@ end:
 
 	return ret;
 }
+
+int get_file_size(FILE *fd)
+{
+	int total_bytes;
+
+	if (fd == NULL)
+		return 0;
+	fseek(fd, 0L, SEEK_END);
+	total_bytes = (int)ftell(fd);
+	fseek(fd, 0, SEEK_SET);
+
+	return total_bytes;
+}
+

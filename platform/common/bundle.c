@@ -13,8 +13,7 @@
  */
 
 /* sdnv_ functions from DTN2 reference implementation */
-int
-sdnv_encode(uint64_t val, uint8_t *bp)
+int sdnv_encode(uint64_t val, uint8_t *bp)
 {
 	size_t val_len = 0;
 	uint64_t tmp = val;
@@ -36,8 +35,7 @@ sdnv_encode(uint64_t val, uint8_t *bp)
 	return val_len;
 }
 
-size_t
-sdnv_encoding_len(uint64_t val)
+size_t sdnv_encoding_len(uint64_t val)
 {
 	size_t val_len = 0;
 	uint64_t tmp = val;
@@ -49,8 +47,7 @@ sdnv_encoding_len(uint64_t val)
 	return val_len;
 }
 
-int
-sdnv_decode(const uint8_t *bp, uint64_t *val)
+int sdnv_decode(const uint8_t *bp, uint64_t *val)
 {
 	const uint8_t *start = bp;
 	if (!val) {
@@ -76,8 +73,7 @@ sdnv_decode(const uint8_t *bp, uint64_t *val)
 	return val_len;
 }
 
-size_t
-sdnv_len(const uint8_t *bp)
+size_t sdnv_len(const uint8_t *bp)
 {
 	size_t val_len = 1;
 	for ( ; *bp++ & 0x80; ++val_len );
@@ -115,8 +111,7 @@ sdnv_len(const uint8_t *bp)
 /**/
 
 /* Primary Block Block RFC5050 */
-bundle_s *
-bundle_new()
+bundle_s *bundle_new()
 {
 	bundle_s *ret = NULL;
 	static int last_timestamp = 0;
@@ -148,8 +143,7 @@ bundle_new()
 	return ret;
 }
 
-int
-bundle_set_proc_flags(bundle_s *bundle, uint64_t flags)
+int bundle_set_proc_flags(bundle_s *bundle, uint64_t flags)
 {
 	int ret = 0;
 
@@ -164,8 +158,7 @@ end:
 	return ret;
 }
 
-int
-bundle_set_lifetime(bundle_s *bundle, uint64_t lifetime)
+int bundle_set_lifetime(bundle_s *bundle, uint64_t lifetime)
 {
 	int ret = 0;
 
@@ -179,8 +172,7 @@ end:
 	return ret;
 }
 
-static int
-bundle_set_dict_offset(bundle_s *bundle, primary_field_e field, uint64_t offset)
+static int bundle_set_dict_offset(bundle_s *bundle, primary_field_e field, uint64_t offset)
 {
 	int ret = 0;
 
@@ -222,8 +214,7 @@ end:
 	return ret;
 }
 
-static int
-bundle_get_dict_offset(bundle_s *bundle, primary_field_e field)
+static int bundle_get_dict_offset(bundle_s *bundle, primary_field_e field)
 {
 	int ret = 0;
 
@@ -265,8 +256,7 @@ end:
 	return ret;
 }
 
-static int
-bundle_update_primary_offsets(bundle_s *bundle, uint64_t removed_entry_offset, int removed_entry_l)
+static int bundle_update_primary_offsets(bundle_s *bundle, uint64_t removed_entry_offset, int removed_entry_l)
 {
 	if (bundle->primary->dest_scheme_offset > removed_entry_offset)
 		bundle->primary->dest_scheme_offset -= removed_entry_l;
@@ -288,8 +278,7 @@ bundle_update_primary_offsets(bundle_s *bundle, uint64_t removed_entry_offset, i
 	return 0;
 }
 
-static int
-bundle_remove_dict_entry(bundle_s *bundle, uint64_t removed_entry_offset)
+static int bundle_remove_dict_entry(bundle_s *bundle, uint64_t removed_entry_offset)
 {
 	int removed_entry_l = 0, ret = 0, new_dict_l = 0;
 	char *new_dict = NULL;
@@ -314,8 +303,7 @@ bundle_remove_dict_entry(bundle_s *bundle, uint64_t removed_entry_offset)
 	return ret;
 }
 
-static int
-bundle_add_dict_entry(bundle_s *bundle, const char *new_dict_entry)
+static int bundle_add_dict_entry(bundle_s *bundle, const char *new_dict_entry)
 {
 	int new_dict_entry_l = 0, entry_offset = 0, ret = 0;
 
@@ -336,8 +324,7 @@ end:
 	return ret;
 }
 
-int
-bundle_set_primary_entry(bundle_s *bundle, primary_field_e field, const char *new_dict_entry)
+int bundle_set_primary_entry(bundle_s *bundle, primary_field_e field, const char *new_dict_entry)
 {
 	int entry_offset = 0, ret = 0;
 
@@ -366,8 +353,7 @@ end:
 	return ret;
 }
 
-int
-bundle_remove_primary_entry(bundle_s *bundle, primary_field_e field)
+int bundle_remove_primary_entry(bundle_s *bundle, primary_field_e field)
 {
 	int entry_offset = 0, ret = 0;
 
@@ -390,8 +376,7 @@ end:
 /**/
 
 /* Payload Block RFC5050 */
-payload_block_s *
-bundle_new_payload_block()
+payload_block_s *bundle_new_payload_block()
 {
 	payload_block_s *payload_block = (payload_block_s *)calloc(1, sizeof(payload_block_s));
 	payload_block->body.payload = (payload_body_s *)calloc(1, sizeof(payload_body_s));
@@ -400,8 +385,7 @@ bundle_new_payload_block()
 	return payload_block;
 }
 
-int
-bundle_set_payload(payload_block_s *block, uint8_t *payload, int payload_l)
+int bundle_set_payload(payload_block_s *block, uint8_t *payload, int payload_l)
 {
 	int ret = 0;
 	if (!block) {
@@ -422,8 +406,7 @@ end:
 /**/
 
 /* Metadata Extension Block RFC6258 */
-meb_s *
-bundle_new_meb()
+meb_s *bundle_new_meb()
 {
 	meb_s *meb = (meb_s *)calloc(1, sizeof(meb_s));
 	meb->type = META_B;
@@ -432,8 +415,7 @@ bundle_new_meb()
 	return meb;
 }
 
-int
-bundle_set_metadata(meb_s *block, uint64_t meta_type, uint8_t *metadata, int metadata_l)
+int bundle_set_metadata(meb_s *block, uint64_t meta_type, uint8_t *metadata, int metadata_l)
 {
 	int ret = 0;
 	if (!block) {
@@ -456,8 +438,7 @@ end:
 /**/
 
 /* Mobile-code Metadata Extension Block (SeNDA) */
-mmeb_s *
-bundle_new_mmeb()
+mmeb_s *bundle_new_mmeb()
 {
 	mmeb_s *mmeb = (mmeb_s *)bundle_new_meb();
 	mmeb->body.meb->type = MMEB_B;
@@ -467,8 +448,7 @@ bundle_new_mmeb()
 
 
 
-int
-bundle_add_mmeb_code(mmeb_s *block, uint16_t alg_type, uint16_t fwk, size_t sw_length, uint8_t *sw_code)
+int bundle_add_mmeb_code(mmeb_s *block, uint16_t alg_type, uint16_t fwk, size_t sw_length, uint8_t *sw_code)
 {
 	int ret = 0;
 	mmeb_code_s **new_code = NULL;
@@ -513,8 +493,7 @@ end:
 /**/
 
 
-int
-bundle_set_ext_block_flags(ext_block_s *ext_block, uint8_t flags)
+int bundle_set_ext_block_flags(ext_block_s *ext_block, uint8_t flags)
 {
 	int ret = 0;
 
@@ -530,8 +509,7 @@ end:
 
 }
 
-int
-bundle_add_ext_block(bundle_s *bundle, ext_block_s *ext_block)
+int bundle_add_ext_block(bundle_s *bundle, ext_block_s *ext_block)
 {
 	int ret = 0;
 	ext_block_s **next = NULL;
@@ -738,8 +716,7 @@ end:
 
 
 /* Bundle raw creation functions */
-static int
-bundle_primary_raw(primary_block_s *primary_block, uint8_t **raw)
+static int bundle_primary_raw(primary_block_s *primary_block, uint8_t **raw)
 {
 	int ret = 0, primary_block_l = 0, off = 0, max_raw_l = 0;
 	size_t header_length = 0;
@@ -799,8 +776,7 @@ bundle_primary_raw(primary_block_s *primary_block, uint8_t **raw)
 }
 
 // Length must be correctly set!!
-static int
-bundle_ext_block_header_raw(ext_block_s *ext_block, uint8_t **raw)
+static int bundle_ext_block_header_raw(ext_block_s *ext_block, uint8_t **raw)
 {
 	int ret = 0, max_raw_header_l = 0, off = 0;
 
@@ -832,8 +808,7 @@ bundle_ext_block_header_raw(ext_block_s *ext_block, uint8_t **raw)
 }
 
 // Extension body lenght is already the block->length (there aren't SDNV values)
-static int
-bundle_payload_raw(payload_block_s *block, uint8_t **raw)
+static int bundle_payload_raw(payload_block_s *block, uint8_t **raw)
 {
 	int ret = 0, header_raw_l = 0, payload_raw_l = 0;
 
@@ -853,8 +828,7 @@ bundle_payload_raw(payload_block_s *block, uint8_t **raw)
 }
 
 
-static int
-bundle_meb_raw(meb_s *block, uint8_t **raw)
+static int bundle_meb_raw(meb_s *block, uint8_t **raw)
 {
 	int ret = 0, header_raw_l = 0, meb_body_raw_l = 0, meb_raw_l = 0, off = 0;
 
@@ -875,8 +849,7 @@ bundle_meb_raw(meb_s *block, uint8_t **raw)
 	return ret;
 }
 
-static int
-bundle_mmeb_raw(mmeb_s *block, uint8_t **raw)
+static int bundle_mmeb_raw(mmeb_s *block, uint8_t **raw)
 {
 	int ret = 0, mmeb_body_raw_l = 0, header_raw_l = 0, mmeb_raw_l = 0, off = 0;
 	mmeb_body_s *next_mmeb_body = NULL;
@@ -940,8 +913,7 @@ end:
 	return ret;
 }
 
-int
-bundle_create_raw(const bundle_s *bundle, /*out*/uint8_t **bundle_raw)
+int bundle_create_raw(const bundle_s *bundle, /*out*/uint8_t **bundle_raw)
 {
 	int ret = -1, ext_raw_l = 0, bundle_raw_l = 0;
 	uint8_t *ext_raw = NULL;
@@ -1072,8 +1044,7 @@ end:
 
 /*  Returns a printable string containing bundle information from a bundle_s structure. */
 
-int
-bundle_get_printable(const bundle_s *bundle, /*out*/ char **buff)
+int bundle_get_printable(const bundle_s *bundle, /*out*/ char **buff)
 {
 	int ret = 1, eb_counter = 0, eid_counter = 0, mmeb_counter = 0, mcode_counter = 0, len = 0;
 	int pl_counter = 0, meta_counter = 0, i = 0;
@@ -1179,8 +1150,7 @@ end:
 
 /* Bundle raw parsing functions */
 
-static int
-bundle_raw_check_block_requirements(const uint8_t *bundle_raw, int last_block)
+static int bundle_raw_check_block_requirements(const uint8_t *bundle_raw, int last_block)
 {
 	int ret = 1;
 	const uint8_t *b_pos = NULL;
@@ -1206,8 +1176,7 @@ end:
 	return ret;
 }
 
-int
-bundle_raw_check(const uint8_t *bundle_raw, int length)
+int bundle_raw_check(const uint8_t *bundle_raw, int length)
 {
 	int ret = 1, prim = 0, payl = 0, last_block = 0, off = 0;
 	const uint8_t *b_pos = NULL;
@@ -1264,8 +1233,7 @@ end:
 }
 
 //Returns the offset of the <field_num> SDNV field
-int
-bundle_raw_get_sdnv_off(const uint8_t *raw, const int field_num)
+int bundle_raw_get_sdnv_off(const uint8_t *raw, const int field_num)
 {
 	int i = 0, off = 0;
 
@@ -1277,8 +1245,7 @@ bundle_raw_get_sdnv_off(const uint8_t *raw, const int field_num)
 }
 
 //Returns length of the ext block body
-static inline int
-bundle_raw_get_body_off(const uint8_t *raw, /*out*/ int *ext_block_body_off)
+static inline int bundle_raw_get_body_off(const uint8_t *raw, /*out*/ int *ext_block_body_off)
 {
 	uint64_t EID_ref_count = 0, body_length = 0, proc_flags = 0;
 	const uint8_t *b_pos = NULL;
@@ -1302,8 +1269,7 @@ bundle_raw_get_body_off(const uint8_t *raw, /*out*/ int *ext_block_body_off)
 
 
 //Returns length of the ext block body
-static inline int
-bundle_raw_ext_get_block_body(const uint8_t *bundle_raw, block_type_e block_type, /*out*/uint8_t **body)
+static inline int bundle_raw_ext_get_block_body(const uint8_t *bundle_raw, block_type_e block_type, /*out*/uint8_t **body)
 {
 	size_t body_l = 0;
 	int ret = 0, block_off = 0, body_off = 0;
@@ -1326,8 +1292,7 @@ end:
 }
 
 // Returns offset to next block
-int
-bundle_raw_next_block_off(const uint8_t *raw)
+int bundle_raw_next_block_off(const uint8_t *raw)
 {
 	int body_l = 0, body_off = 0;
 
@@ -1336,8 +1301,7 @@ bundle_raw_next_block_off(const uint8_t *raw)
 }
 
 
-int
-bundle_raw_get_proc_flags(const uint8_t *primary_raw, /*out*/uint64_t *flags)
+int bundle_raw_get_proc_flags(const uint8_t *primary_raw, /*out*/uint64_t *flags)
 {
 	int off = 0, ret = 0;
 
@@ -1348,8 +1312,7 @@ bundle_raw_get_proc_flags(const uint8_t *primary_raw, /*out*/uint64_t *flags)
 	return ret;
 }
 
-int
-bundle_raw_set_proc_flags(uint8_t *primary_raw, /*out*/uint64_t new_flags)
+int bundle_raw_set_proc_flags(uint8_t *primary_raw, /*out*/uint64_t new_flags)
 {
 	int off = 0, ret = 0, old_flags_l = 0, new_flags_l = 0;
 	uint64_t old_flags = 0;
@@ -1367,8 +1330,7 @@ bundle_raw_set_proc_flags(uint8_t *primary_raw, /*out*/uint64_t new_flags)
 	return ret;
 }
 
-int
-bundle_raw_ext_get_proc_flags(const uint8_t *ext_raw, /*out*/uint8_t *flags)
+int bundle_raw_ext_get_proc_flags(const uint8_t *ext_raw, /*out*/uint8_t *flags)
 {
 	uint64_t flags_32 = 0, ret = 0;
 
@@ -1378,8 +1340,7 @@ bundle_raw_ext_get_proc_flags(const uint8_t *ext_raw, /*out*/uint8_t *flags)
 	return ret;
 }
 
-int
-bundle_raw_ext_set_proc_flags(uint8_t *ext_raw, uint8_t new_flags)
+int bundle_raw_ext_set_proc_flags(uint8_t *ext_raw, uint8_t new_flags)
 {
 	uint64_t flags_32 = 0;
 	flags_32 = new_flags;
@@ -1388,8 +1349,7 @@ bundle_raw_ext_set_proc_flags(uint8_t *ext_raw, uint8_t new_flags)
 }
 
 //Returs 1 if current block is the last one 0 otherwise
-int
-bundle_raw_ext_is_last_block(const uint8_t *raw)
+int bundle_raw_ext_is_last_block(const uint8_t *raw)
 {
 	uint8_t block_flags = 0;
 	int ret = 0;
@@ -1403,8 +1363,7 @@ bundle_raw_ext_is_last_block(const uint8_t *raw)
 }
 
 //Returns the offset start of the block with id <block_id>.
-int
-bundle_raw_find_block_off(const uint8_t *raw, const uint8_t block_id)
+int bundle_raw_find_block_off(const uint8_t *raw, const uint8_t block_id)
 {
 	int next_block_off = 0;
 	const uint8_t *b_pos = NULL;
@@ -1429,8 +1388,7 @@ bundle_raw_find_block_off(const uint8_t *raw, const uint8_t block_id)
 }
 
 
-int
-bundle_raw_get_primary_field(const uint8_t *bundle_raw, const primary_field_e field_id, /*out*/char **field)
+int bundle_raw_get_primary_field(const uint8_t *bundle_raw, const primary_field_e field_id, /*out*/char **field)
 {
 	int ret = 0, sdnv_field_off = 0, dict_off = 0;
 	const uint8_t *b_pos = NULL;
@@ -1463,8 +1421,7 @@ end:
 	return ret;
 }
 
-int
-bunlde_raw_get_timestamp_and_seq(const uint8_t *bundle_raw, /*out*/uint64_t *timestamp_time, /*out*/uint64_t *timestamp_seq)
+int bunlde_raw_get_timestamp_and_seq(const uint8_t *bundle_raw, /*out*/uint64_t *timestamp_time, /*out*/uint64_t *timestamp_seq)
 {
 	unsigned off = 0;
 
@@ -1476,8 +1433,7 @@ bunlde_raw_get_timestamp_and_seq(const uint8_t *bundle_raw, /*out*/uint64_t *tim
 	return 0;
 }
 
-int
-bundle_raw_get_lifetime(const uint8_t *bundle_raw, /*out*/uint64_t *lifetime)
+int bundle_raw_get_lifetime(const uint8_t *bundle_raw, /*out*/uint64_t *lifetime)
 {
 	unsigned off = 0;
 
@@ -1488,14 +1444,12 @@ bundle_raw_get_lifetime(const uint8_t *bundle_raw, /*out*/uint64_t *lifetime)
 	return 0;
 }
 
-int
-bundle_raw_get_payload(const uint8_t *bundle_raw, /*out*/uint8_t **payload)
+int bundle_raw_get_payload(const uint8_t *bundle_raw, /*out*/uint8_t **payload)
 {
 	return bundle_raw_ext_get_block_body(bundle_raw, PAYL_B, payload);
 }
 
-int
-bundle_raw_get_metadata(const uint8_t *bundle_raw, /*out*/uint64_t *metadata_type, /*out*/uint8_t **metadata)
+int bundle_raw_get_metadata(const uint8_t *bundle_raw, /*out*/uint64_t *metadata_type, /*out*/uint8_t **metadata)
 {
 	uint8_t *metadata_raw = NULL;
 	size_t metadata_l = 0;
@@ -1511,8 +1465,7 @@ bundle_raw_get_metadata(const uint8_t *bundle_raw, /*out*/uint64_t *metadata_typ
 	return metadata_l - 1;
 }
 
-static inline int
-bundle_raw_get_mmeb_codes(const uint8_t *mmeb_codes_raw, const int mmeb_codes_raw_l, /*out*/mmeb_code_s **mmeb_codes)
+static inline int bundle_raw_get_mmeb_codes(const uint8_t *mmeb_codes_raw, const int mmeb_codes_raw_l, /*out*/mmeb_code_s **mmeb_codes)
 {
 	int ret = 0, off = 0;
 	mmeb_code_s **next_code = mmeb_codes;
@@ -1535,8 +1488,7 @@ bundle_raw_get_mmeb_codes(const uint8_t *mmeb_codes_raw, const int mmeb_codes_ra
 	return ret;
 }
 
-int
-bundle_raw_get_mmeb(const uint8_t *bundle_raw, /*out*/mmeb_body_s *mmeb)
+int bundle_raw_get_mmeb(const uint8_t *bundle_raw, /*out*/mmeb_body_s *mmeb)
 {
 	int ret = 0, total_block_off = 0, block_off = 0, body_off = 0, mmeb_off = 0;
 	size_t body_l = 0, mmeb_body_l = 0;

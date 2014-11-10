@@ -9,14 +9,7 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 
-#include "neighbours.h"
-#include "bundle.h"
-#include "rit.h"
-#include "log.h"
-#include "constants.h"
-
-//${ANNOUNCED_INFO}/${nb_id}/subscribed/
-#define RIT_SUBSCRIBED_PATH ANNOUNCED_INFO"/%s/subscribed"
+#include "common.h"
 
 int get_nbs(char **nbs_list_p)
 {

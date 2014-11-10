@@ -4,9 +4,8 @@
 #include <stdbool.h>
 #include <syslog.h>
 #include <errno.h>
+#include "constants.h"
 
-#define MAX_LOG_MSG 512 	//In bytes
-#define DEBUG 1
 #define _FILE strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__
 #define INFO_MSG(...) do {if (DEBUG) info_msg(__VA_ARGS__);} while(0);
 

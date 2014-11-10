@@ -18,8 +18,7 @@
 #include <dlfcn.h>
 
 #include "common/include/init.h"
-#include "common/include/log.h"
-#include "common/include/paths.h"
+#include "common/include/common.h"
 
 #include "modules/include/hash.h"
 #include "modules/include/exec.h"

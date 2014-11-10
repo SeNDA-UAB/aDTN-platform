@@ -1,20 +1,9 @@
 #ifndef INC_COMMON_RIT
 #define INC_COMMON_RIT
 
-#include "rit_paths.h"
+#include "constants.h"
 
 //rit.h
-#ifndef PREFIX
-#define PREFIX "/usr/local"
-#endif
-
-#ifndef DEFAULT_CONF_FILE
-#define DEFAULT_CONF_FILE PREFIX"/etc/adtn.ini"
-#endif
-
-#ifndef NBS_INFO
-#define NBS_INFO "NBS"
-#endif
 
 typedef struct{
 	int transaction;

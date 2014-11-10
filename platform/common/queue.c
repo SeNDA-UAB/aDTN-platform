@@ -8,10 +8,8 @@
 
 #include "log.h"
 #include "paths.h"
+#include "constants.h"
 
-#define SOCK_PATH "/queue_manager.sock" //change it
-#define MAX_BUFFER 256
-#define CONN_TIMEOUT 2000000 //in usecs
 
 struct sockaddr_un queue_addr = {0};
 
