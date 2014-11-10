@@ -37,8 +37,8 @@
 #define NOLOG 0
 #endif
 
-#define ERROR_LOG_FILE "/adtn.err.log"
-#define INFO_LOG_FILE "/adtn.info.log"
+#define ERROR_LOG_FILE "adtn.err.log"
+#define INFO_LOG_FILE "adtn.info.log"
 #define MAX_ENAME 133
 
 /*
@@ -57,11 +57,11 @@
 #ifndef SYSCONFDIR
 #define SYSCONFDIR PREFIX "/etc"
 #endif
-#ifndef CONF_FILE
-#define CONF_FILE "adtn.ini"
+#ifndef CONF_FILE_NAME
+#define CONF_FILE_NAME "adtn.ini"
 #endif
-#ifndef DEFAULT_CONF_FILE
-#define DEFAULT_CONF_FILE SYSCONFDIR"/"CONF_FILE
+#ifndef DEFAULT_CONF_FILE_PATH
+#define DEFAULT_CONF_FILE_PATH SYSCONFDIR"/adtn/"CONF_FILE_NAME
 #endif
 #ifndef BIN_PREFIX
 #define BIN_PREFIX PREFIX"/bin"
@@ -70,14 +70,11 @@
 #define LIB_PREFIX PREFIX"/lib"
 #endif
 
-//Data paths
-#define FIFO_FILE "adtn.pipe"
-#define BUNDLE_QUEUE_SEM "queue_sem"
-#define SPOOL_PATH "/bundle_queue/"
-//#define SPOOL_QUEUE_PATH SPOOL_PATH"/queue"
-#define OBJECTS_PATH SPOOL_PATH"codes/"   //relative to spool_path
-#define INPUT_PATH "/input/"
-#define DEST_PATH "/incoming/"
+//Data paths (relative to data path from adtn.ini)
+#define QUEUE_PATH "bundle_queue"
+#define OBJECTS_PATH QUEUE_PATH"/codes"   //relative to spool_path
+#define INPUT_PATH "input"
+#define DEST_PATH "incoming"
 
 
 /*

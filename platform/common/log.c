@@ -19,16 +19,16 @@ void init_log(const char *data_path)
 		return;
 
 	errno = 0;
-	int error_log_l = strlen(data_path) + strlen(ERROR_LOG_FILE) + 1;
+	int error_log_l = strlen(data_path) + strlen(ERROR_LOG_FILE) + 2;
 	error_log_path = (char *)malloc(error_log_l);
-	snprintf(error_log_path, error_log_l, "%s%s", data_path, ERROR_LOG_FILE);
+	snprintf(error_log_path, error_log_l, "%s/%s", data_path, ERROR_LOG_FILE);
 	error_log_f = fopen(error_log_path, "a");
 	if (error_log_f == NULL)
 		err_msg(1, "Error opening error logfile %s", error_log_path);
 
-	int info_log_l = strlen(data_path) + strlen(INFO_LOG_FILE) + 1;
+	int info_log_l = strlen(data_path) + strlen(INFO_LOG_FILE) + 2;
 	info_log_path = (char *)malloc(info_log_l);
-	snprintf(info_log_path, info_log_l, "%s%s", data_path, INFO_LOG_FILE);
+	snprintf(info_log_path, info_log_l, "%s/%s", data_path, INFO_LOG_FILE);
 	info_log_f = fopen(info_log_path, "a");
 	if (info_log_f == NULL)
 		err_msg("Error opening info logfile %s", info_log_path);

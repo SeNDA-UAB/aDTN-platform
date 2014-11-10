@@ -18,7 +18,6 @@
 #include "common/include/log.h"
 #include "common/include/utils.h"
 #include "common/include/queue.h"
-#include "common/include/paths.h"
 #include "common/include/init.h"
 
 #include "api/include/adtn.h"
@@ -85,7 +84,7 @@ static void help(char *program_name)
 	printf( "%s is part of the SeNDA aDTN platform\n"
 	        "Usage: %s [options] [platform_id]\n"
 	        "Supported options:\n"
-	        "       [-f | --conf_file] config_file\t\tUse {config_file} config file instead of the default found at "DEFAULT_CONF_FILE"\n"
+	        "       [-f | --conf_file] config_file\t\tUse {config_file} config file instead of the default found at "DEFAULT_CONF_FILE_PATH"\n"
 	        "       [-c | --count] count\t\t\tStop after sending {count} adtn pings\n"
 	        "       [-s | --size] size\t\t\tSet a payload of {size} bytes\n"
 	        "       [-i | --interval] interval \t\tWait {interval} milliseconds between adtn pings\n"
@@ -414,7 +413,7 @@ int main(int argc,  char *const *argv)
 	parse_arguments(argc, argv);
 
 	if (conf.config_file == NULL)
-		conf.config_file = DEFAULT_CONF_FILE;
+		conf.config_file = DEFAULT_CONF_FILE_PATH;
 
 	if (conf.payload_size == 0) {
 		conf.payload_size = DEFAULT_PAYLOAD_SIZE;
@@ -444,7 +443,7 @@ int main(int argc,  char *const *argv)
 		goto end;
 	}
 
-	asprintf(&conf.input_path, "%s%s", conf.shm->data_path, (char *)INPUT_PATH);
+	asprintf(&conf.input_path, "%s/%s", conf.shm->data_path, (char *)INPUT_PATH);
 
 	// We will use a random app port to be able to do multiple pings at the same time from the same platform
 	// If folder app exists, use another one.

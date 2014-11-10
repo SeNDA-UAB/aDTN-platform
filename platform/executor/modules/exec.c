@@ -8,7 +8,6 @@
 #include "include/world.h"
 
 #include "common/include/log.h"
-#include "common/include/paths.h"
 #include "common/include/neighbours.h"
 
 #include "modules/include/exec.h"

@@ -152,9 +152,9 @@ int main(int argc, char *const argv[])
 		goto end;
 
 	}
-	bundles_path_l = strlen(world.shm->data_path) + strlen(SPOOL_PATH) + 1;
+	bundles_path_l = strlen(world.shm->data_path) + strlen(QUEUE_PATH) + 2;
 	world.bundles_path = (char *)malloc(bundles_path_l);
-	snprintf(world.bundles_path, bundles_path_l, "%s%s", world.shm->data_path, SPOOL_PATH);
+	snprintf(world.bundles_path, bundles_path_l, "%s/%s", world.shm->data_path, QUEUE_PATH);
 
 	if (stat(world.bundles_path, &folder_stat) != 0) {
 		err_msg(true, "Can't find bundles folder %s. Creating it.", world.bundles_path);

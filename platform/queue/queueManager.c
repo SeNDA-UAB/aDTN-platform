@@ -425,7 +425,7 @@ static int get_raw_bundle(char *name, uint8_t **raw_bundle)
 {
 	int ret = 1;
 	char *bundle_path;
-	asprintf(&bundle_path, "%s%s%s", shm->data_path, SPOOL_PATH, name);
+	asprintf(&bundle_path, "%s/%s/%s", shm->data_path, QUEUE_PATH, name);
 
 	ret = load_bundle(bundle_path, raw_bundle);
 
@@ -606,9 +606,9 @@ int main(int argc, char *const argv[])
 	if (sigaction(SIGINT, &act, NULL) != 0)
 		return 1;
 	signal(SIGPIPE, SIG_IGN);
-	len = strlen(shm->data_path) + 1 + strlen(SPOOL_PATH);
+	len = strlen(shm->data_path) + 1 + strlen(QUEUE_PATH);
 	path = calloc(len, sizeof(char));
-	snprintf(path, len, "%s"SPOOL_PATH, shm->data_path);
+	snprintf(path, len, "%s/"QUEUE_PATH, shm->data_path);
 	queue_init(&queue, path);
 
 	connect_executor(shm->data_path);

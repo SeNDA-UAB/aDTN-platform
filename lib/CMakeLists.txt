@@ -2,10 +2,17 @@ cmake_minimum_required (VERSION 2.8.2)
 
 MESSAGE("-- [INFO] Starting cmake of lib")
 
-project(lib C CXX)
+# Define installation prefix
+SET(PREFIX "${CMAKE_INSTALL_PREFIX}")
+add_definitions(-DPREFIX="${PREFIX}")
 
-SET(PREFIX "\"${CMAKE_INSTALL_PREFIX}\"")
-add_definitions(-DPREFIX=${PREFIX})
+# Define configuration dir
+if (NOT DEFINED SYSCONFDIR)
+	set(SYSCONFDIR "${PREFIX}/etc/adtn" CACHE PATH "Path of the configuration files." FORCE)
+endif()
+add_definitions(-DSYSCONFDIR="${SYSCONFDIR}")
+
+project(lib C CXX)
 
 STRING(TOLOWER "${BTYPE}" BTYPE)
 if(BTYPE STREQUAL "debug")

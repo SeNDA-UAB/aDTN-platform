@@ -15,7 +15,6 @@
 #include <linux/limits.h>
 
 #include "common/include/common.h"
-#include "common/include/paths.h"
 #include "common/include/init.h"
 #include "common/include/queue.h"
 #include "common/include/utils.h"
@@ -32,7 +31,7 @@ typedef struct {
 
 typedef struct {
 	int queue_conn;
-	char *spool_path; // Bundles received from and to the network
+	char *queue_path; // Bundles received from and to the network
 	char *input_path; // Bundles created locally by the api (are catched by the inotify thread)
 	char *destination_path; // Bundles are stored here if its destination is this platform
 	char *platform_ip;
@@ -56,9 +55,9 @@ static int mkdir_in(const char *in_path, const char *path, mode_t mode, /*out*/ 
 		full_path = &tmp_path;
 	}
 
-	full_path_l = strlen(in_path) + strlen(path) + 1;
+	full_path_l = strlen(in_path) + strlen(path) + 2;
 	*full_path = (char *)malloc(full_path_l);
-	snprintf(*full_path, full_path_l, "%s%s", in_path, path);
+	snprintf(*full_path, full_path_l, "%s/%s", in_path, path);
 
 	if (mkdir(*full_path, mode) != 0) {
 		if (errno != EEXIST) {
@@ -87,7 +86,7 @@ static int create_paths(const char *data_path)
 	ret |= mkdir_in(data_path, INPUT_PATH, mode, &g_vars.input_path);
 	ret |= mkdir_in(data_path, DEST_PATH, mode, &g_vars.destination_path);
 	mode = S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH; //chmod 755
-	ret |= mkdir_in(data_path, SPOOL_PATH, mode, &g_vars.spool_path);
+	ret |= mkdir_in(data_path, QUEUE_PATH, mode, &g_vars.queue_path);
 
 	return ret;
 }
@@ -262,9 +261,9 @@ int put_bundle_into_queue(const uint8_t *raw_bundle, const int raw_bundle_l)
 	if ((bundle_name = generate_bundle_name()) == NULL)
 		goto end;
 
-	if (write_to(g_vars.spool_path, bundle_name, raw_bundle, raw_bundle_l) != 0)
+	if (write_to(g_vars.queue_path, bundle_name, raw_bundle, raw_bundle_l) != 0)
 		goto end;
-	INFO_MSG("Bundle stored into %s%s", g_vars.spool_path, bundle_name);
+	INFO_MSG("Bundle stored into %s%s", g_vars.queue_path, bundle_name);
 
 	if (queue(bundle_name, g_vars.queue_conn) != 0)
 		goto end;
@@ -434,7 +433,7 @@ static int process_multiple_bundles(const char *bundles_path)
 			continue;
 
 		// Create full path
-		strncpy(full_path + bundles_path_l, ne->d_name, PATH_MAX - bundles_path_l);
+		snprintf(full_path + bundles_path_l, bundles_path_l, "/%s", ne->d_name);
 
 		INFO_MSG("Processing bundle %s", full_path)
 
@@ -514,7 +513,8 @@ void *inotify_thread()
 			event = (struct inotify_event *) p;
 
 			new_bundle_name = event->name;
-			strncpy(full_path + input_path_l, new_bundle_name, sizeof(full_path) - input_path_l);
+
+			snprintf(full_path + input_path_l, sizeof(full_path) - input_path_l, "/%s", new_bundle_name);
 
 			INFO_MSG("New bundle %s received", full_path);
 

@@ -94,9 +94,9 @@ static void delete_bundle(char *name)
 	char *bundle_file = NULL;
 	int len;
 
-	len = strlen(bundle_queue) + strlen(name) + 1;
+	len = strlen(bundle_queue) + strlen(name) + 2;
 	bundle_file = (char *)calloc(len, sizeof(char));
-	snprintf(bundle_file, len, "%s%s", bundle_queue, name);
+	snprintf(bundle_file, len, "%s/%s", bundle_queue, name);
 	if (remove(bundle_file) != 0)
 		info_msg("Can't delete bundle located in %s", bundle_file);
 	else
@@ -142,9 +142,9 @@ static int get_raw_bundle(char *name, uint8_t **raw_bundle)
 	int len = 0;
 	char *bundle_file = NULL;
 
-	len = strlen(bundle_queue) + strlen(name) + 1;
+	len = strlen(bundle_queue) + strlen(name) + 2;
 	bundle_file = (char *)calloc(len, sizeof(char));
-	snprintf(bundle_file, len, "%s%s", bundle_queue, name);
+	snprintf(bundle_file, len, "%s/%s", bundle_queue, name);
 
 	ret = load_bundle(bundle_file, raw_bundle);
 
@@ -334,9 +334,9 @@ static int bundle_file_exist(char *name)
 	char *bundle_file = NULL;
 	FILE *f = NULL;
 
-	len = strlen(bundle_queue) + strlen(name) + 1;
+	len = strlen(bundle_queue) + strlen(name) + 2;
 	bundle_file = (char *)calloc(len, sizeof(char));
-	snprintf(bundle_file, len, "%s%s", bundle_queue, name);
+	snprintf(bundle_file, len, "%s/%s", bundle_queue, name);
 
 	f = fopen(bundle_file, "rb");
 	if (f == NULL) {
@@ -391,9 +391,9 @@ static int init_dirs()
 
 	if (!shm->data_path)
 		goto end;
-	len = strlen(shm->data_path) + strlen(SPOOL_PATH) + 1 + 1;
+	len = strlen(shm->data_path) + strlen(QUEUE_PATH) + 2;
 	bundle_queue = (char *)calloc(len, sizeof(char));
-	snprintf(bundle_queue, len, "%s%s/", shm->data_path, SPOOL_PATH);
+	snprintf(bundle_queue, len, "%s/%s", shm->data_path, QUEUE_PATH);
 	//creates directory if not exist
 	mkdir(bundle_queue, 0755);
 	if (errno != EEXIST && errno != 0)

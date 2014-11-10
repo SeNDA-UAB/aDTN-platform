@@ -22,7 +22,7 @@ static void help(char *program_name)
 	printf( "%s is part of the SeNDA aDTN platform\n"
 	        "Usage: %s [options]\n"
 	        "Supported options:\n"
-	        "       -c [config_file]      %s will use the specified config file instead of the default found at "DEFAULT_CONF_FILE"\n"
+	        "       -c [config_file]      %s will use the specified config file instead of the default found at "DEFAULT_CONF_FILE_PATH"\n"
 	        "       -f            Force to reread the config file\n"
 	        "       -h            Shows this help message\n"
 	        , program_name, program_name, program_name);
@@ -280,7 +280,7 @@ int init_adtn_process(int argc, char *const argv[], struct common **shm_common)
 		goto end;
 	}
 	if (config_file == NULL)
-		config_file = strdup(DEFAULT_CONF_FILE);
+		config_file = strdup(DEFAULT_CONF_FILE_PATH);
 
 	//Check if file exists
 	if (access(config_file, R_OK) != 0) {

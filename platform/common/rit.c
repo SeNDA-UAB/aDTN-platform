@@ -70,7 +70,7 @@ int rit_changePath(const char *newPath)
 		memset(rit_path, 0, 100);
 		if (*rit_path == '\0') {
 			struct conf_list global_configuration = {0};
-			if (load_config("global", &global_configuration, DEFAULT_CONF_FILE) != 1) {
+			if (load_config("global", &global_configuration, DEFAULT_CONF_FILE_PATH) != 1) {
 				return 1;
 			}
 			char *data_path = get_option_value("data", &global_configuration);
@@ -165,7 +165,7 @@ static cJSON *get_full_rit(int only_block)
 
 	if (*rit_path == '\0') {
 		struct conf_list global_configuration = {0};
-		if (load_config("global", &global_configuration, DEFAULT_CONF_FILE) != 1) {
+		if (load_config("global", &global_configuration, DEFAULT_CONF_FILE_PATH) != 1) {
 			return NULL;
 		}
 		char *data_path = get_option_value("data", &global_configuration);
