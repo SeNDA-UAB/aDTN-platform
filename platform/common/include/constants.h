@@ -58,10 +58,10 @@
 #define SYSCONFDIR PREFIX "/etc"
 #endif
 #ifndef CONF_FILE
-#define CONF_FILE "/adtn/adtn.ini"
+#define CONF_FILE "adtn.ini"
 #endif
 #ifndef DEFAULT_CONF_FILE
-#define DEFAULT_CONF_FILE SYSCONFDIR CONF_FILE
+#define DEFAULT_CONF_FILE SYSCONFDIR"/"CONF_FILE
 #endif
 #ifndef BIN_PREFIX
 #define BIN_PREFIX PREFIX"/bin"
