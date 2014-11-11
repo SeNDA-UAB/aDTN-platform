@@ -1,16 +1,9 @@
 cmake_minimum_required (VERSION 2.8.2)
+project(ADTN C CXX)
 
-# Define installation prefix
-SET(PREFIX "${CMAKE_INSTALL_PREFIX}")
-add_definitions(-DPREFIX="${PREFIX}")
+message("-- Starting aDTN-platform build configuration")
 
-# Define configuration dir
-if (NOT DEFINED SYSCONFDIR)
-	set(SYSCONFDIR "${PREFIX}/etc/adtn" CACHE PATH "Path of the configuration files." FORCE)
-endif()
-add_definitions(-DSYSCONFDIR="${SYSCONFDIR}")
-
-project(adtn C CXX)
+include(aDTNConfig.cmake.in)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 
