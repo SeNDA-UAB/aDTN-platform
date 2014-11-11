@@ -30,7 +30,6 @@ struct sockaddr_un exec_addr;
 /**/
 
 /* Defines */
-#define INFO_MSG(...) do {if (DEBUG) info_msg(__VA_ARGS__);} while(0);
 #define QUEUE_SOCKNAME "/proc-queue.sock"
 #define PROC_SOCKNAME "/proc-executor.sock"
 #define EXEC_SOCKNAME "/executor.sock"
@@ -313,7 +312,7 @@ static int send_bundle(char *bundle_name, char **neighbours, int n_hops, int *ke
 				--wait_for;
 			}
 		} else {
-			INFO_MSG("We are one of the bundles destination. We will keep a copy");
+			LOG_MSG(LOG__INFO, false, "We are one of the bundles destination. We will keep a copy");
 			*keep = 1;
 			--wait_for;
 		}

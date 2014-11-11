@@ -35,14 +35,14 @@ void init_log(const char *data_path)
 	snprintf(error_log_path, error_log_l, "%s%s", data_path, ERROR_LOG_FILE);
 	error_log_f = fopen(error_log_path, "a");
 	if (error_log_f == NULL)
-		err_msg(1, "Error opening error logfile %s", error_log_path);
+		LOG_MSG(LOG__ERROR, true, "Error opening error logfile %s", error_log_path);
 
 	int info_log_l = strlen(data_path) + strlen(INFO_LOG_FILE) + 1;
 	info_log_path = (char *)malloc(info_log_l);
 	snprintf(info_log_path, info_log_l, "%s%s", data_path, INFO_LOG_FILE);
 	info_log_f = fopen(info_log_path, "a");
 	if (info_log_f == NULL)
-		err_msg("Error opening info logfile %s", info_log_path);
+		LOG_MSG(LOG__ERROR, false, "Error opening info logfile %s", info_log_path);
 
 	free(error_log_path);
 	free(info_log_path);
@@ -135,51 +135,7 @@ static void generate_warnmsg(bool useErr, int err,
 	snprintf(buf, MAX_LOG_MSG, "%s WARNING[%s:%d] %s\n", get_formatted_time(), file, line, userMsg);
 }
 
-// Writes to error log and stderr
-void err_message(const bool useErr, const char *file, int line, const char *format, ...)
-{
-	va_list argList;
-	int savedErrno;
-	char buf[MAX_LOG_MSG];
-
-	savedErrno = errno;       /* In case we change it here */
-
-	va_start(argList, format);
-	generate_errmsg(useErr, errno, buf, format, file, line, argList);
-	va_end(argList);
-
-	fputs(buf, stderr);
-	if (error_log_f != NULL) {
-		fwrite(buf, strlen(buf), 1, error_log_f);
-		fflush(error_log_f);
-	}
-
-	errno = savedErrno;
-}
-
 //Writes to info log
-void info_message(const char *file, int line, const char *format, ...)
-{
-	va_list argList;
-	int savedErrno;
-	char buf[MAX_LOG_MSG];
-
-	savedErrno = errno;       /* In case we change it here */
-
-	va_start(argList, format);
-	generate_infomsg(buf, format, file, line, argList);
-	va_end(argList);
-
-	printf("%s", buf);
-	fflush(stdout);
-	if (info_log_f != NULL) {
-		fwrite(buf, strlen(buf), 1, info_log_f);
-		fflush(info_log_f);
-	}
-
-	errno = savedErrno;
-}
-
 void log_info_message(const int debug_level, const char *file, int line, const char *format, ...)
 {
 	va_list argList;
@@ -204,6 +160,7 @@ void log_info_message(const int debug_level, const char *file, int line, const c
 	errno = savedErrno;
 }
 
+// Writes to error log and stderr
 void log_err_message(const int debug_level, const bool useErr, const char *file, int line, const char *format, ...)
 {
 	va_list argList;

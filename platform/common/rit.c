@@ -9,12 +9,8 @@
 #include "cJSON.h"
 #include "rit.h"
 #include "config.h"
+#include "log.h"
 
-#ifdef LOG
-	#include "log.h"
-#else
-	#define err_msg(bool, mssg) (0)
-#endif
 
 typedef struct list {
 	char *value;
@@ -37,7 +33,7 @@ int rit_lock()
 	f1.l_pid = getpid();
 
 	if (fcntl(fileno(rit_fd), F_SETLKW, &f1) == -1) {
-		err_msg(0, "Can't lock RIT");
+		LOG_MSG(LOG__ERROR, false, "Can't lock RIT");
 		return 1;
 	}
 
@@ -54,7 +50,7 @@ int rit_unlock()
 	f1.l_pid = getpid();
 
 	if (fcntl(fileno(rit_fd), F_SETLK, &f1) == -1) {
-		err_msg(0, "Can't lock RIT");
+		LOG_MSG(LOG__ERROR, false, "Can't lock RIT");
 		return 1;
 	}
 
@@ -401,7 +397,7 @@ int rit_rollback()
 	rit_unlock();
 	all = get_full_rit(0);
 	if (!all) {
-		err_msg(0, "Rollback fails");
+		LOG_MSG(LOG__ERROR, false, "Rollback fails");
 		goto end;
 	}
 	save_JSON_to_rit(all, 0);
@@ -448,23 +444,23 @@ int rit_set_base(const char *path, const char *value)
 	int i;
 
 	if (path == NULL || strcmp(path, "") == 0) {
-		err_msg(0, "Path must be a valid value");
+		LOG_MSG(LOG__ERROR, false, "Path must be a valid value");
 		return 1;
 	}
 	if (!value) {
-		err_msg(0, "set: Value is mandatory for function set");
+		LOG_MSG(LOG__ERROR, false, "set: Value is mandatory for function set");
 		return 1;
 	}
 
 	if (!all) {
-		err_msg(0, "unset: unable to retrieve RIT");
+		LOG_MSG(LOG__ERROR, false, "unset: unable to retrieve RIT");
 		goto end;
 	}
 
 	splitPath = parse(path, SEPARATOR);
 	if (!splitPath) {
 		cJSON_Delete(all);
-		err_msg(0, "set: Invalid path");
+		LOG_MSG(LOG__ERROR, false, "set: Invalid path");
 		retValue = -1;
 		goto end;
 	}
@@ -541,7 +537,7 @@ int rit_unset_base(const char *path)
 		goto end;
 
 	if (!all) {
-		err_msg(0, "unset: unable to retrieve RIT");
+		LOG_MSG(LOG__ERROR, false, "unset: unable to retrieve RIT");
 		goto end;
 	}
 
@@ -629,14 +625,14 @@ int rit_tag_base(const char *path, const char *name, const char *value)
 		goto end;
 
 	if (!all) {
-		err_msg(0, "tag: Unable to retrieve the RIT");
+		LOG_MSG(LOG__ERROR, false, "tag: Unable to retrieve the RIT");
 		goto end;
 	}
 
 	splitPath = parse(path, SEPARATOR);
 	if (!splitPath) {
 		cJSON_Delete(all);
-		err_msg(0, "tag: Invalid path");
+		LOG_MSG(LOG__ERROR, false, "tag: Invalid path");
 		goto end;
 	}
 	ptrList = splitPath;
@@ -719,14 +715,14 @@ int rit_untag_base(const char *path, const char *name)
 		goto end;
 
 	if (!all) {
-		err_msg(0, "untag: Unable to retrieve the RIT");
+		LOG_MSG(LOG__ERROR, false, "untag: Unable to retrieve the RIT");
 		goto end;
 	}
 
 	splitPath = parse(path, SEPARATOR);
 	if (!splitPath) {
 		cJSON_Delete(all);
-		err_msg(0, "untag: Invalid path");
+		LOG_MSG(LOG__ERROR, false, "untag: Invalid path");
 		goto end;
 	}
 	ptrList = splitPath;

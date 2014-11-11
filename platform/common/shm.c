@@ -42,12 +42,12 @@ int load_shared_memory_from_path(char *data_path, struct common **shm_common, in
 		goto end;
 
 	if ((*shm_fd = init_shared_memory(shm_suffix, write_permissions)) < 0) {
-		err_msg(false, "Can't init shared memory");
+		LOG_MSG(LOG__ERROR, false, "Can't init shared memory");
 		goto end;
 	}
 	*shm_common = NULL;
 	if ((*shm_common = map_shared_memory(*shm_fd, write_permissions)) == NULL) {
-		err_msg(false, "Can't map shared memory");
+		LOG_MSG(LOG__ERROR, false, "Can't map shared memory");
 		goto end;
 	}
 	ret = 0;
@@ -71,14 +71,14 @@ int init_shared_memory(const unsigned prefix_id, bool write_permissions)
 		fd = shm_open(shm_name, O_RDONLY, S_IRUSR | S_IRGRP | S_IROTH); //chmod = 444
 	if (fd == -1) {
 		if (write_permissions)
-			err_msg(true, "Error creating or opening an existing shared memory with write permissions");
+			LOG_MSG(LOG__ERROR, true, "Error creating or opening an existing shared memory with write permissions");
 		else
-			err_msg(true, "Error opening an existing shared memory with read permissions");
+			LOG_MSG(LOG__ERROR, true, "Error opening an existing shared memory with read permissions");
 		goto end;
 	}
 
 	if (fstat(fd, &ms) != 0) {
-		err_msg(true, "fstat()");
+		LOG_MSG(LOG__ERROR, true, "fstat()");
 		goto end;
 	}
 
@@ -106,9 +106,9 @@ struct common *map_shared_memory(int shm_fd, bool write_permissions)
 		addr = (struct common *)mmap(NULL, sizeof(struct common), PROT_READ, MAP_SHARED, shm_fd, 0);
 	if (addr == MAP_FAILED) {
 		if (write_permissions)
-			err_msg(true, "Error mapping shared memory with write permissions");
+			LOG_MSG(LOG__ERROR, true, "Error mapping shared memory with write permissions");
 		else
-			err_msg(true, "Error mapping shared memory with read permissions");
+			LOG_MSG(LOG__ERROR, true, "Error mapping shared memory with read permissions");
 		addr = NULL;
 	}
 	return addr;

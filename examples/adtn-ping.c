@@ -30,16 +30,16 @@
 
 #define PING_CONTENT "Just a ping"
 #define QUEUE_SOCKNAME "/ping-queue.sock"
-#define SNPRINTF(...)                           \
-	do{                                         \
-		int r = snprintf(__VA_ARGS__);          \
-		if (r >= MAX_PLATFORM_ID_LEN){          \
-			err_msg(0, "String too long");      \
-			goto end;                           \
-		} else if (r < 0){                      \
-			err_msg(1, "snprintf()");           \
-			goto end;                           \
-		}                                       \
+#define SNPRINTF(...)                                               \
+	do{                                                             \
+		int r = snprintf(__VA_ARGS__);                              \
+		if (r >= MAX_PLATFORM_ID_LEN){                              \
+			LOG_MSG(LOG__ERROR, false, "String too long");          \
+			goto end;                                               \
+		} else if (r < 0){                                          \
+			LOG_MSG(LOG__ERROR, true, "snprintf()");                \
+			goto end;                                               \
+		}                                                           \
 	} while(0);
 
 struct _stats {
@@ -399,11 +399,11 @@ int main(int argc,  char *const *argv)
 	/* Initialization */
 	sigset_t blocked_sigs = {{0}};
 	if (sigaddset(&blocked_sigs, SIGINT) != 0)
-		err_msg(false, "sigaddset()", errno);
+		LOG_MSG(LOG__ERROR, errno, "sigaddset()");
 	if (sigaddset(&blocked_sigs, SIGTERM) != 0)
-		err_msg(false, "sigaddset()", errno);
+		LOG_MSG(LOG__ERROR, errno, "sigaddset()");
 	if (sigprocmask(SIG_BLOCK, &blocked_sigs, NULL) == -1)
-		err_msg(false, "sigprocmask()", errno);
+		LOG_MSG(LOG__ERROR, errno, "sigprocmask()");
 
 	/* Redirect stderr to /dev/null to avoid that unwated error messages appear in terminal*/
 	fd = open("/dev/null", O_RDWR);

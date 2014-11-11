@@ -20,7 +20,6 @@
 #include "common/include/queue.h"
 #include "common/include/utils.h"
 
-#define INFO_MSG(...) do {if (DEBUG) info_msg(__VA_ARGS__);} while(0);
 #define QUEUE_SOCKNAME "/rec-queue.sock"
 #define INOTIFY_EVENT_SIZE  ( sizeof (struct inotify_event) + NAME_MAX + 1)
 #define INOTIFY_EVENT_BUF (1*INOTIFY_EVENT_SIZE)
@@ -62,13 +61,13 @@ static int mkdir_in(const char *in_path, const char *path, mode_t mode, /*out*/ 
 
 	if (mkdir(*full_path, mode) != 0) {
 		if (errno != EEXIST) {
-			err_msg(true, "Error creating %s", *full_path);
+			LOG_MSG(LOG__ERROR, true, "Error creating %s", *full_path);
 			ret = 1;
 			goto end;
 		}
 	}
 	if (chmod(*full_path, mode) != 0) { //avoid umask restriction
-		err_msg(true, "Error changing permisions to %s", *full_path);
+		LOG_MSG(LOG__ERROR, true, "Error changing permisions to %s", *full_path);
 		ret = 1;
 		goto end;
 	}
@@ -102,7 +101,7 @@ static ssize_t load_bundle(const char *file, uint8_t **raw_bundle)
 		goto end;
 
 	if ((fd = fopen(file, "r")) <= 0) {
-		err_msg(true, "Error loading bundle %s", file);
+		LOG_MSG(LOG__ERROR, true, "Error loading bundle %s", file);
 		goto end;
 	}
 
@@ -111,12 +110,12 @@ static ssize_t load_bundle(const char *file, uint8_t **raw_bundle)
 
 	*raw_bundle = (uint8_t *) malloc(raw_bundle_l);
 	if (fread(*raw_bundle, sizeof(**raw_bundle), raw_bundle_l, fd) != raw_bundle_l) {
-		err_msg(true, "read()");
+		LOG_MSG(LOG__ERROR, true, "read()");
 		goto end;
 	}
 
 	if (fclose(fd) != 0)
-		err_msg(true, "close()");
+		LOG_MSG(LOG__ERROR, true, "close()");
 
 	ret = raw_bundle_l;
 end:
@@ -161,10 +160,10 @@ int get_platform_subscriptions(char **subscribed)
 	r = snprintf(subs_path, sizeof(subs_path), SUBSC_PATH, g_vars.platform_id);
 
 	if (r > sizeof(subs_path)) {
-		err_msg(false, "Rit path too long");
+		LOG_MSG(LOG__ERROR, false, "Rit path too long");
 		goto end;
 	} else if (r < 0) {
-		err_msg(true, "snprintf()");
+		LOG_MSG(LOG__ERROR, true, "snprintf()");
 		goto end;
 	}
 
@@ -222,7 +221,7 @@ int delegate_bundle_to_app(const uint8_t *raw_bundle, const int raw_bundle_l, co
 
 	if (write_to(bundle_dest_path, bundle_name, raw_bundle, raw_bundle_l) != 0)
 		goto end;
-	INFO_MSG("Bundle stored into %s%s", bundle_dest_path, bundle_name);
+	LOG_MSG(LOG__INFO, false, "Bundle stored into %s%s", bundle_dest_path, bundle_name);
 
 	ret = 0;
 end:
@@ -244,7 +243,7 @@ int delegate_bundle_to_receiver(const uint8_t *raw_bundle, const int raw_bundle_
 
 	if (write_to(g_vars.input_path, bundle_name, raw_bundle, raw_bundle_l) != 0)
 		goto end;
-	INFO_MSG("Bundle stored into %s%s", g_vars.input_path, bundle_name);
+	LOG_MSG(LOG__INFO, false, "Bundle stored into %s%s", g_vars.input_path, bundle_name);
 
 	ret = 0;
 end:
@@ -264,7 +263,7 @@ int put_bundle_into_queue(const uint8_t *raw_bundle, const int raw_bundle_l)
 
 	if (write_to(g_vars.spool_path, bundle_name, raw_bundle, raw_bundle_l) != 0)
 		goto end;
-	INFO_MSG("Bundle stored into %s%s", g_vars.spool_path, bundle_name);
+	LOG_MSG(LOG__INFO, false, "Bundle stored into %s%s", g_vars.spool_path, bundle_name);
 
 	if (queue(bundle_name, g_vars.queue_conn) != 0)
 		goto end;
@@ -282,7 +281,7 @@ int process_status_report_req_flags(const uint8_t *raw_bundle, const int raw_bun
 	int ret = -1;
 	uint64_t flags;
 	if (bundle_raw_get_proc_flags(raw_bundle, &flags) != 0) {
-		err_msg(false, "Error getting proc flags.");
+		LOG_MSG(LOG__ERROR, false, "Error getting proc flags.");
 		goto end;
 	}
 
@@ -295,12 +294,11 @@ int process_status_report_req_flags(const uint8_t *raw_bundle, const int raw_bun
 		bundle_s *bundle_sr = NULL;
 		struct timeval tv;
 
-
-		INFO_MSG("Received bundle with bit SR_RECV set");
-		INFO_MSG("Creating response to bundle with SR_RECV bit");
+		LOG_MSG(LOG__INFO, false, "Received bundle with bit SR_RECV set");
+		LOG_MSG(LOG__INFO, false, "Creating response to bundle with SR_RECV bit");
 
 		if (snprintf(origin, sizeof(origin), "%s:%d", g_vars.platform_id, PING_APP) <= 0) {
-			err_msg(true, "snprintf()");
+			LOG_MSG(LOG__ERROR, true, "snprintf()");
 			goto end_SR_RECV;
 		}
 
@@ -309,23 +307,23 @@ int process_status_report_req_flags(const uint8_t *raw_bundle, const int raw_bun
 
 		//Create reply bundle
 		if ((bundle_sr = bundle_sr_new_reception_status(origin, tv, raw_bundle, raw_bundle_l)) == NULL) {
-			err_msg(false, "Error creating response bundle to the bundle reception reporting request");
+			LOG_MSG(LOG__ERROR, false, "Error creating response bundle to the bundle reception reporting request");
 			goto end_SR_RECV;
 		}
 		if ((bundle_sr_raw_l = bundle_create_raw(bundle_sr, &bundle_sr_raw)) <= 0) {
-			err_msg(false, "Error creating raw response bundle to the bundle reception reporting request");
+			LOG_MSG(LOG__ERROR, false, "Error creating raw response bundle to the bundle reception reporting request");
 			goto end_SR_RECV;
 		}
 
 		//Reprocess bundle
 		if (delegate_bundle_to_receiver(bundle_sr_raw, bundle_sr_raw_l) != 0) {
-			err_msg(false, "Error putting response bundle to the bundle reception reporting request into the queue");
+			LOG_MSG(LOG__ERROR, false, "Error putting response bundle to the bundle reception reporting request into the queue");
 		}
 
 		ret = 2;
 end_SR_RECV:
 		if (ret == -1)
-			err_msg(false, "Response bundle has not been created");
+			LOG_MSG(LOG__ERROR, false, "Response bundle has not been created");
 		if (report_to)
 			free(report_to);
 		if (bundle_sr)
@@ -347,14 +345,14 @@ int process_bundle(const uint8_t *raw_bundle, const int raw_bundle_l)
 	endpoint_t ep = {0};
 
 	if (bundle_raw_check(raw_bundle, raw_bundle_l) != 0) {
-		err_msg(false, "Bundle has errors");
+		LOG_MSG(LOG__ERROR, false, "Bundle has errors");
 		goto end;
 	}
 
 	// It should have a destination (bundle_raw_check checks if it has)
 	bundle_get_destination(raw_bundle, (uint8_t **) &full_dest);
 	if (parse_destination(full_dest, &ep) != 0) {
-		err_msg(false, "Error parsing bundle's destination");
+		LOG_MSG(LOG__ERROR, false, "Error parsing bundle's destination");
 		goto end;
 	}
 
@@ -362,41 +360,41 @@ int process_bundle(const uint8_t *raw_bundle, const int raw_bundle_l)
 	if (strcmp(ep.id, g_vars.platform_id) == 0) {
 		// If we are the destination delegate bundle to application
 
-		INFO_MSG("The bundle is for us. Storing bundle into %s", g_vars.destination_path);
+		LOG_MSG(LOG__INFO, false, "The bundle is for us. Storing bundle into %s", g_vars.destination_path);
 
 		err = process_status_report_req_flags(raw_bundle, raw_bundle_l);
 		if (err < 0) {
-			err_msg(false, "Error processing status report request flags");
+			LOG_MSG(LOG__ERROR, false, "Error processing status report request flags");
 			goto end;
 		}
 
 		if (delegate_bundle_to_app(raw_bundle, raw_bundle_l, ep) != 0) {
-			err_msg(false, "Error delegating bundle to the app");
+			LOG_MSG(LOG__ERROR, false, "Error delegating bundle to the app");
 			goto end;
 		}
 
 	} else if (subscribed_to(ep.id)) {
 		// If the destination is a multicast address delegate bundle to application and put it into the queue
 
-		INFO_MSG("The bundle is destined to a multicast id which we are subscribed");
+		LOG_MSG(LOG__INFO, false, "The bundle is destined to a multicast id which we are subscribed");
 
 		if (put_bundle_into_queue(raw_bundle, raw_bundle_l) != 0) {
-			err_msg(false, "Error putting bundle into the queue");
+			LOG_MSG(LOG__ERROR, false, "Error putting bundle into the queue");
 			goto end;
 		}
 
 		if (delegate_bundle_to_app(raw_bundle, raw_bundle_l, ep) != 0) {
-			err_msg(false, "Error delegatin bundle to the app");
+			LOG_MSG(LOG__ERROR, false, "Error delegatin bundle to the app");
 			goto end;
 		}
 
 	} else {
 		// Otherwise put bundle into the queue
 
-		INFO_MSG("The bundle is not for us. Putting bundle into queue");
+		LOG_MSG(LOG__INFO, false, "The bundle is not for us. Putting bundle into queue");
 
 		if (put_bundle_into_queue(raw_bundle, raw_bundle_l) != 0) {
-			err_msg(false, "Error putting bundle into the queue");
+			LOG_MSG(LOG__ERROR, false, "Error putting bundle into the queue");
 			goto end;
 		}
 
@@ -423,7 +421,7 @@ static int process_multiple_bundles(const char *bundles_path)
 	struct dirent *ne = NULL;
 
 	if ((bp_dfd = opendir(bundles_path)) == NULL) {
-		err_msg(true, "opendir()");
+		LOG_MSG(LOG__ERROR, true, "opendir()");
 		goto end;
 	}
 
@@ -436,7 +434,7 @@ static int process_multiple_bundles(const char *bundles_path)
 		// Create full path
 		strncpy(full_path + bundles_path_l, ne->d_name, PATH_MAX - bundles_path_l);
 
-		INFO_MSG("Processing bundle %s", full_path)
+		LOG_MSG(LOG__INFO, false, "Processing bundle %s", full_path);
 
 		// Load bundle form file
 		if ((raw_bundle_l = load_bundle(full_path, &raw_bundle)) == -1) {
@@ -446,13 +444,13 @@ static int process_multiple_bundles(const char *bundles_path)
 		// Process bundle
 		process_result = process_bundle(raw_bundle, raw_bundle_l);
 		if (process_result < 0) {
-			err_msg(false, "Error processing %s", full_path);
+			LOG_MSG(LOG__ERROR, false, "Error processing %s", full_path);
 		} else {
-			INFO_MSG("Bundle %s processed correctly", full_path);
+			LOG_MSG(LOG__INFO, false, "Bundle %s processed correctly", full_path);
 			if (unlink(full_path) != 0 && errno != ENOENT)
-				err_msg(true, "Error removing bundle %s", full_path);
+				LOG_MSG(LOG__ERROR, true, "Error removing bundle %s", full_path);
 			else
-				INFO_MSG("Bundle %s removed", full_path);
+				LOG_MSG(LOG__INFO, false, "Bundle %s removed", full_path);
 		}
 
 		free(raw_bundle);
@@ -479,25 +477,25 @@ void *inotify_thread()
 	size_t input_path_l = 0;
 	struct inotify_event *event = NULL;
 
-	INFO_MSG("Initiated inotify thread");
+	LOG_MSG(LOG__INFO, false, "Initiated inotify thread");
 
 	if ((fd_notify = inotify_init()) < 0) {
-		err_msg(true, "inotify_init()");
+		LOG_MSG(LOG__ERROR, true, "inotify_init()");
 		goto end;
 	}
 
 	if ((wd = inotify_add_watch(fd_notify, g_vars.input_path, IN_CLOSE_WRITE)) < 0) {
-		err_msg(true, "inotify_add_watch()");
+		LOG_MSG(LOG__ERROR, true, "inotify_add_watch()");
 		goto end;
 	}
 
-	INFO_MSG("Processing stored bundles in %s", g_vars.input_path);
+	LOG_MSG(LOG__INFO, false, "Processing stored bundles in %s", g_vars.input_path);
 	if (process_multiple_bundles(g_vars.input_path) != 0)
-		err_msg(false, "There has been an error processing the stored bundles");
+		LOG_MSG(LOG__ERROR, false, "There has been an error processing the stored bundles");
 	else
-		INFO_MSG("Stored bundles processed correctly");
+		LOG_MSG(LOG__INFO, false, "Stored bundles processed correctly");
 
-	INFO_MSG("Waiting for locally created bundles (in %s)", g_vars.input_path);
+	LOG_MSG(LOG__INFO, false, "Waiting for locally created bundles (in %s)", g_vars.input_path);
 
 	input_path_l = strlen(g_vars.input_path);
 	memcpy(full_path, g_vars.input_path, input_path_l);
@@ -505,7 +503,7 @@ void *inotify_thread()
 		// Wait for a new bundle in the input folder
 		buffer_l = read(fd_notify, buffer, INOTIFY_EVENT_BUF);
 		if (buffer_l < 0) {
-			err_msg(true, "inotify read()");
+			LOG_MSG(LOG__ERROR, true, "inotify read()");
 			continue;
 		}
 
@@ -516,26 +514,26 @@ void *inotify_thread()
 			new_bundle_name = event->name;
 			strncpy(full_path + input_path_l, new_bundle_name, sizeof(full_path) - input_path_l);
 
-			INFO_MSG("New bundle %s received", full_path);
+			LOG_MSG(LOG__INFO, false, "New bundle %s received", full_path);
 
 			// Get contents of the bundle
 			if ((raw_bundle_l = load_bundle(full_path, &raw_bundle)) < 0) {
-				err_msg(false, "Error loading bundle %s", new_bundle_name);
+				LOG_MSG(LOG__ERROR, false, "Error loading bundle %s", new_bundle_name);
 				goto next_event;
 			} else {
-				INFO_MSG("Bundle %s loaded", full_path);
+				LOG_MSG(LOG__INFO, false, "Bundle %s loaded", full_path);
 			}
 
 			// Process new bundle
 			process_result = process_bundle(raw_bundle, raw_bundle_l);
 			if (process_result < 0) {
-				err_msg(false, "Error processing bunde %s", new_bundle_name);
+				LOG_MSG(LOG__ERROR, false, "Error processing bunde %s", new_bundle_name);
 			} else {
-				INFO_MSG("Bundle %s processed correctly", new_bundle_name);
+				LOG_MSG(LOG__INFO, false, "Bundle %s processed correctly", new_bundle_name);
 				if (unlink(full_path) != 0 && errno != ENOENT )
-					err_msg(true, "Error removing bundle %s", full_path);
+					LOG_MSG(LOG__ERROR, true, "Error removing bundle %s", full_path);
 				else
-					INFO_MSG("Bundle %s removed", full_path);
+					LOG_MSG(LOG__INFO, false, "Bundle %s removed", full_path);
 			}
 
 next_event:
@@ -571,22 +569,22 @@ static int get_and_process_bundle(int *sock)
 
 	// Get from where we are receiving the bundle
 	if (getpeername(*sock, (struct sockaddr *)&bundle_src, &bundle_src_l) != 0) {
-		err_msg(true, "getpeername()");
+		LOG_MSG(LOG__ERROR, true, "getpeername()");
 	} else {
 		// If we ever change from AF_INET family, we should change this.
 		bundle_src_addr = inet_ntoa(bundle_src.sin_addr);
 	}
-	INFO_MSG("Receiving bundle form %s:%d", bundle_src_addr, ntohs(bundle_src.sin_port));
+	LOG_MSG(LOG__INFO, false, "Receiving bundle form %s:%d", bundle_src_addr, ntohs(bundle_src.sin_port));
 
 	// First we get the size of the bundle
 	recv_ret = recv(*sock, &bundle_l, sizeof(bundle_l), 0);
 	if (recv_ret != sizeof(bundle_l)) {
 		if (recv_ret == 0) {
-			err_msg(true, "Error receiving bundle length from %s. Probably peer has disconnected.", bundle_src_addr);
+			LOG_MSG(LOG__ERROR, true, "Error receiving bundle length from %s. Probably peer has disconnected.", bundle_src_addr);
 		} else if (recv_ret < 0) {
-			err_msg(true, "Error receiving bundle length from %s.", bundle_src_addr);
+			LOG_MSG(LOG__ERROR, true, "Error receiving bundle length from %s.", bundle_src_addr);
 		} else {
-			err_msg(true, "Error receiving bundle length from %s. Length not in the correct format", bundle_src_addr);
+			LOG_MSG(LOG__ERROR, true, "Error receiving bundle length from %s. Length not in the correct format", bundle_src_addr);
 		}
 		ret = 1;
 		goto end;
@@ -600,7 +598,7 @@ static int get_and_process_bundle(int *sock)
 	while (recv_l != bundle_l) {
 		recv_ret = recv(*sock, bundle + recv_l, bundle_l - recv_l, 0);
 		if (recv_ret == -1) {
-			err_msg(true, "Error receiving bundle from %s", bundle_src_addr);
+			LOG_MSG(LOG__ERROR, true, "Error receiving bundle from %s", bundle_src_addr);
 			break;
 		} else if (recv_ret == 0) {  // Peer closed the connection
 			break;
@@ -609,16 +607,16 @@ static int get_and_process_bundle(int *sock)
 	}
 
 	if (recv_l != bundle_l) {
-		err_msg(false, "Bundle not received correctly from %s.", bundle_src_addr);
+		LOG_MSG(LOG__ERROR, false, "Bundle not received correctly from %s.", bundle_src_addr);
 		ret = 1;
 		goto end;
 	}
 
-	INFO_MSG("Recieved bundle form %s:%d with length %d", bundle_src_addr, ntohs(bundle_src.sin_port), recv_l);
+	LOG_MSG(LOG__INFO, false, "Recieved bundle form %s:%d with length %d", bundle_src_addr, ntohs(bundle_src.sin_port), recv_l);
 
 
 	if (process_bundle(bundle, bundle_l) < 0) {
-		err_msg(false, "Error processing bundle from %s", bundle_src_addr);
+		LOG_MSG(LOG__ERROR, false, "Error processing bundle from %s", bundle_src_addr);
 		ret = 1;
 		goto end;
 	}
@@ -642,11 +640,11 @@ static void *socket_thread()
 	socklen_t cli_addr_l = sizeof(cli_addr);
 	pthread_t get_and_process_bundle_t = {0};
 	struct timeval tv = {.tv_sec = IN_SOCK_TIMEOUT, .tv_usec = 0};
-	INFO_MSG("Initiated socket thread");
+	LOG_MSG(LOG__INFO, false, "Initiated socket thread");
 
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) {
-		err_msg(true, "socket()");
+		LOG_MSG(LOG__ERROR, true, "socket()");
 		ret = 1;
 		goto end;
 	}
@@ -656,37 +654,37 @@ static void *socket_thread()
 	serv_addr.sin_addr.s_addr = inet_addr(g_vars.platform_ip);
 
 	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-		err_msg(true, "bind()");
+		LOG_MSG(LOG__ERROR, true, "bind()");
 		ret = 1;
 		goto end;
 	}
 
 	if (listen(sockfd, 10) != 0) {
-		err_msg(true, "listen()");
+		LOG_MSG(LOG__ERROR, true, "listen()");
 		ret = 1;
 		goto end;
 	}
 
-	INFO_MSG("Waiting for connections");
+	LOG_MSG(LOG__INFO, false, "Waiting for connections");
 
 	for (;;) {
 		newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &cli_addr_l);
 		if (newsockfd < 0 && errno == EINTR) {
 			break;
 		} else if (newsockfd < 0) {
-			err_msg(true, "accept()");
+			LOG_MSG(LOG__ERROR, true, "accept()");
 			continue;
 		}
 
 		// Set timeout to socket
 		if (setsockopt(newsockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(struct timeval)) != 0)
-			err_msg(true, "setsockopt()");
+			LOG_MSG(LOG__ERROR, true, "setsockopt()");
 
 		newsockfd_t = (int *)malloc(sizeof(int));
 		*newsockfd_t = newsockfd;
 
 		if (pthread_create(&get_and_process_bundle_t, NULL, (void *) get_and_process_bundle, (void *) newsockfd_t) != 0) {
-			err_msg(true, "pthread_create()");
+			LOG_MSG(LOG__ERROR, true, "pthread_create()");
 			continue;
 		}
 	}
@@ -706,25 +704,25 @@ int main(int argc, char *argv[])
 	/* Initialization */
 	sigset_t blocked_sigs = {{0}};
 	if (sigaddset(&blocked_sigs, SIGINT) != 0)
-		err_msg(false, "sigaddset()", errno);
+		LOG_MSG(LOG__ERROR, true, "sigaddset()");
 	if (sigaddset(&blocked_sigs, SIGTERM) != 0)
-		err_msg(false, "sigaddset()", errno);
+		LOG_MSG(LOG__ERROR, true, "sigaddset()");
 	if (sigprocmask(SIG_BLOCK, &blocked_sigs, NULL) == -1)
-		err_msg(false, "sigprocmask()", errno);
+		LOG_MSG(LOG__ERROR, true, "sigprocmask()");
 
 	if (init_adtn_process(argc, argv, &shm) != 0) { //loads shared memory
-		err_msg(false, "Error loading shared memory.");
+		LOG_MSG(LOG__ERROR, false, "Error loading shared memory.");
 		goto end;
 	}
 
 	// Reading from shm
 	if (pthread_rwlock_rdlock(&shm->rwlock) != 0) {
-		err_msg(true, "pthread_rwlock_rdlock()");
+		LOG_MSG(LOG__ERROR, true, "pthread_rwlock_rdlock()");
 		goto end;
 	}
 
 	if (create_paths(shm->data_path) != 0) {
-		err_msg(false, "Error creating all the required folders.");
+		LOG_MSG(LOG__ERROR, false, "Error creating all the required folders.");
 		goto end;
 	}
 
@@ -733,13 +731,13 @@ int main(int argc, char *argv[])
 	g_vars.platform_port = shm->platform_port;
 	g_vars.queue_conn = queue_manager_connect(shm->data_path, QUEUE_SOCKNAME);
 	if (g_vars.queue_conn == 0) {
-		err_msg(false, "Error connecting to the queue manager.");
+		LOG_MSG(LOG__ERROR, false, "Error connecting to the queue manager.");
 		ret = EXIT_FAILURE;
 		goto end;
 	}
 
 	if (pthread_rwlock_unlock(&shm->rwlock) != 0) {
-		err_msg(true, "pthread_rwlock_unlock()");
+		LOG_MSG(LOG__ERROR, true, "pthread_rwlock_unlock()");
 		goto end;
 	}
 	// End reading from shm
@@ -748,11 +746,11 @@ int main(int argc, char *argv[])
 
 	/* Main threads */
 	if (pthread_create(&inotify_t, NULL, inotify_thread, NULL) != 0) {
-		err_msg(true, "pthread_create()");
+		LOG_MSG(LOG__ERROR, true, "pthread_create()");
 		goto end;
 	}
 	if (pthread_create(&sock_t, NULL, socket_thread, NULL) != 0) {
-		err_msg(true, "pthread_create()");
+		LOG_MSG(LOG__ERROR, true, "pthread_create()");
 		goto end;
 	}
 	/**/

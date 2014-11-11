@@ -81,7 +81,7 @@ ssize_t initialize_socket(char *sockname)
 	struct stat stat_file = {0};
 
 	if ((s = socket(AF_UNIX, SOCK_DGRAM, 0)) == -1) {
-		err_msg(true, "socket()");
+		LOG_MSG(LOG__ERROR, true, "socket()");
 		ret = -1;
 		goto end;
 	}
@@ -95,7 +95,7 @@ ssize_t initialize_socket(char *sockname)
 	}
 
 	if ((ret = bind(s, (struct sockaddr *) &addr, sizeof(struct sockaddr_un))) == -1) {
-		err_msg(true, "bind()");
+		LOG_MSG(LOG__ERROR, true, "bind()");
 		goto end;
 	}
 end:
@@ -131,15 +131,15 @@ int main(int argc, char *const argv[])
 	 (new threads are created with the signals in blocked_sigs masked)
 	*/
 	if (sigaddset(&blocked_sigs, SIGINT) != 0)
-		err_msg(false, "sigaddset()", errno);
+		LOG_MSG(LOG__ERROR, true, "sigaddset()");
 	if (sigaddset(&blocked_sigs, SIGTERM) != 0)
-		err_msg(false, "sigaddset()", errno);
+		LOG_MSG(LOG__ERROR, true, "sigaddset()");
 	if (sigprocmask(SIG_BLOCK, &blocked_sigs, NULL) == -1)
-		err_msg(false, "sigprocmask()", errno);
+		LOG_MSG(LOG__ERROR, true, "sigprocmask()");
 
 	//Init aDTN process (shm and global option)
 	if (init_adtn_process(argc, argv, &world.shm) != 0) {
-		err_msg(false, "Process initialization failed. Aborting execution");
+		LOG_MSG(LOG__ERROR, false, "Process initialization failed. Aborting execution");
 		ret = 1;
 		goto end;
 	}
@@ -147,7 +147,7 @@ int main(int argc, char *const argv[])
 	pthread_rwlock_rdlock(&world.shm->rwlock);
 	// Prepare global functions
 	if (world.shm->data_path == NULL || *world.shm->data_path == '\0') {
-		err_msg(false, "Path of data folder not initialized.");
+		LOG_MSG(LOG__ERROR, false, "Path of data folder not initialized.");
 		ret = 1;
 		goto end;
 
@@ -157,9 +157,9 @@ int main(int argc, char *const argv[])
 	snprintf(world.bundles_path, bundles_path_l, "%s%s", world.shm->data_path, SPOOL_PATH);
 
 	if (stat(world.bundles_path, &folder_stat) != 0) {
-		err_msg(true, "Can't find bundles folder %s. Creating it.", world.bundles_path);
+		LOG_MSG(LOG__ERROR, true, "Can't find bundles folder %s. Creating it.", world.bundles_path);
 		if (mkdir(world.bundles_path, 0755) != 0 && errno !=  EEXIST) {
-			err_msg(true, "Error creating objects path %s", world.bundles_path);
+			LOG_MSG(LOG__ERROR, true, "Error creating objects path %s", world.bundles_path);
 			ret = 1;
 			goto end;
 		}
@@ -167,7 +167,7 @@ int main(int argc, char *const argv[])
 
 	// Initialize global socket
 	if (sizeof(world.shm->prefix_id) > 4) {
-		err_msg(false, "Platform hash (prefix_id) too long");
+		LOG_MSG(LOG__ERROR, false, "Platform hash (prefix_id) too long");
 		ret = 1;
 		goto end;
 	}
@@ -178,7 +178,7 @@ int main(int argc, char *const argv[])
 
 	main_socket = initialize_socket(sockname);
 	if (main_socket == -1) {
-		err_msg(true, "Socket initialization failed");
+		LOG_MSG(LOG__ERROR, true, "Socket initialization failed");
 		ret = 1;
 		goto end;
 	}
@@ -188,7 +188,7 @@ int main(int argc, char *const argv[])
 	world.objects_path = (char *)malloc(objects_path_l);
 	snprintf(world.objects_path, objects_path_l, "%s/%s", world.shm->data_path, OBJECTS_PATH);
 	if (mkdir(world.objects_path, 0755) != 0 && errno !=  EEXIST) {
-		err_msg(true, "Error creating objects path %s", world.objects_path);
+		LOG_MSG(LOG__ERROR, true, "Error creating objects path %s", world.objects_path);
 		ret = 1;
 		goto end;
 	}
@@ -217,7 +217,7 @@ int main(int argc, char *const argv[])
 
 		// Create threads
 		if (pthread_create(&threads_pool[i], NULL, (void *) worker_thread, (void *) params) != 0) {
-			err_msg(true, "Can't init pool of workers");
+			LOG_MSG(LOG__ERROR, true, "Can't init pool of workers");
 			ret = 1;
 			goto end;
 		}
@@ -234,23 +234,23 @@ int main(int argc, char *const argv[])
 	//Exit gracefully
 	for (i = 0; i < POOL_SIZE; i++) {
 		if (pthread_cancel(threads_pool[i]) != 0) {
-			err_msg(true, "Can't cancel worker thread %d", i);
+			LOG_MSG(LOG__ERROR, true, "Can't cancel worker thread %d", i);
 		}
 	}
 
 	//Wait for all threads to finish
 	for (i = 0; i < POOL_SIZE; i++) {
 		if (pthread_join(threads_pool[i], NULL) != 0) {
-			err_msg(true, "Can't join worker thread %d", i);
+			LOG_MSG(LOG__ERROR, true, "Can't join worker thread %d", i);
 		}
 	}
 
 
 end:
 	if (close(main_socket) == -1)
-		err_msg(true, "close()");
+		LOG_MSG(LOG__ERROR, true, "close()");
 	if (unlink(sockname) == -1)
-		err_msg(true, "unlink()");
+		LOG_MSG(LOG__ERROR, true, "unlink()");
 	if (sockname)
 		free(sockname);
 	if (preparing_exec)

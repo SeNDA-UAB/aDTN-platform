@@ -1,18 +1,18 @@
 void log_nd_query(struct nd_query *nd_query, bool send)
 {
 	if (send) {
-		INFO_MSG("[SENT] ND_QUERY; platform_id: %s ", nd_query->platform_id);
+		LOG_MSG(LOG__INFO, false, "[SENT] ND_QUERY; platform_id: %s ", nd_query->platform_id);
 	} else {
-		INFO_MSG("[RECV] ND_QUERY; platform_id: %s ", nd_query->platform_id);
+		LOG_MSG(LOG__INFO, false, "[RECV] ND_QUERY; platform_id: %s ", nd_query->platform_id);
 	}
 }
 
 void log_nd_beacon(struct nd_beacon *nd_beacon, bool send)
 {
 	if (send) {
-		INFO_MSG("[SENT] ND_BEACON;  platform_id: %s platform_ip: %s platform_port: %d rit_announceables: %s", nd_beacon->platform_id, nd_beacon->platform_ip, nd_beacon->platform_port, nd_beacon->rit_announceables);
+		LOG_MSG(LOG__INFO, false, "[SENT] ND_BEACON;  platform_id: %s platform_ip: %s platform_port: %d rit_announceables: %s", nd_beacon->platform_id, nd_beacon->platform_ip, nd_beacon->platform_port, nd_beacon->rit_announceables);
 	} else {
-		INFO_MSG("[RECV] ND_BEACON;  platform_id: %s platform_ip: %s platform_port: %d rit_announceables: %s", nd_beacon->platform_id, nd_beacon->platform_ip, nd_beacon->platform_port, nd_beacon->rit_announceables);
+		LOG_MSG(LOG__INFO, false, "[RECV] ND_BEACON;  platform_id: %s platform_ip: %s platform_port: %d rit_announceables: %s", nd_beacon->platform_id, nd_beacon->platform_ip, nd_beacon->platform_port, nd_beacon->rit_announceables);
 	}
 }
 
@@ -32,7 +32,7 @@ int log_nbs_table(struct nbs_list *nbs)
 	}
 	pthread_rwlock_unlock(&nbs->rwlock);
 
-	INFO_MSG(log_msg);
+	LOG_MSG(LOG__INFO, false, log_msg);
 
 	return 0;
 }

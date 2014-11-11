@@ -32,13 +32,13 @@ static char *send_petition(char *msg, int answer, int sock)
 	char str[MAX_BUFFER] = {0};
 
 	if (sendto(sock, msg, strlen(msg), 0, (struct sockaddr *)&queue_addr, (socklen_t)sizeof(queue_addr)) < 0) {
-		err_msg(true, "[Queue]Unable to contact");
+		LOG_MSG(LOG__ERROR, true, "[Queue]Unable to contact");
 		goto end;
 	}
 	if (answer) {
 		int received = recv(sock, str, MAX_BUFFER, 0);
 		if (received <= 0) {
-			err_msg(true, "[Queue] Unable to get response");
+			LOG_MSG(LOG__ERROR, true, "[Queue] Unable to get response");
 		}
 		char *bundle_id = ((strcmp(str, "NULL") != 0) && (received > 0)) ? strdup(str) : NULL;
 		return bundle_id;

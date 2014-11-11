@@ -13,7 +13,7 @@ int update_nbs_info(const char *nb_id, const char *nb_ip, const int nb_port, str
 	}
 
 	if (store_nbs_info_to_rit(nbs) != 0)
-		err_msg(false, "Error storing updated nbs info into the RIT");
+		LOG_MSG(LOG__ERROR, false, "Error storing updated nbs info into the RIT");
 
 	return 0;
 }

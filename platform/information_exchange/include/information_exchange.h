@@ -25,9 +25,9 @@
 #include "common/include/log.h"
 #include "common/include/init.h"
 
-#define READ_LOCK(lock) do { if (pthread_rwlock_rdlock(lock) != 0) err_msg(true, "pthread_rwlock_rdlock()"); } while (0)
-#define WRITE_LOCK(lock) do { if (pthread_rwlock_wrlock(lock) != 0) err_msg(true, "pthread_rwlock_wrlock()"); } while (0)
-#define UNLOCK_LOCK(lock) do { if (pthread_rwlock_unlock(lock) != 0) err_msg(true, "pthread_rwlock_unlock()"); } while (0)
+#define READ_LOCK(lock) do { if (pthread_rwlock_rdlock(lock) != 0) LOG_MSG(LOG__ERROR, true, "pthread_rwlock_rdlock()"); } while (0)
+#define WRITE_LOCK(lock) do { if (pthread_rwlock_wrlock(lock) != 0) LOG_MSG(LOG__ERROR, true, "pthread_rwlock_wrlock()"); } while (0)
+#define UNLOCK_LOCK(lock) do { if (pthread_rwlock_unlock(lock) != 0) LOG_MSG(LOG__ERROR, true, "pthread_rwlock_unlock()"); } while (0)
 
 #include "constants.h"
 #include "hash.h"
