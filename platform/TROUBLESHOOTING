@@ -1,5 +1,0 @@
-If there are problems compiling ADL, some of the lines below could solve the problem
-
-export JAVA_HOME=<java path where is located jni.h>
-export LIBRARY_PATH=<platform_installation_path>/lib
-export LD_LIBRARY_PATH=<platform_installation_path>/lib
