@@ -262,7 +262,7 @@ int put_bundle_into_queue(const uint8_t *raw_bundle, const int raw_bundle_l)
 
 	if (write_to(g_vars.queue_path, bundle_name, raw_bundle, raw_bundle_l) != 0)
 		goto end;
-	LOG_MSG(LOG__INFO, false, "Bundle stored into %s%s", g_vars.spool_path, bundle_name);
+	LOG_MSG(LOG__INFO, false, "Bundle stored into %s%s", g_vars.queue_path, bundle_name);
 
 	if (queue(bundle_name, g_vars.queue_conn) != 0)
 		goto end;
