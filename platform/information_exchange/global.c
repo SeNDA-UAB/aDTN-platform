@@ -1,9 +1,9 @@
 int init_world()
 {
 	if (pthread_rwlock_init(&world->nbs.rwlock, NULL) != 0)
-		err_msg(true, "pthread_rwlock_init()");
+		LOG_MSG(LOG__ERROR, true, "pthread_rwlock_init()");
 	if (pthread_rwlock_init(&world->rwlock, NULL) != 0)
-		err_msg(true, "pthread_rwlock_init()");
+		LOG_MSG(LOG__ERROR, true, "pthread_rwlock_init()");
 
 	//Init stats (values are sensed every 10s)
 	world->last_ten_ewma_factor = 2.0 / (10.0 + 1.0);
@@ -11,7 +11,7 @@ int init_world()
 
 	//Init stats
 	if (reset_stat("num_nbs") != 0)
-		err_msg(false, "Error reseting num_nbs stat");
+		LOG_MSG(LOG__ERROR, true, "Error reseting num_nbs stat");
 
 	world->last_ten_ewma = get_stat("last_ten_ewma");
 	if (world->last_ten_ewma < 0) {
@@ -43,14 +43,14 @@ int load_ritd_config(const char *config_file)
 
 	//Load ritd section from adtn.ini
 	if ((load_config("ritd", &ritd_config, config_file)) != 1)
-		err_msg(false, "Error loading ritd config. Aborting execution.");
+		LOG_MSG(LOG__ERROR, false, "Error loading ritd config. Aborting execution.");
 
 	use_default = 0;
 	tmp_value = get_option_value("multicast_group", &ritd_config);
 	if (tmp_value != NULL) {
 		strncpy(world->multicast_group, tmp_value , sizeof(world->multicast_group));
 		if (!ip_valid(world->multicast_group)) {
-			err_msg(false, "Config error: Multicast IP format error. Using default value.");
+			LOG_MSG(LOG__ERROR, false, "Config error: Multicast IP format error. Using default value.");
 			use_default = 1;
 		}
 	} else {
@@ -64,7 +64,7 @@ int load_ritd_config(const char *config_file)
 	if (tmp_value != NULL) {
 		world->multicast_port = strtol((tmp_value), NULL, 10);
 		if (world->multicast_port == 0 || world->multicast_port < 1024 || world->multicast_port > 65535) {
-			err_msg(false, "Config error: Multicast port not valid. Using default value.");
+			LOG_MSG(LOG__ERROR, false, "Config error: Multicast port not valid. Using default value.");
 			use_default = 1;
 		}
 	} else {
@@ -79,12 +79,12 @@ int load_ritd_config(const char *config_file)
 	if (tmp_value != NULL) {
 		world->announcement_period = strtol(tmp_value, NULL, 10);
 		if (world->announcement_period == 0) {
-			err_msg(false, "Config error: Announcement period can't be 0. Aborting execution.");
+			LOG_MSG(LOG__ERROR, false, "Config error: Announcement period can't be 0. Aborting execution.");
 			ret = 1;
 			goto end;
 		}
 	} else {
-		err_msg(false, "Config error: Announcment period not specified. Aborting execution.");
+		LOG_MSG(LOG__ERROR, false, "Config error: Announcment period not specified. Aborting execution.");
 		ret = 1;
 		goto end;
 	}
@@ -93,7 +93,7 @@ int load_ritd_config(const char *config_file)
 	if (tmp_value != NULL) {
 		world->announceable = strtol(tmp_value, NULL, 10);
 	} else {
-		INFO_MSG("Announceable configuration option not specified. Using default option: announceable = 0");
+		LOG_MSG(LOG__INFO, false, "Announceable configuration option not specified. Using default option: announceable = 0");
 		world->announceable = 0;
 	}
 

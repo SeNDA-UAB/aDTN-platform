@@ -30,7 +30,6 @@ struct sockaddr_un exec_addr;
 /**/
 
 /* Defines */
-#define INFO_MSG(...) do {if (DEBUG) info_msg(__VA_ARGS__);} while(0);
 #define QUEUE_SOCKNAME "/proc-queue.sock"
 #define PROC_SOCKNAME "/proc-executor.sock"
 #define EXEC_SOCKNAME "/executor.sock"
@@ -63,18 +62,18 @@ static int process_code(int *num_hops, char *hops_list[MAX_HOPS_LEN], char *bund
 	p.header.code_type = ROUTING_CODE;
 
 	strncpy(p.header.bundle_id, bundle_id, NAME_MAX);
-	INFO_MSG("Executing routing code for bundle: %s", bundle_id);
+	LOG_MSG(LOG__INFO, false, "Executing routing code for bundle: %s", bundle_id);
 	if (sendto(proc_socket, &p, sizeof(p), 0, (struct sockaddr *)&exec_addr, (socklen_t)sizeof(exec_addr)) < 0) {
-		err_msg(true, "Unable to connect with executor");
+		LOG_MSG(LOG__ERROR, true, "Unable to connect with executor");
 		goto end;
 	}
 	recv_l = recv(proc_socket, &r, sizeof(r), 0);
 	if (recv_l <= 0) {
-		err_msg(true, "Unable to get executor response");
+		LOG_MSG(LOG__ERROR, true, "Unable to get executor response");
 		goto end;
 	}
 	if (r.exec_r.correct == 1) {
-		INFO_MSG("Code correctly executed, the mssg should be send to %d nbs", r.exec_r.num_hops);
+		LOG_MSG(LOG__INFO, false, "Code correctly executed, the mssg should be send to %d nbs", r.exec_r.num_hops);
 		*num_hops = r.exec_r.num_hops;
 		*hops_list = (char *)malloc(*num_hops * MAX_PLATFORM_ID_LEN);
 		memcpy(*hops_list, r.exec_r.hops_list, *num_hops * MAX_PLATFORM_ID_LEN);
@@ -98,9 +97,9 @@ static void delete_bundle(char *name)
 	bundle_file = (char *)calloc(len, sizeof(char));
 	snprintf(bundle_file, len, "%s/%s", bundle_queue, name);
 	if (remove(bundle_file) != 0)
-		info_msg("Can't delete bundle located in %s", bundle_file);
+		LOG_MSG(LOG__WARNING, false, "Can't delete bundle located in %s", bundle_file);
 	else
-		info_msg("Bundle %s has been deleted", bundle_file);
+		LOG_MSG(LOG__INFO, false, "Bundle %s has been deleted", bundle_file);
 	free(bundle_file);
 }
 
@@ -114,7 +113,7 @@ static ssize_t load_bundle(const char *file, uint8_t **raw_bundle)
 		goto end;
 
 	if ((fd = fopen(file, "r")) <= 0) {
-		err_msg(true, "Error loading bundle %s", file);
+		LOG_MSG(LOG__ERROR, true, "Error loading bundle %s", file);
 		goto end;
 	}
 
@@ -123,12 +122,12 @@ static ssize_t load_bundle(const char *file, uint8_t **raw_bundle)
 
 	*raw_bundle = (uint8_t *) malloc(raw_bundle_l);
 	if (fread(*raw_bundle, sizeof(**raw_bundle), raw_bundle_l, fd) != raw_bundle_l) {
-		err_msg(true, "read()");
+		LOG_MSG(LOG__ERROR, true, "read()");
 		goto end;
 	}
 
 	if (fclose(fd) != 0)
-		err_msg(true, "close()");
+		LOG_MSG(LOG__ERROR, true, "close()");
 
 	ret = raw_bundle_l;
 end:
@@ -158,12 +157,12 @@ static int get_nb_ip_and_port(char *neighbour, char **ip, int *port)
 	int ret = 1;
 
 	if (get_nb_ip(neighbour, ip) != 0) {
-		err_msg(0, "Error getting nb ip from RTI");
+		LOG_MSG(LOG__ERROR, false, "Error getting nb ip from RTI");
 		goto end;
 	}
 
 	if (get_nb_port(neighbour, port) != 0) {
-		err_msg(0, "Error getting nb port from RTI");
+		LOG_MSG(LOG__ERROR, false, "Error getting nb port from RTI");
 		goto end;
 	}
 
@@ -183,11 +182,11 @@ static int generate_unique_bundle_id(uint8_t *raw_bundle, /* out*/ unsigned char
 	MD5_CTX context;
 
 	if (bunlde_raw_get_timestamp_and_seq(raw_bundle, &timestamp, &timestamp_seq) != 0) {
-		err_msg(0, "Unable to generate unique bundle id: timestamp");
+		LOG_MSG(LOG__ERROR, false, "Unable to generate unique bundle id: timestamp");
 		goto end;
 	}
 	if (bundle_get_source(raw_bundle, &bundle_src) != 0) {
-		err_msg(0, "Unable to generate unique bundle id: source");
+		LOG_MSG(LOG__ERROR, false, "Unable to generate unique bundle id: source");
 		goto end;
 	}
 
@@ -231,12 +230,12 @@ static char *send_bundle_thread(thread_sb_data *data)
 	remote_nb.sin_family = AF_INET;
 	remote_nb.sin_port = htons(n_port);
 	if (inet_aton(n_ip, &remote_nb.sin_addr) == 0) {
-		err_msg(true, "Invalid nb address");
+		LOG_MSG(LOG__ERROR, true, "Invalid nb address");
 		goto end;
 	}
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0) {
-		err_msg(true, "Unable to create socket to contact nb");
+		LOG_MSG(LOG__ERROR, true, "Unable to create socket to contact nb");
 		goto end;
 	}
 	timeout.tv_sec = NB_TIMEOUT / 1000000;
@@ -244,22 +243,22 @@ static char *send_bundle_thread(thread_sb_data *data)
 	st -= setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout));
 	st -= setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout));
 	if (st != 0) {
-		err_msg(true, "Can't set timeout for nb socket");
+		LOG_MSG(LOG__ERROR, true, "Can't set timeout for nb socket");
 		goto end;
 	}
 	if (connect(sock, (struct sockaddr *)&remote_nb, sizeof(remote_nb)) < 0) {
-		err_msg(true, "Can't connect with the neighbour");
+		LOG_MSG(LOG__ERROR, true, "Can't connect with the neighbour");
 		goto end;
 	}
 	if (data->raw_bundle_l <= 0) {
-		err_msg(false, "Invalid bundle length");
+		LOG_MSG(LOG__ERROR, false, "Invalid bundle length");
 		goto end;
 	}
 	bundle_l = htons(data->raw_bundle_l);
 	n = write(sock, &bundle_l, sizeof(uint16_t));
 	n = write(sock, data->raw_bundle, data->raw_bundle_l);
 	if (n < 0) {
-		err_msg(false, "Can't write to the socket");
+		LOG_MSG(LOG__ERROR, false, "Can't write to the socket");
 		goto end;
 	}
 
@@ -267,13 +266,14 @@ static char *send_bundle_thread(thread_sb_data *data)
 	socklen_t bundle_src_l = sizeof(bundle_src);
 	// Get from where we are sending the bundle
 	if (getsockname(sock, (struct sockaddr *)&bundle_src, &bundle_src_l) != 0) {
-		err_msg(true, "getpeername()");
+		LOG_MSG(LOG__ERROR, true, "getpeername()");
 	} else {
 		// If we ever change from AF_INET family, we should change this.
 		bundle_src_addr = inet_ntoa(bundle_src.sin_addr);
 	}
 
-	INFO_MSG("A bundle of length %d has been sent to %s:%d from %s:%d", data->raw_bundle_l, n_ip, n_port, bundle_src_addr, ntohs(bundle_src.sin_port));
+	LOG_MSG(LOG__INFO, false, "A bundle of length %d has been sent to %s:%d from %s:%d", data->raw_bundle_l, n_ip, n_port, bundle_src_addr, ntohs(bundle_src.sin_port));
+
 	// add_contact((char*)digest, n_ip);
 
 	ret = 1;
@@ -308,11 +308,11 @@ static int send_bundle(char *bundle_name, char **neighbours, int n_hops, int *ke
 			// sb_data->bundle_id = (char*)calloc(len, sizeof(char));
 			// strncpy(sb_data->bundle_id, bundle_name, len);
 			if (pthread_create(&(id_Threads[j]), NULL, (void *)send_bundle_thread, (void *)sb_data) != 0) {
-				err_msg(true, "Error creating thread to send bundle");
+				LOG_MSG(LOG__ERROR, true, "Error creating thread to send bundle");
 				--wait_for;
 			}
 		} else {
-			INFO_MSG("We are one of the bundles destination. We will keep a copy");
+			LOG_MSG(LOG__INFO, false, "We are one of the bundles destination. We will keep a copy");
 			*keep = 1;
 			--wait_for;
 		}
@@ -322,7 +322,7 @@ static int send_bundle(char *bundle_name, char **neighbours, int n_hops, int *ke
 		pthread_join(id_Threads[i], (void **)&t_ret);
 		ret += *t_ret;  //t_ret = 0 everything ok, neighbours++
 	}
-	INFO_MSG("The bundle has been sent to %d neighbours", ret);
+	LOG_MSG(LOG__INFO, false, "The bundle has been sent to %d neighbours", ret);
 	free(id_Threads);
 	return ret;
 }
@@ -340,7 +340,7 @@ static int bundle_file_exist(char *name)
 
 	f = fopen(bundle_file, "rb");
 	if (f == NULL) {
-		INFO_MSG("The bundle id %s doesn't exist");
+		LOG_MSG(LOG__WARNING, false, "The bundle id %s doesn't exist", name);
 		ret = 0;
 	}
 	free(bundle_file);
@@ -357,26 +357,26 @@ static void process_bundle(char *name, int queue_conn)
 	char *neighbours = NULL;
 	int b_send = 0;
 
-	INFO_MSG("Start processing for bundle %s", name);
+	LOG_MSG(LOG__INFO, false, "Start processing for bundle %s", name);
 	if (bundle_file_exist(name) == 0)
 		goto end;
 
 	cod_r = process_code(&n_hops, &neighbours, name);
 	if (n_hops <= 0 || cod_r != 0) {
 		keep_bundle = 1;
-		INFO_MSG("Unable to execute code for bundle %s", name);
+		LOG_MSG(LOG__WARNING, false, "Unable to execute code for bundle %s", name);
 		goto end;
 	}
 	b_send = send_bundle(name, &neighbours, n_hops, &keep_bundle);
 	if (b_send != n_hops) {
-		err_msg(false, "Bundle %s not sent to all nbs (%d/%d)", name, b_send, n_hops);
+		LOG_MSG(LOG__WARNING, false, "Bundle %s not sent to all nbs (%d/%d)", name, b_send, n_hops);
 	}
 	if (b_send == 0 && keep_bundle == 0)
 		keep_bundle = 1;
 end:
 	if (keep_bundle) {
 		queue(name, queue_conn);
-		INFO_MSG("Keeping a copy of %s bundle", name);
+		LOG_MSG(LOG__INFO, false, "Keeping a copy of %s bundle", name);
 	} else {
 		delete_bundle(name);
 	}
@@ -422,7 +422,7 @@ static int connect_executor()
 	strncpy(local_addr.sun_path, sockname, sizeof(local_addr.sun_path) - 1);
 
 	if (bind(proc_socket, (struct sockaddr *)&local_addr, sizeof(struct sockaddr_un)) == -1) {
-		err_msg(true, "[Processor] Creating executor socket");
+		LOG_MSG(LOG__ERROR, true, "[Processor] Creating executor socket");
 		ret = 1;
 		goto end;
 	}
@@ -458,7 +458,7 @@ static int init_processor(int *queue_conn, int argc, char *argv[])
 	int ret = 1;
 
 	if (init_adtn_process(argc, argv, &shm) != 0) {
-		err_msg(false, "Can't init shm");
+		LOG_MSG(LOG__ERROR, false, "Can't init shm");
 		ret = -1;
 		goto end;
 	}
@@ -466,11 +466,11 @@ static int init_processor(int *queue_conn, int argc, char *argv[])
 	own_id = strdup(shm->platform_id);
 
 	if (init_dirs() != 0) {
-		err_msg(true, "Can't create needed folders");
+		LOG_MSG(LOG__ERROR, true, "Can't create needed folders");
 		goto end;
 	}
 	if (pthread_rwlock_wrlock(&shm->rwlock) != 0) {
-		err_msg(true, "Can't block shm");
+		LOG_MSG(LOG__ERROR, true, "Can't block shm");
 		goto end;
 	}
 	shm->pid_outgoing = getpid();
@@ -478,14 +478,14 @@ static int init_processor(int *queue_conn, int argc, char *argv[])
 
 	*queue_conn = queue_manager_connect(shm->data_path, QUEUE_SOCKNAME);
 	if (*queue_conn <= 0) {
-		err_msg(true, "[Processor] Can't stablish connection with queueManager");
+		LOG_MSG(LOG__ERROR, true, "[Processor] Can't stablish connection with queueManager");
 		goto end;
 	}
 	if (connect_executor() != 0) {
-		err_msg(true, "Can't connect with executor");
+		LOG_MSG(LOG__ERROR, true, "Can't connect with executor");
 		goto end;
 	}
-	INFO_MSG("Processor initialized");
+	LOG_MSG(LOG__INFO, false, "Processor initialized");
 	ret = 0;
 end:
 
@@ -518,7 +518,7 @@ int main(int argc, char *argv[])
 	sa.sa_flags = 0;
 	sa.sa_handler = end_handler;
 	if (sigaction(SIGINT, &sa, NULL) < 0) {
-		err_msg(true, "[Processor] Can't set SIGINT handler");
+		LOG_MSG(LOG__ERROR, true, "[Processor] Can't set SIGINT handler");
 		goto end;
 	}
 	bundle_queue = NULL;

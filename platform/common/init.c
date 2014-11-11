@@ -72,39 +72,39 @@ int try_sem(sem_t *semaphore)
 	wait_time.tv_nsec = 0;
 
 	if (sem_trywait(semaphore) != 0 && (errno == EAGAIN)) {
-		log_message(LOG_WARNING, "Queue semaphore locked. Uncontrolled exit?. Waiting 5 seconds before resetting it.", errno);
+		LOG_MSG(LOG__WARNING, true, "Queue semaphore locked. Uncontrolled exit?. Waiting 5 seconds before resetting it.");
 		wait_time.tv_sec = time(NULL) + 5;
 		if (sem_timedwait(semaphore, &wait_time) != 0 && (errno == ETIMEDOUT || errno == EDEADLK)) {
-			log_message(LOG_WARNING, "Can't get queue semaphore. Resetting it", 0);
+			LOG_MSG(LOG__WARNING, false, "Can't get queue semaphore. Resetting it");
 			if (sem_destroy(semaphore) != 0) {
-				log_message(LOG_WARNING, "sem_destroy()", errno);
+				LOG_MSG(LOG__ERROR, true, "sem_destroy()");
 				ret = 1;
 				goto end;
 			}
 			if (sem_init(semaphore, 1, 1) != 0) {
-				log_message(LOG_WARNING, "sem_init()", errno);
+				LOG_MSG(LOG__ERROR, true, "sem_init()");
 				ret = 1;
 				goto end;
 			}
 		} else if (errno == EINVAL) {
-			log_message(LOG_WARNING, "sem_timedwait()", errno);
+			LOG_MSG(LOG__ERROR, true, "sem_timedwait()");
 			ret = 1;
 			goto end;
 		} else {
-			log_message(LOG_WARNING, "Queue semaphore succesfully adquired beore 5 seconds. Unlocking it.", 0);
+			LOG_MSG(LOG__WARNING, false, "Queue semaphore succesfully adquired beore 5 seconds. Unlocking it.");
 			if (sem_post(semaphore) != 0) {
-				log_message(LOG_WARNING, "sem_post()", errno);
+				LOG_MSG(LOG__ERROR, true, "sem_post()");
 				ret = 1;
 				goto end;
 			}
 		}
 	} else if (errno == EINVAL) {
-		log_message(LOG_WARNING, "sem_trywait()", errno);
+		LOG_MSG(LOG__ERROR, true, "sem_trywait()");
 		ret = 1;
 		goto end;
 	} else {
 		if (sem_post(semaphore) != 0) {
-			log_message(LOG_WARNING, "sem_post()", errno);
+			LOG_MSG(LOG__ERROR, true, "sem_post()");
 			ret = 1;
 			goto end;
 		}
@@ -122,39 +122,39 @@ int try_rwlock(pthread_rwlock_t *rwlock)
 	wait_time.tv_nsec = 0;
 
 	if (((errno = pthread_rwlock_trywrlock(rwlock)) != 0) && (errno == EBUSY || errno == EDEADLK)) {
-		log_message(LOG_WARNING, "Read/write lock locked. Uncontrolled exit?. Waiting 5 seconds before resetting it.", errno);
+		LOG_MSG(LOG__WARNING, true, "Read/write lock locked. Uncontrolled exit?. Waiting 5 seconds before resetting it.");
 		wait_time.tv_sec = time(NULL) + 5;
 		if (((errno = pthread_rwlock_timedwrlock(rwlock, &wait_time)) != 0) && (errno == ETIMEDOUT || errno == EDEADLK)) {
-			log_message(LOG_WARNING, "Can't get read/write lock. Resetting it", 0);
+			LOG_MSG(LOG__WARNING, false, "Can't get read/write lock. Resetting it");
 			if (pthread_rwlock_destroy(rwlock) != 0) {
-				log_message(LOG_WARNING, "pthread_rwlock_destroy()", errno);
+				LOG_MSG(LOG__ERROR, true, "pthread_rwlock_destroy()");
 				ret = 1;
 				goto end;
 			}
 			if (pthread_rwlock_init(rwlock, NULL) != 0) {
-				log_message(LOG_WARNING, "pthread_rwlock_init()", errno);
+				LOG_MSG(LOG__ERROR, true, "pthread_rwlock_init()");
 				ret = 1;
 				goto end;
 			}
 		} else if (errno == EINVAL) {
-			log_message(LOG_WARNING, "pthread_rwlock_timedwrlock()", errno);
+			LOG_MSG(LOG__ERROR, true, "pthread_rwlock_timedwrlock()");
 			ret = 1;
 			goto end;
 		} else {
-			log_message(LOG_WARNING, "Read/write lock succesfully adquired before 5 seconds. Unlocking it.", 0);
+			LOG_MSG(LOG__WARNING, false, "Read/write lock succesfully adquired before 5 seconds. Unlocking it.");
 			if (pthread_rwlock_unlock(rwlock) != 0) {
-				log_message(LOG_WARNING, "pthread_rwlock_unlock()", errno);
+				LOG_MSG(LOG__ERROR, true, "pthread_rwlock_unlock()");
 				ret = 1;
 				goto end;
 			}
 		}
 	} else if (errno == EINVAL) {
-		log_message(LOG_WARNING, "pthread_rwlock_tryrwlock()", errno);
+		LOG_MSG(LOG__ERROR, true, "pthread_rwlock_tryrwlock()");
 		ret = 1;
 		goto end;
 	} else {
 		if (pthread_rwlock_unlock(rwlock) != 0) {
-			log_message(LOG_WARNING, "pthread_rwlock_unlock()", errno);
+			LOG_MSG(LOG__ERROR, true, "pthread_rwlock_unlock()");
 			ret = 1;
 			goto end;
 		}
@@ -176,38 +176,38 @@ int load_global_config(struct common *shm, const char *config_file)
 	}
 
 	if (load_config("global", &global_configuration, config_file) != 1) {
-		log_message(LOG_WARNING, "Error loading global config. Configuration file not found.", 0);
+		LOG_MSG(LOG__ERROR, false, "Error loading global config. Configuration file not found.");
 		ret = 1;
 		goto end;
 	}
 
 	//Required options
 	if (get_option_value("ip", &global_configuration) == NULL) {
-		log_message(LOG_WARNING, "No IP (ip) defined in the configuration file.", 0);
+		LOG_MSG(LOG__ERROR, false, "No IP (ip) defined in the configuration file.");
 		ret = 1;
 		goto free1;
 	}
 
 	if (get_option_value("id", &global_configuration) == NULL) {
-		log_message(LOG_WARNING, "No IP (ip) defined in the configuration file.", 0);
+		LOG_MSG(LOG__ERROR, false, "No IP (ip) defined in the configuration file.");
 		ret = 1;
 		goto free1;
 	}
 
 	if (get_option_value("port", &global_configuration) == NULL) {
-		log_message(LOG_WARNING, "No platform port (port) defined in the configuration file.", 0);
+		LOG_MSG(LOG__ERROR, false, "No platform port (port) defined in the configuration file.");
 		ret = 1;
 		goto free1;
 	}
 
 	if (get_option_value("data", &global_configuration) == NULL) {
-		log_message(LOG_WARNING, "No data dir (data) defined in the configuration file.", 0);
+		LOG_MSG(LOG__ERROR, false, "No data dir (data) defined in the configuration file.");
 		ret = 1;
 		goto free1;
 	}
 
 	if (pthread_rwlock_wrlock(&shm->rwlock) != 0) {
-		log_message(LOG_WARNING, "pthread_rwlock_wrlock()", errno);
+		LOG_MSG(LOG__ERROR, true, "pthread_rwlock_wrlock()");
 		goto free1;
 	}
 
@@ -218,7 +218,7 @@ int load_global_config(struct common *shm, const char *config_file)
 
 	/**/
 	if (pthread_rwlock_unlock(&shm->rwlock) != 0) {
-		log_message(LOG_WARNING, "pthread_rwlock_unlock", errno);
+		LOG_MSG(LOG__ERROR, true, "pthread_rwlock_unlock");
 	}
 
 free1:
@@ -236,7 +236,7 @@ int init_locks(struct common *shm)
 		goto end;
 
 	if (pthread_rwlock_init(&shm->rwlock, NULL) != 0) {
-		err_msg(true, "pthread_rwlock_unlock()");
+		LOG_MSG(LOG__ERROR, true, "pthread_rwlock_unlock()");
 		goto end;
 	}
 
@@ -275,7 +275,7 @@ int init_adtn_process(int argc, char *const argv[], struct common **shm_common)
 	unsigned int shm_suffix = 0;
 
 	if (parse_adtn_options(argc, argv, &config_file, &force_init) != 0) {
-		log_message(LOG_WARNING, "Error parsing command line options", 0);
+		LOG_MSG(LOG__ERROR, false, "Error parsing command line options");
 		ret = 1;
 		goto end;
 	}
@@ -284,14 +284,14 @@ int init_adtn_process(int argc, char *const argv[], struct common **shm_common)
 
 	//Check if file exists
 	if (access(config_file, R_OK) != 0) {
-		log_message(LOG_WARNING, "Configuration file not found.", 0);
+		LOG_MSG(LOG__ERROR, false, "Configuration file not found.");
 		ret = 1;
 		goto free1;
 	}
 
 	//Get data path
 	if (ini_gets("global", "data", "", data_path, 255, config_file) == 0) {
-		log_message(LOG_WARNING, "Data path not found in the configuration file", 0);
+		LOG_MSG(LOG__ERROR, false, "Data path not found in the configuration file");
 		ret = 1;
 		goto free1;
 	}
@@ -304,34 +304,34 @@ int init_adtn_process(int argc, char *const argv[], struct common **shm_common)
 	shm_suffix = Crc32_ComputeBuf(shm_suffix, data_path, strlen(data_path));
 
 	if ((shm_fd = init_shared_memory(shm_suffix, true)) < 0) {
-		log_message(LOG_WARNING, "Can't init shared memory: ", errno);
+		LOG_MSG(LOG__ERROR, true, "Can't init shared memory: ");
 		ret = -1;
 		goto free1;
 	}
 	*shm_common = NULL;
 	if ((*shm_common = map_shared_memory(shm_fd, true)) == NULL) {
-		log_message(LOG_WARNING, "Can't map shared memory: ", errno);
+		LOG_MSG(LOG__ERROR, true, "Can't map shared memory: ");
 		ret = -1;
 		goto free1;
 	}
 
 	// Lock shm fd
 	if (flock(shm_fd, LOCK_EX) != 0) {
-		err_msg(true, "flock");
+		LOG_MSG(LOG__ERROR, true, "flock");
 		ret = -1;
 		goto free1;
 	}
 
 	if (!(*shm_common)->initialized || force_init) {
 		if ((ret = init_locks(*shm_common)) != 0)
-			err_msg(false, "Error initializing shm locks");
+			LOG_MSG(LOG__ERROR, false, "Error initializing shm locks");
 
 		if (realpath(config_file, absolute_config_file_path) == NULL)
-			err_msg(true, "realpath()");
+			LOG_MSG(LOG__ERROR, true, "realpath()");
 
 		snprintf((*shm_common)->config_file, 255, "%s", absolute_config_file_path);
 		if ((ret = load_global_config(*shm_common, absolute_config_file_path)) != 0)
-			err_msg(false, "Error loading config into shm: ");
+			LOG_MSG(LOG__ERROR, false, "Error loading config into shm: ");
 
 		(*shm_common)->prefix_id = shm_suffix;
 
@@ -339,12 +339,12 @@ int init_adtn_process(int argc, char *const argv[], struct common **shm_common)
 			(*shm_common)->initialized = 1;
 	} else if ((*shm_common)->initialized) {
 		if (test_locks(*shm_common) != 0)
-			err_msg(false, "Error resetting locks");
+			LOG_MSG(LOG__ERROR, false, "Error resetting locks");
 	}
 
 	// Unlock shm fd
 	if (flock(shm_fd, LOCK_UN) != 0) {
-		err_msg(true, "flock");
+		LOG_MSG(LOG__ERROR, true, "flock");
 		ret = -1;
 		goto free1;
 	}

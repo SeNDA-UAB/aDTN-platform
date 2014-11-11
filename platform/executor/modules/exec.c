@@ -53,7 +53,7 @@ static int write_code_to_disk(const char *code, const char *code_path)
 	FILE *fd = fopen(code_path, "w");
 	if (fd == NULL || fwrite(code, sizeof(char), strlen(code), fd) == -1) {
 		ret = 1;
-		err_msg(1, "Error writing code %s to disk", code_path);
+		LOG_MSG(LOG__ERROR, true, "Error writing code %s to disk", code_path);
 		goto end;
 	}
 
@@ -67,7 +67,7 @@ static int remove_code_from_disk(const char *code_path)
 	int ret = 0;
 	if (unlink(code_path) != 0) {
 		ret = 1;
-		err_msg(1, "Error removing code %s from disk", code_path);
+		LOG_MSG(LOG__ERROR, true, "Error removing code %s from disk", code_path);
 	}
 
 	return ret;
@@ -80,7 +80,7 @@ static int execute_compile_cmd(const char *cmd)
 
 	ret = system(cmd);
 	if (ret != 0)
-		err_msg(1, "Error executing compile command %s", cmd);
+		LOG_MSG(LOG__ERROR, true, "Error executing compile command %s", cmd);
 
 	return ret;
 }
@@ -140,7 +140,7 @@ static int compile_routing_code(const char *code_name, const char *code)
 
 end:
 	if (ret == 1)
-		err_msg(0, "Error compiling routing code");
+		LOG_MSG(LOG__ERROR, false, "Error compiling routing code");
 
 	if (code_ready)
 		free(code_ready);
@@ -165,42 +165,42 @@ static routing_dl_s *load_routing_dl(const char *so_name)
 
 	*(void **)&routing_dl->handler = dlopen(dl_path, RTLD_LAZY | RTLD_LOCAL);
 	if (routing_dl->handler == NULL) {
-		err_msg(0, "%s: Error opening: %s", dlerror(), dl_path);
+		LOG_MSG(LOG__ERROR, false, "%s: Error opening: %s", dlerror(), dl_path);
 		ret = 1;
 		goto end;
 	}
 
 	*(void **)&routing_dl->r = dlsym(routing_dl->handler, "r");
 	if (routing_dl->r == NULL) {
-		err_msg(0, "%s: Error loading r symbol", dlerror());
+		LOG_MSG(LOG__ERROR, false, "%s: Error loading r symbol", dlerror());
 		ret = 1;
 		goto end;
 	}
 
 	*(void **)&routing_dl->nbs_info = dlsym(routing_dl->handler, "nbs_info");
 	if (routing_dl->nbs_info == NULL) {
-		err_msg(0, "%s: Error loading nbs_info symbol", dlerror());
+		LOG_MSG(LOG__ERROR, false, "%s: Error loading nbs_info symbol", dlerror());
 		ret = 1;
 		goto end;
 	}
 
 	*(void **)&routing_dl->dest = dlsym(routing_dl->handler, "dest");
 	if (routing_dl->dest == NULL) {
-		err_msg(0, "%s: Error loading dest symbol", dlerror());
+		LOG_MSG(LOG__ERROR, false, "%s: Error loading dest symbol", dlerror());
 		ret = 1;
 		goto end;
 	}
 
 	*(void **)&routing_dl->r_result = dlsym(routing_dl->handler, "r_result");
 	if (routing_dl->r_result == NULL) {
-		err_msg(0, "%s: Error loading r_result symbol", dlerror());
+		LOG_MSG(LOG__ERROR, false, "%s: Error loading r_result symbol", dlerror());
 		ret = 1;
 		goto end;
 	}
 
 	*(void **) (&init_env) = dlsym(routing_dl->handler, "init_env");
 	if (init_env == NULL) {
-		err_msg("%s: Error loading init_env symbol", dlerror());
+		LOG_MSG(LOG__ERROR, false, "%s: Error loading init_env symbol", dlerror());
 		ret = 1;
 		goto end;
 	}
@@ -342,7 +342,7 @@ static int compile_no_helpers_code(code_type_e code_type, const char *code_name,
 
 end:
 	if (ret == 1)
-		err_msg(0, "Error compiling %s", code_type_e_name[code_type]);
+		LOG_MSG(LOG__ERROR, false, "Error compiling %s", code_type_e_name[code_type]);
 
 	if (code_path)
 		free(code_path);
@@ -382,7 +382,7 @@ static void *load_no_helpers_dl(code_type_e code_type, const char *so_name)
 		break;
 	default :
 		ret = 1;
-		err_msg(0, "Error: load_no_helpers_dl() the type of the code to laod is not recognized");
+		LOG_MSG(LOG__ERROR, false, "Error: load_no_helpers_dl() the type of the code to laod is not recognized");
 		goto end;
 	}
 
@@ -390,14 +390,14 @@ static void *load_no_helpers_dl(code_type_e code_type, const char *so_name)
 
 	*(void **)(handler) = dlopen(dl_path, RTLD_LAZY | RTLD_LOCAL);
 	if (*handler == NULL) {
-		err_msg(0, "%s: Error opening: %s", dlerror(), dl_path);
+		LOG_MSG(LOG__ERROR, false, "%s: Error opening: %s", dlerror(), dl_path);
 		ret = 1;
 		goto end;
 	}
 
 	*(void **)(main_funct) = dlsym(*handler, main_funct_name);
 	if (*main_funct == NULL) {
-		err_msg(0, "%s: Error loading %s symbol", dlerror(), main_funct_name);
+		LOG_MSG(LOG__ERROR, false, "%s: Error loading %s symbol", dlerror(), main_funct_name);
 		ret = 1;
 		goto end;
 	}
@@ -456,7 +456,7 @@ int prepare_no_helpers_code(code_type_e code_type, const char *bundle_id, bundle
 				check_code = 1;
 			break;
 		default:
-			err_msg(0, "prepare_no_helpers_code(): Code to prepare not recognized");
+			LOG_MSG(LOG__ERROR, false, "prepare_no_helpers_code(): Code to prepare not recognized");
 			goto end;
 		}
 	}
@@ -481,7 +481,7 @@ int prepare_no_helpers_code(code_type_e code_type, const char *bundle_id, bundle
 			code_dl_add = (void *(*)(const char *, void *))prio_code_dl_add;
 			break;
 		default:
-			err_msg(0, "prepare_no_helpers_code(): Code to prepare not recognized");
+			LOG_MSG(LOG__ERROR, false, "prepare_no_helpers_code(): Code to prepare not recognized");
 			ret = -1;
 			goto end;
 		}
@@ -513,7 +513,7 @@ int prepare_no_helpers_code(code_type_e code_type, const char *bundle_id, bundle
 			target_bundle_dls.prio ->refs++;
 			break;
 		default:
-			err_msg(0, "prepare_no_helpers_code(): Code to prepare not recognized");
+			LOG_MSG(LOG__ERROR, false, "prepare_no_helpers_code(): Code to prepare not recognized");
 			ret = -1;
 			break;
 		}
@@ -560,7 +560,7 @@ int execute_no_helpers_code(code_type_e code_type, void *code_dl, /*OUT*/ int *r
 		*result = ((prio_dl_s *)code_dl)->p();
 		break;
 	default:
-		err_msg(0, "execute_no_helpers_code(): Code type to executo not recognized");
+		LOG_MSG(LOG__ERROR, false, "execute_no_helpers_code(): Code type to executo not recognized");
 		goto end;
 	}
 

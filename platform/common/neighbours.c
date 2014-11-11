@@ -66,10 +66,10 @@ int get_nb_ip(const char *nb_id, /*out*/char **ip)
 
 	r = snprintf(ip_path, MAX_RIT_PATH, "%s/%s/ip", NBS_INFO, nb_id);
 	if (r > MAX_RIT_PATH) {
-		err_msg(false, "Rit path too long");
+		LOG_MSG(LOG__ERROR, false, "Rit path too long");
 		goto end;
 	} else if (r < 0) {
-		err_msg(true, "snprintf()");
+		LOG_MSG(LOG__ERROR, true, "snprintf()");
 		goto end;
 	}
 
@@ -92,10 +92,10 @@ int get_nb_port(const char *nb_id, /*out*/int *port)
 
 	r = snprintf(port_path, MAX_RIT_PATH, "%s/%s/port", NBS_INFO, nb_id);
 	if (r > MAX_RIT_PATH) {
-		err_msg(false, "Rit path too long");
+		LOG_MSG(LOG__ERROR, false, "Rit path too long");
 		goto end;
 	} else if (r < 0) {
-		err_msg(true, "snprintf()");
+		LOG_MSG(LOG__ERROR, true, "snprintf()");
 		goto end;
 	}
 
@@ -121,10 +121,10 @@ int get_nb_subscriptions(const char *nb_id, /*out*/ char **subscribed)
 
 	r = snprintf(subsc_path, MAX_RIT_PATH, RIT_SUBSCRIBED_PATH, nb_id);
 	if (r > MAX_RIT_PATH) {
-		err_msg(false, "Rit path too long");
+		LOG_MSG(LOG__ERROR, false, "Rit path too long");
 		goto end;
 	} else if (r < 0) {
-		err_msg(true, "snprintf()");
+		LOG_MSG(LOG__ERROR, true, "snprintf()");
 		goto end;
 	}
 

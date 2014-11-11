@@ -8,7 +8,7 @@
 #include "include/utils.h"
 
 #ifndef DEBUG
-	#define DEBUG 0
+#define DEBUG 0
 #endif
 
 char *generate_bundle_name()
@@ -34,17 +34,17 @@ int write_to(const char *path, const char *name, const uint8_t *content, const s
 	asprintf(&full_path, "%s/%s", path, name);
 
 	if ((dest = fopen(full_path, "w")) == NULL) {
-		err_msg(true, "Error opening %s", full_path);
+		LOG_MSG(LOG__ERROR, true, "Error opening %s", full_path);
 		goto end;
 	}
 
 	if (fwrite(content, sizeof(*content), content_l, dest) != content_l) {
-		err_msg(true, "Error writing to %s", full_path);
+		LOG_MSG(LOG__ERROR, true, "Error writing to %s", full_path);
 		goto end;
 	}
 
 	if (fclose(dest) != 0) {
-		err_msg(true, "Error closing %s", full_path);
+		LOG_MSG(LOG__ERROR, true, "Error closing %s", full_path);
 		goto end;
 	}
 

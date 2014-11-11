@@ -50,12 +50,12 @@ char *get_option_value_r(const char *key, struct conf_list *config)
 	char *option = NULL;
 
 	if (pthread_rwlock_rdlock(&config->lock) != 0)
-		log_message(LOG_ERR, "pthread_rwlock_rdlock()", errno);
+		LOG_MSG(LOG__ERROR, errno, "pthread_rwlock_rdlock()");
 
 	option = get_option_value(key, config);
 
 	if (pthread_rwlock_unlock(&config->lock) != 0)
-		log_message(LOG_ERR, "pthread_unlock_rdlock()", errno);
+		LOG_MSG(LOG__ERROR, errno, "pthread_unlock_rdlock()");
 
 	return option;
 }
@@ -95,12 +95,12 @@ int set_option_value_r(const char *key, const char *value, struct conf_list *con
 	int result = 1;
 
 	if (pthread_rwlock_wrlock(&config->lock) != 0)
-		log_message(LOG_ERR, "pthread_rwlock_wrlock()", errno);
+		LOG_MSG(LOG__ERROR, errno, "pthread_rwlock_wrlock()");
 
 	result = set_option_value(key, value, config);
 
 	if (pthread_rwlock_unlock(&config->lock) != 0)
-		log_message(LOG_ERR, "pthread_rwlock_unlock()", errno);
+		LOG_MSG(LOG__ERROR, errno, "pthread_rwlock_unlock()");
 
 	return result;
 }
@@ -116,6 +116,6 @@ int free_options_list(struct conf_list *config)
 		free(option);
 	}
 	free(config->section);
-	
+
 	return 0;
 }

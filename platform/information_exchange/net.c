@@ -12,7 +12,7 @@ int bind_socket(const int sock, const int port, const char *ip)
 		recv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	if ((bind(sock, (struct sockaddr *) &recv_addr, sizeof(recv_addr))) < 0) {
-		err_msg(1, "bind():");
+		LOG_MSG(LOG__ERROR, true, "bind():");
 		ret = 1;
 	}
 
@@ -24,12 +24,12 @@ int create_and_bind_socket(const int port, const char *ip, const short reuse_add
 	int sock, flag_on = 1;
 
 	if ((sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
-		err_msg(true, "socket()");
+		LOG_MSG(LOG__ERROR, true, "socket()");
 
 	if (reuse_addr) {
 		/* useful to have multiple information exchanges runnning at the same time in the same platform */
 		if ((setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &flag_on, sizeof(flag_on))) < 0) {
-			err_msg(true, "setsockopt()");
+			LOG_MSG(LOG__ERROR, true, "setsockopt()");
 		}
 	}
 
@@ -55,7 +55,7 @@ int join_multicast_group(const int mc_sock, const char *mc_group, const char *if
 
 	/* send an ADD MEMBERSHIP message via setsockopt */
 	if ((setsockopt(mc_sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (void *) &mc_req, sizeof(mc_req))) < 0) {
-		err_msg(true, "setsockopt()");
+		LOG_MSG(LOG__ERROR, true, "setsockopt()");
 		ret = 1;
 	}
 
@@ -73,7 +73,7 @@ int leave_multicast_group(const int mc_sock, const char *mc_group, const char *i
 
 	/* send a DROP MEMBERSHIP message via setsockopt */
 	if ((setsockopt(mc_sock, IPPROTO_IP, IP_DROP_MEMBERSHIP, (void *) &mc_req, sizeof(mc_req))) < 0) {
-		err_msg(true, "setsockopt()");
+		LOG_MSG(LOG__ERROR, true, "setsockopt()");
 		ret = 1;
 	}
 

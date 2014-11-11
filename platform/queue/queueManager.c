@@ -24,8 +24,6 @@
 
 #define EXEC_T 0x00
 
-#define INFO_MSG(...) do {if (DEBUG) info_msg(__VA_ARGS__);} while(0);
-
 typedef struct node {
 	char *bundle_id;
 	int prio;
@@ -348,12 +346,12 @@ static int run_code(char *bundle_id, code_type_e ct)
 	strncpy(p.header.bundle_id, bundle_id, NAME_MAX); //Bundle id
 
 	if (sendto(queue_socket, &p, sizeof(p), 0, (struct sockaddr *)&exec_addr, (socklen_t)sizeof(exec_addr)) == -1) {
-		err_msg(true, "Unable to contact executor");
+		LOG_MSG(LOG__ERROR, true, "Unable to contact executor");
 		goto end;
 	}
 	recv_l = recv(queue_socket, &r, sizeof(r), 0);
 	if (recv_l <= 0) {
-		err_msg(true, "[NORMAL] No response from executor");
+		LOG_MSG(LOG__ERROR, true, "[NORMAL] No response from executor");
 		ret = 0;
 		goto end;
 	}
@@ -364,7 +362,7 @@ static int run_code(char *bundle_id, code_type_e ct)
 		sendto(queue_socket, &rp, sizeof(rp), 0, (struct sockaddr *)&exec_addr, (socklen_t)sizeof(exec_addr));
 		recv_l = recv(queue_socket, &rr, sizeof(rr), 0);
 		if (recv_l <= 0) {
-			err_msg(true, "[ERASE] No response from executor");
+			LOG_MSG(LOG__ERROR, true, "[ERASE] No response from executor");
 			ret = 0;
 			goto end;
 		}
@@ -399,7 +397,7 @@ static ssize_t load_bundle(const char *file, uint8_t **raw_bundle)
 		goto end;
 
 	if ((fd = fopen(file, "r")) <= 0) {
-		err_msg(true, "Error loading bundle %s", file);
+		LOG_MSG(LOG__ERROR, true, "Error loading bundle %s", file);
 		goto end;
 	}
 
@@ -408,12 +406,12 @@ static ssize_t load_bundle(const char *file, uint8_t **raw_bundle)
 
 	*raw_bundle = (uint8_t *) malloc(raw_bundle_l);
 	if (fread(*raw_bundle, sizeof(**raw_bundle), raw_bundle_l, fd) != raw_bundle_l) {
-		err_msg(true, "read()");
+		LOG_MSG(LOG__ERROR, true, "read()");
 		goto end;
 	}
 
 	if (fclose(fd) != 0)
-		err_msg(true, "close()");
+		LOG_MSG(LOG__ERROR, true, "close()");
 
 	ret = raw_bundle_l;
 end:
@@ -448,7 +446,7 @@ static int is_lifetime_expired(char *bundle_id)
 	if (bundle_raw_get_lifetime(raw_bundle, &lifetime) != 0)
 		goto end;
 	if (timestamp + lifetime + RFC_DATE_2000 < t_now) {
-		INFO_MSG("Checking lifetime. Bundle's timestamp: %lu,  lifetime %lu. Local time: %lu ", timestamp + RFC_DATE_2000, lifetime, t_now);
+		LOG_MSG(LOG__INFO, false, "Checking lifetime. Bundle's timestamp: %lu,  lifetime %lu. Local time: %lu ", timestamp + RFC_DATE_2000, lifetime, t_now);
 		ret = 1;
 	}
 end:
@@ -480,9 +478,9 @@ static int schedule(char *path)
 		remove(bundle_path);
 
 		if (del_life)
-			INFO_MSG("Bundle %s removed because its lifetime expired", bundle_path);
+			LOG_MSG(LOG__INFO, false, "Bundle %s removed because its lifetime expired", bundle_path);
 		if (del_life_code)
-			INFO_MSG("Bundle %s removed because of its lifetime code", bundle_path);
+			LOG_MSG(LOG__INFO, false, "Bundle %s removed because of its lifetime code", bundle_path);
 
 		free(bundle_path);
 	} else {
@@ -594,7 +592,7 @@ int main(int argc, char *const argv[])
 
 	pthread_mutex_init(&queue_mutex, NULL);
 	if (init_adtn_process(argc, argv, &shm) != 0) {
-		err_msg(false, "Process initialization failed. Aborting execution");
+		LOG_MSG(LOG__ERROR, false, "Process initialization failed. Aborting execution");
 		exit_adtn_process();
 		exit(1);
 	}

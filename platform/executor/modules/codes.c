@@ -57,14 +57,14 @@ static int get_bundle_content(const uint8_t *bundle_raw, /*out*/bundle_info_s *i
 
 	if (info != NULL) {
 		if (bundle_get_destination(bundle_raw, (uint8_t **)&info->dest) != 0) {
-			err_msg(0, "Can't get destination.");
+			LOG_MSG(LOG__ERROR, false, "Can't get destination.");
 			ret = 1;
 			goto end;
 		}
 	}
 
 	if (bundle_raw_get_mmeb(bundle_raw, mmeb) != 0) {
-		err_msg(0, "Can't get mmeb block of bundle");
+		LOG_MSG(LOG__ERROR, false, "Can't get mmeb block of bundle");
 		ret = 1;
 		goto end;
 	}
@@ -126,18 +126,18 @@ static int load_code_from_file(const char *path, char **code)
 		goto end;
 
 	if ((fd = fopen(path, "r")) <= 0) {
-		err_msg(true, "Error loading code %s", path);
+		LOG_MSG(LOG__ERROR, true, "Error loading code %s", path);
 		goto end;
 	}
 
 	if ((code_l = get_file_size(fd)) <= 0) {
-		err_msg(false, "Error getting lenght of code %s", path);
+		LOG_MSG(LOG__ERROR, false, "Error getting lenght of code %s", path);
 		goto end;
 	}
 
 	*code = (char *) malloc(sizeof(**code) * (code_l + 1));
 	if (fread(*code, sizeof(**code), code_l, fd) != code_l) {
-		err_msg(true, "Error reading code %s", path);
+		LOG_MSG(LOG__ERROR, true, "Error reading code %s", path);
 		goto end;
 	}
 	(*code)[code_l] = '\0';
@@ -146,7 +146,7 @@ static int load_code_from_file(const char *path, char **code)
 end:
 	if (fd) {
 		if (fclose(fd) != 0)
-			err_msg(true, "close()");
+			LOG_MSG(LOG__ERROR, true, "close()");
 	}
 
 	return ret;
@@ -166,7 +166,7 @@ ssize_t get_default_code(code_type_e code_type, char **code)
 	case ROUTING_CODE:
 		if (*def_routing_code == '\0') {
 			if (ini_gets("executor", "def_routing_code", NULL, def_routing_code, PATH_MAX, world.shm->config_file) == 0) {
-				err_msg(false, "Default routing code (def_routing_code) is not specified in the config file %s", world.shm->config_file);
+				LOG_MSG(LOG__ERROR, false, "Default routing code (def_routing_code) is not specified in the config file %s", world.shm->config_file);
 				goto end;
 			}
 		}
@@ -175,7 +175,7 @@ ssize_t get_default_code(code_type_e code_type, char **code)
 	case LIFE_CODE:
 		if (*def_life_code == '\0') {
 			if (ini_gets("executor", "def_life_code", NULL, def_life_code, PATH_MAX, world.shm->config_file) == 0) {
-				err_msg(false, "Default routing code (def_life_code) is not specified in the config file %s", world.shm->config_file);
+				LOG_MSG(LOG__ERROR, false, "Default routing code (def_life_code) is not specified in the config file %s", world.shm->config_file);
 				goto end;
 			}
 		}
@@ -185,7 +185,7 @@ ssize_t get_default_code(code_type_e code_type, char **code)
 	case PRIO_CODE:
 		if (*def_prio_code ==  '\0') {
 			if (ini_gets("executor", "def_prio_code", NULL, def_prio_code, PATH_MAX, world.shm->config_file) == 0) {
-				err_msg(false, "Default routing code (def_prio_code) is not specified in the config file %s", world.shm->config_file);
+				LOG_MSG(LOG__ERROR, false, "Default routing code (def_prio_code) is not specified in the config file %s", world.shm->config_file);
 				goto end;
 			}
 		}
@@ -205,16 +205,16 @@ int get_code_and_info(code_type_e code_type, const char *bundle_id, /*out*/char 
 	mmeb_body_s *mmeb = NULL;
 
 	if (open_raw_bundle(world.bundles_path, bundle_id, &bundle_raw) != 0) {
-		err_msg(0, "Can't load bundle %s", bundle_id);
+		LOG_MSG(LOG__ERROR, false, "Can't load bundle %s", bundle_id);
 		goto end;
 	}
 
 	mmeb = calloc(1, sizeof(mmeb_body_s));
 	if (get_bundle_content(bundle_raw, info, mmeb) != 0) {
-		err_msg(false, "Can't find mmeb extension, using default codes.");
+		LOG_MSG(LOG__ERROR, false, "Can't find mmeb extension, using default codes.");
 	} else {
 		if (find_code(mmeb, code_type, code, code_l) != 0) {
-			err_msg(false, "Can't find code, using default codes.");
+			LOG_MSG(LOG__ERROR, false, "Can't find code, using default codes.");
 		} else {
 			use_default = 0;
 		}
@@ -222,9 +222,9 @@ int get_code_and_info(code_type_e code_type, const char *bundle_id, /*out*/char 
 	bundle_free_mmeb(mmeb);
 
 	if (use_default) {
-		INFO_MSG("Can't find code for bundle %s, using default code.", bundle_id);
+		LOG_MSG(LOG__INFO, false, "Can't find code for bundle %s, using default code.", bundle_id);
 		if ((*code_l = get_default_code(code_type, code)) == -1) {
-			err_msg(false, "Error loading default code");
+			LOG_MSG(LOG__ERROR, false, "Error loading default code");
 			*code_l = 0;
 			goto end;
 		}

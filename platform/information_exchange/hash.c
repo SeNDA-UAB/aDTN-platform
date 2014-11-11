@@ -13,7 +13,7 @@ struct nb_info *init_nb(const char *id, const char *ip, const int port, long int
 	nb->first_seen = first_seen;
 	nb->last_seen = first_seen;
 	if (pthread_rwlock_init(&nb->rwlock, NULL) != 0)
-		err_msg(true, "pthread_rwlock_init()");
+		LOG_MSG(LOG__ERROR, true, "pthread_rwlock_init()");
 
 	return nb;
 }

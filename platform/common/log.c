@@ -9,6 +9,17 @@
 static int initiated = 0;
 static FILE *error_log_f;
 static FILE *info_log_f;
+static int debug_lvl = 4;
+
+/*
+Debug levels for log.
+
+LOG__ERROR 0        Error conditions
+LOG__WARNING 1      Warning conditions
+LOG__INFO 2         Informational
+LOG__DEBUG 3        Debug-level messages
+
+*/
 
 void init_log(const char *data_path)
 {
@@ -24,14 +35,14 @@ void init_log(const char *data_path)
 	snprintf(error_log_path, error_log_l, "%s/%s", data_path, ERROR_LOG_FILE);
 	error_log_f = fopen(error_log_path, "a");
 	if (error_log_f == NULL)
-		err_msg(1, "Error opening error logfile %s", error_log_path);
+		LOG_MSG(LOG__ERROR, true, "Error opening error logfile %s", error_log_path);
 
 	int info_log_l = strlen(data_path) + strlen(INFO_LOG_FILE) + 2;
 	info_log_path = (char *)malloc(info_log_l);
 	snprintf(info_log_path, info_log_l, "%s/%s", data_path, INFO_LOG_FILE);
 	info_log_f = fopen(info_log_path, "a");
 	if (info_log_f == NULL)
-		err_msg("Error opening info logfile %s", info_log_path);
+		LOG_MSG(LOG__ERROR, false, "Error opening info logfile %s", info_log_path);
 
 	free(error_log_path);
 	free(info_log_path);
@@ -113,13 +124,19 @@ static void generate_infomsg(char buf[MAX_LOG_MSG],
 {
 	char userMsg[MAX_LOG_MSG];
 	vsnprintf(userMsg, MAX_LOG_MSG, format, ap);
-
 	snprintf(buf, MAX_LOG_MSG, "%s INFO[%s:%d] %s\n", get_formatted_time(), file, line, userMsg);
 }
 
+static void generate_warnmsg(bool useErr, int err,
+                             char buf[MAX_LOG_MSG], const char *format, const char *file, int line, va_list ap)
+{
+	char userMsg[MAX_LOG_MSG];
+	vsnprintf(userMsg, MAX_LOG_MSG, format, ap);
+	snprintf(buf, MAX_LOG_MSG, "%s WARNING[%s:%d] %s\n", get_formatted_time(), file, line, userMsg);
+}
 
-// Writes to error log and stderr
-void err_message(const bool useErr, const char *file, int line, const char *format, ...)
+//Writes to info log
+void log_info_message(const int debug_level, const char *file, int line, const char *format, ...)
 {
 	va_list argList;
 	int savedErrno;
@@ -127,21 +144,24 @@ void err_message(const bool useErr, const char *file, int line, const char *form
 
 	savedErrno = errno;       /* In case we change it here */
 
-	va_start(argList, format);
-	generate_errmsg(useErr, errno, buf, format, file, line, argList);
-	va_end(argList);
+	if (debug_level <= debug_lvl) {
+		va_start(argList, format);
+		generate_infomsg(buf, format, file, line, argList);
+		va_end(argList);
 
-	fputs(buf, stderr);
-	if (error_log_f != NULL) {
-		fwrite(buf, strlen(buf), 1, error_log_f);
-		fflush(error_log_f);
+		printf("%s", buf);
+		fflush(stdout);
+		if (info_log_f != NULL) {
+			fwrite(buf, strlen(buf), 1, info_log_f);
+			fflush(info_log_f);
+		}
 	}
 
 	errno = savedErrno;
 }
 
-//Writes to info log
-void info_message(const char *file, int line, const char *format, ...)
+// Writes to error log and stderr
+void log_err_message(const int debug_level, const bool useErr, const char *file, int line, const char *format, ...)
 {
 	va_list argList;
 	int savedErrno;
@@ -149,15 +169,19 @@ void info_message(const char *file, int line, const char *format, ...)
 
 	savedErrno = errno;       /* In case we change it here */
 
-	va_start(argList, format);
-	generate_infomsg(buf, format, file, line, argList);
-	va_end(argList);
+	if (debug_level <= debug_lvl) {
+		va_start(argList, format);
+		if (debug_level == LOG__ERROR)
+			generate_errmsg(useErr, errno, buf, format, file, line, argList);
+		else
+			generate_warnmsg(useErr, errno, buf, format, file, line, argList);
+		va_end(argList);
 
-	printf("%s", buf);
-	fflush(stdout);
-	if (info_log_f != NULL) {
-		fwrite(buf, strlen(buf), 1, info_log_f);
-		fflush(info_log_f);
+		fputs(buf, stderr);
+		if (error_log_f != NULL) {
+			fwrite(buf, strlen(buf), 1, error_log_f);
+			fflush(error_log_f);
+		}
 	}
 
 	errno = savedErrno;
@@ -171,4 +195,14 @@ void end_log()
 		fclose(error_log_f);
 	if (info_log_f != NULL)
 		fclose(info_log_f);
+}
+
+void set_debug_lvl(const int lvl)
+{
+	if (lvl < 0)
+		debug_lvl = 0;
+	else if (lvl > 4)
+		debug_lvl = 4;
+	else
+		debug_lvl = lvl;
 }

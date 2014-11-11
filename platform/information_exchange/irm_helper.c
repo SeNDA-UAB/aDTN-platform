@@ -2,10 +2,10 @@
 	do{                                                         \
 		int r = snprintf(__VA_ARGS__);                          \
 		if (r >= MAX_RIT_PATH){                                 \
-			err_msg(0, "nb_path too long");                     \
+			LOG_MSG(LOG__ERROR, false, "nb_path too long");     \
 			continue;                                           \
 		} else if (r < 0){                                      \
-			err_msg(1, "snprintf()");                           \
+			LOG_MSG(LOG__ERROR, true, "snprintf()");            \
 			continue;                                           \
 		}                                                       \
 	} while(0);
@@ -64,15 +64,15 @@ int store_announceables(char *rit_announceables)
 	while (next_announceable != NULL) {
 		char *s = strchr(next_announceable, '=');
 		if (s == NULL) {
-			err_msg(0, "Invalid announceable, it does not has a value");
+			LOG_MSG(LOG__ERROR, false, "Invalid announceable, it does not has a value");
 			goto next;
 		}
 		*s = '\0'; // Set termination char
 		snprintf(out_branch + off, MAX_RIT_PATH - off, "%s", next_announceable);
-		INFO_MSG("Storing received announceable %s=%s", out_branch, s + 1);
+		LOG_MSG(LOG__INFO, false, "Storing received announceable %s=%s", out_branch, s + 1);
 
 		if (rit_set(out_branch, s + 1) != 0)
-			err_msg(0, "rit_set()");
+			LOG_MSG(LOG__ERROR, false, "rit_set()");
 next:
 		next_announceable = strtok_r(NULL, "|", &next_announceable_saveptr);
 	}
@@ -97,14 +97,14 @@ int store_nbs_info_to_rit(struct nbs_list *nbs)
 
 	// Unset nbs
 	if (rit_delete(NBS_BRANCH, 1) != 0)
-		err_msg(0, "Error removing old nbs from the RIT");
+		LOG_MSG(LOG__ERROR, false, "Error removing old nbs from the RIT");
 
 	off = snprintf(nb_path, MAX_RIT_PATH, "%s/", NBS_INFO);
 	if (off >= MAX_RIT_PATH) {
-		err_msg(0, "NBS_INFO path too long");
+		LOG_MSG(LOG__ERROR, false, "NBS_INFO path too long");
 		goto end;
 	} else if (off < 0) {
-		err_msg(1, "snprintf()");
+		LOG_MSG(LOG__ERROR, true, "snprintf()");
 		goto end;
 	}
 
@@ -113,7 +113,7 @@ int store_nbs_info_to_rit(struct nbs_list *nbs)
 		// Store IP
 		SNPRINTF(nb_path + off, MAX_RIT_PATH - off, "%s/ip", elt->id);
 		if (rit_set(nb_path, elt->ip, 1) != 0) {
-			err_msg(false, "Error setting nb %s info into RIT", elt->id);
+			LOG_MSG(LOG__ERROR, false, "Error setting nb %s info into RIT", elt->id);
 			continue;
 		}
 		// Store port
@@ -121,7 +121,7 @@ int store_nbs_info_to_rit(struct nbs_list *nbs)
 		char port_string[6];
 		snprintf(port_string, sizeof(port_string), "%d", elt->port);
 		if (rit_set(nb_path, port_string, 1) != 0) {
-			err_msg(false, "Error setting nb %s info into RIT", elt->id);
+			LOG_MSG(LOG__ERROR, false, "Error setting nb %s info into RIT", elt->id);
 			continue;
 		}
 

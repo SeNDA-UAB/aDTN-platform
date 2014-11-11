@@ -19,7 +19,7 @@ struct adtn_stat {
 struct adtn_stat *open_adtn_stat(const char *stat, action_t action)
 {
 	if (stat == NULL || *stat == '\0') {
-		err_msg(true, "open_adtn_stat(): Invalid path");
+		LOG_MSG(LOG__ERROR, true, "open_adtn_stat(): Invalid path");
 		return NULL;
 	}
 
@@ -27,10 +27,10 @@ struct adtn_stat *open_adtn_stat(const char *stat, action_t action)
 	int full_path_l;
 	full_path_l = snprintf(full_path, 1024, "/%s", stat);
 	if (full_path_l < 0) {
-		err_msg(true, "open_adtn_stat(): snprintf()");
+		LOG_MSG(LOG__ERROR, true, "open_adtn_stat(): snprintf()");
 		return NULL;
 	} else if (full_path_l > 1024) {
-		err_msg(true, "open_adtn_stat(): path to long");
+		LOG_MSG(LOG__ERROR, true, "open_adtn_stat(): path to long");
 		return NULL;
 	}
 
@@ -41,7 +41,7 @@ struct adtn_stat *open_adtn_stat(const char *stat, action_t action)
 		fd = shm_open(full_path, O_RDONLY, 0);
 	}
 	if (fd == -1) {
-		err_msg(true, "open_adtn_stat(): shm_open()");
+		LOG_MSG(LOG__ERROR, true, "open_adtn_stat(): shm_open()");
 		return NULL;
 	}
 
@@ -49,13 +49,13 @@ struct adtn_stat *open_adtn_stat(const char *stat, action_t action)
 		struct stat ms;
 		if (fstat(fd, &ms) != 0) {
 			close(fd);
-			err_msg(true, "open_adtn_stat(): fstat():");
+			LOG_MSG(LOG__ERROR, true, "open_adtn_stat(): fstat():");
 			return NULL;
 		}
 		if (ms.st_size == 0) {
 			if (ftruncate(fd, sizeof(struct adtn_stat)) != 0) {
 				close(fd);
-				err_msg(true, "open_adtn_stat(): ftruncate()");
+				LOG_MSG(LOG__ERROR, true, "open_adtn_stat(): ftruncate()");
 				return NULL;
 			}
 		}
@@ -68,7 +68,7 @@ struct adtn_stat *open_adtn_stat(const char *stat, action_t action)
 		new_adtn_stat = mmap(NULL, sizeof(struct adtn_stat), PROT_READ, MAP_SHARED, fd, 0);
 	if (new_adtn_stat == MAP_FAILED) {
 		close(fd);
-		err_msg(true, "set_stat(): mmap():");
+		LOG_MSG(LOG__ERROR, true, "set_stat(): mmap():");
 		return NULL;
 	}
 
@@ -80,7 +80,7 @@ struct adtn_stat *open_adtn_stat(const char *stat, action_t action)
 int close_adtn_stat(struct adtn_stat *stat_to_unmap)
 {
 	if (munmap(stat_to_unmap, (sizeof(struct adtn_stat))) != 0) {
-		err_msg(true, "close_adtn_stat(): munmap():");
+		LOG_MSG(LOG__ERROR, true, "close_adtn_stat(): munmap():");
 		return 1;
 	}
 
@@ -93,7 +93,7 @@ float get_stat(const char *stat)
 	if (stat_to_get != NULL) {
 		float stat_value = strtof(stat_to_get->value, NULL);
 		if (stat_value > FLT_MAX || stat_value < -FLT_MAX) {
-			err_msg(true, "get_stat(): Stored value too big", 0);
+			LOG_MSG(LOG__ERROR, true, "get_stat(): Stored value too big");
 			close_adtn_stat(stat_to_get);
 			return -2;
 		} else {
@@ -169,15 +169,15 @@ int remove_stat(const char *stat)
 	int full_path_l;
 	full_path_l = snprintf(full_path, 1024, "%s%s", BASE_PATH, stat);
 	if (full_path_l < 0) {
-		err_msg(true, "open_adtn_stat(): snprintf()");
+		LOG_MSG(LOG__ERROR, true, "open_adtn_stat(): snprintf()");
 		return 1;
 	} else if (full_path_l > 1024) {
-		err_msg(false, "open_adtn_stat(): path to long");
+		LOG_MSG(LOG__ERROR, false, "open_adtn_stat(): path to long");
 		return 1;
 	}
 
 	if (shm_unlink(full_path) == -1) {
-		err_msg(true, "remove_stat(): Can't remove stat");
+		LOG_MSG(LOG__ERROR, true, "remove_stat(): Can't remove stat");
 		return 1;
 	} else {
 		return 0;

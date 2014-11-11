@@ -16,7 +16,7 @@
 void kill_child(int *pid)
 {
 	if (*pid != 0) {
-		INFO_MSG("Child %d killed", *pid);
+		LOG_MSG(LOG__INFO, false, "Child %d killed", *pid);
 		kill(*pid, SIGTERM);
 	}
 }
@@ -44,9 +44,9 @@ void executor_process(int sv)
 
 	// Allow termination of the process
 	if (sigaddset(&unblocked_sigs, SIGTERM) != 0)
-		err_msg(true, "sigaddset()", errno);
+		LOG_MSG(LOG__ERROR, true, "sigaddset()");
 	if (sigaddset(&unblocked_sigs, SIGINT) != 0)
-		err_msg(true, "sigaddset()", errno);
+		LOG_MSG(LOG__ERROR, true, "sigaddset()");
 	sigprocmask(SIG_UNBLOCK, &unblocked_sigs, NULL);
 
 	// if (signal(SIGTERM, clean) == SIG_ERR)
@@ -70,23 +70,23 @@ void executor_process(int sv)
 		// Wait for petition
 		errno = 0;
 		p_l = recv(sv, &p, sizeof(p), 0);
-		INFO_MSG("Child %u: Received petition for executing bundle %s", pid, p.bundle_id);
+		LOG_MSG(LOG__INFO, false, "Child %u: Received petition for executing bundle %s", pid, p.bundle_id);
 
 		if (p_l != sizeof(p)) {
-			err_msg(false, "Received incorrect petition");
+			LOG_MSG(LOG__ERROR, false, "Received incorrect petition");
 			continue;
 		}
 
 		switch (p.code_type) {
 		case ROUTING_CODE:
-			INFO_MSG("Child %u: Executing bundle %s with code_dl loaded in address %p", pid, p.bundle_id, p.routing_dl);
+			LOG_MSG(LOG__INFO, false, "Child %u: Executing bundle %s with code_dl loaded in address %p", pid, p.bundle_id, p.routing_dl);
 
 			if (execute_routing_code(p.routing_dl, p.dest, &r_result) != 0) {
-				err_msg(false, "Error executing code (type %d) from bundle %s.", p.code_type, p.bundle_id);
+				LOG_MSG(LOG__ERROR, false, "Error executing code (type %d) from bundle %s.", p.code_type, p.bundle_id);
 				goto end;
 			}
 			if ((r_result.hops_list_l * MAX_ID_LEN) > MAX_HOPS_LEN) {
-				err_msg(false, "Response too long (too many hops?). Probably something went worng.");
+				LOG_MSG(LOG__ERROR, false, "Response too long (too many hops?). Probably something went worng.");
 				goto end;
 			}
 
@@ -103,11 +103,11 @@ void executor_process(int sv)
 		case PRIO_CODE:
 			switch (p.code_type) {
 			case LIFE_CODE:
-				INFO_MSG("Child %u: Executing bundle %s with code_dl loaded in address %p", pid, p.bundle_id, p.life_dl);
+				LOG_MSG(LOG__INFO, false, "Child %u: Executing bundle %s with code_dl loaded in address %p", pid, p.bundle_id, p.life_dl);
 				ret_tmp = execute_no_helpers_code(p.code_type, p.life_dl, &n_result);
 				break;
 			case PRIO_CODE:
-				INFO_MSG("Child %u: Executing bundle %s with code_dl loaded in address %p", pid, p.bundle_id, p.prio_dl);
+				LOG_MSG(LOG__INFO, false, "Child %u: Executing bundle %s with code_dl loaded in address %p", pid, p.bundle_id, p.prio_dl);
 				ret_tmp = execute_no_helpers_code(p.code_type, p.prio_dl, &n_result);
 				break;
 			default:
@@ -115,7 +115,7 @@ void executor_process(int sv)
 			}
 
 			if (ret_tmp != 0) {
-				err_msg(false, "Error executing code (type %d) from bundle %s.", p.code_type, p.bundle_id);
+				LOG_MSG(LOG__ERROR, false, "Error executing code (type %d) from bundle %s.", p.code_type, p.bundle_id);
 				goto end;
 			}
 
@@ -124,7 +124,7 @@ void executor_process(int sv)
 			r.simple.result = n_result;
 			break;
 		default:
-			err_msg(false, "Invalid code type received");
+			LOG_MSG(LOG__ERROR, false, "Invalid code type received");
 			goto end;
 		}
 
@@ -135,14 +135,14 @@ end:
 
 		// Return result
 		if (send(sv, &r, r_l, 0) != r_l) {
-			err_msg(true, "Can't send response.");
+			LOG_MSG(LOG__ERROR, true, "Can't send response.");
 		} else {
-			INFO_MSG("Child %u: Result of bundle %s execution has been sent to the parent", pid, p.bundle_id);
+			LOG_MSG(LOG__INFO, false, "Child %u: Result of bundle %s execution has been sent to the parent", pid, p.bundle_id);
 		}
 
 		// Wait until parent resumes execution
 		if (raise(SIGSTOP) != 0)
-			err_msg(true, "raise()");
+			LOG_MSG(LOG__ERROR, true, "raise()");
 	}
 }
 
@@ -172,13 +172,13 @@ ssize_t restart_child(unsigned child_pid, int old_sv[2], int new_sv[2])
 
 	// Close old sockets
 	if (old_sv[0] != 0 && close(old_sv[0]) != 0)
-		err_msg(true, "close()");
+		LOG_MSG(LOG__ERROR, true, "close()");
 	if (old_sv[1] != 0 && close(old_sv[1]) != 0)
-		err_msg(true, "close()");
+		LOG_MSG(LOG__ERROR, true, "close()");
 
 	// Create new sockets
 	if (socketpair(AF_UNIX, SOCK_DGRAM, 0, new_sv) != 0) {
-		err_msg(true, "socketpair()");
+		LOG_MSG(LOG__ERROR, true, "socketpair()");
 		goto end;
 	}
 
@@ -186,7 +186,7 @@ ssize_t restart_child(unsigned child_pid, int old_sv[2], int new_sv[2])
 	if (is_child_alive(child_pid)) {
 		kill(child_pid, SIGTERM);
 		wait(&status);
-		INFO_MSG("Child %u killed", child_pid);
+		LOG_MSG(LOG__INFO, false, "Child %u killed", child_pid);
 	}
 
 	// Create new child
@@ -242,7 +242,7 @@ ssize_t remove_bundle(const char *bundle_id)
 	if (b_dl->dls.routing != NULL) {
 		path_to_delete = get_so_path(bundle_id, ROUTING_CODE);
 		if (unlink(path_to_delete) != 0) {
-			err_msg(1, "Error removing %s", path_to_delete);
+			LOG_MSG(LOG__ERROR, true, "Error removing %s", path_to_delete);
 			ret |= 1;
 		}
 		free(path_to_delete);
@@ -251,7 +251,7 @@ ssize_t remove_bundle(const char *bundle_id)
 	if (b_dl->dls.life != NULL) {
 		path_to_delete = get_so_path(bundle_id, LIFE_CODE);
 		if (unlink(path_to_delete) != 0) {
-			err_msg(1, "Error removing %s", path_to_delete);
+			LOG_MSG(LOG__ERROR, true, "Error removing %s", path_to_delete);
 			ret |= 1;
 		}
 		free(path_to_delete);
@@ -260,7 +260,7 @@ ssize_t remove_bundle(const char *bundle_id)
 	if (b_dl->dls.prio != NULL) {
 		path_to_delete = get_so_path(bundle_id, PRIO_CODE);
 		if (unlink(path_to_delete) != 0) {
-			err_msg(1, "Error removing %s", path_to_delete);
+			LOG_MSG(LOG__ERROR, true, "Error removing %s", path_to_delete);
 			ret |= 1;
 		}
 		free(path_to_delete);
@@ -295,7 +295,7 @@ void worker_thread(worker_params *params)
 	// Prepare child comm.
 	if (socketpair(AF_UNIX, SOCK_DGRAM, 0, sv) != 0) {
 		ret = 1;
-		err_msg(true, "socketpair()");
+		LOG_MSG(LOG__ERROR, true, "socketpair()");
 		goto end;
 	}
 
@@ -323,7 +323,7 @@ void worker_thread(worker_params *params)
 
 		// Received execution petition
 		if (FD_ISSET(params->main_socket, &readfds)) {
-			INFO_MSG("Thread %d: Execution command received", params->thread_num);
+			LOG_MSG(LOG__INFO, false, "Thread %d: Execution command received", params->thread_num);
 
 			state = RECV_PETITION;
 			while (cont) {
@@ -331,14 +331,14 @@ void worker_thread(worker_params *params)
 				case RECV_PETITION:
 					p_l = recvfrom(params->main_socket, &p, sizeof(p), MSG_DONTWAIT, (struct sockaddr *)&src_addr, (socklen_t *)&src_addr_l);
 					if (p_l <= 0 && errno != EWOULDBLOCK) {
-						err_msg(true, "Thread %d: Error reading pettiion", params->thread_num);
+						LOG_MSG(LOG__ERROR, true, "Thread %d: Error reading pettiion", params->thread_num);
 						state = END;
 						continue;
 					} else if (p_l < 0 && (errno == EWOULDBLOCK || errno == EAGAIN)) {
 						state = END;
 						continue;
 					}
-					INFO_MSG("Thread %d: Execution for bundle %s received from %s", params->thread_num, p.header.bundle_id, src_addr.sun_path);
+					LOG_MSG(LOG__INFO, false, "Thread %d: Execution for bundle %s received from %s", params->thread_num, p.header.bundle_id, src_addr.sun_path);
 
 					if (p.header.petition_type == RM)
 						state = RM_BUNDLE;
@@ -348,10 +348,10 @@ void worker_thread(worker_params *params)
 
 				case RM_BUNDLE:
 					if (remove_bundle(p.header.bundle_id) != 0) {
-						err_msg(0, "Thread %d: Can't remove bundle %s", params->thread_num, p.header.bundle_id);
+						LOG_MSG(LOG__ERROR, false, "Thread %d: Can't remove bundle %s", params->thread_num, p.header.bundle_id);
 						state = RM_ERROR;
 					} else {
-						INFO_MSG("Thread %d: Removed bundle %s", params->thread_num, p.header.bundle_id);
+						LOG_MSG(LOG__INFO, false, "Thread %d: Removed bundle %s", params->thread_num, p.header.bundle_id);
 						state = RM_OK;
 					}
 
@@ -374,10 +374,7 @@ void worker_thread(worker_params *params)
 						state = NOTIFY_CHILD_RESPAWN_AND_RESPAWN;
 						break;
 					default:
-						err_msg(false,
-						        "Thread %d: Error loading code from bundle %s.",
-						        params->thread_num,
-						        p.header.bundle_id);
+						LOG_MSG(LOG__ERROR, false, "Thread %d: Error loading code from bundle %s.", params->thread_num, p.header.bundle_id);
 						state = EXEC_ERROR;
 						break;
 					}
@@ -388,9 +385,9 @@ void worker_thread(worker_params *params)
 					pthread_mutex_lock(params->respawn_child_mutex[params->thread_num]);
 					child_pid = restart_child(child_pid, sv, sv);
 					if (child_pid == -1) {
-						err_msg(false, "Thread %d: Error creating a new child", params->thread_num);
+						LOG_MSG(LOG__ERROR, false, "Thread %d: Error creating a new child", params->thread_num);
 					} else {
-						INFO_MSG("Child %u created", child_pid)
+						LOG_MSG(LOG__INFO, false, "Child %u created", child_pid);
 					}
 					params->respawn_child[params->thread_num] = 0;
 					pthread_mutex_unlock(params->respawn_child_mutex[params->thread_num]);
@@ -420,9 +417,9 @@ void worker_thread(worker_params *params)
 					}
 
 					if (send(sv[1], &exec_p, sizeof(exec_p), 0) != sizeof(exec_p)) {
-						err_msg(true, "Thread %d: send()", params->thread_num);
+						LOG_MSG(LOG__ERROR, true, "Thread %d: send()", params->thread_num);
 					} else {
-						INFO_MSG("Thread %d: Petition for executing bundle %s with code_dl in address %p sent", params->thread_num, p.header.bundle_id, code_dl);
+						LOG_MSG(LOG__INFO, false, "Thread %d: Petition for executing bundle %s with code_dl in address %p sent", params->thread_num, p.header.bundle_id, code_dl);
 
 						// Wait for child to pause or terminate
 						waitpid(child_pid, &status, WUNTRACED);
@@ -432,21 +429,21 @@ void worker_thread(worker_params *params)
 						bzero(&r, sizeof(r));
 						recv_l = recv(sv[1], &r, sizeof(r), 0);
 						if (recv_l <= 0 || recv_l != sizeof(r)) {
-							err_msg(true, "Thread %d: Error reading response from executor process.", params->thread_num);
+							LOG_MSG(LOG__ERROR, true, "Thread %d: Error reading response from executor process.", params->thread_num);
 							state = EXEC_ERROR;
 						} else {
-							INFO_MSG("Thread %d: Result received from child", params->thread_num);
+							LOG_MSG(LOG__INFO, false, "Thread %d: Result received from child", params->thread_num);
 							state = EXEC_OK;
 						}
 						kill(child_pid, SIGCONT); // Continue child execution
 					} else if (WIFSIGNALED(status)) {
-						err_msg(false, "Thread %d: Error executing code. Child has terminated.", params->thread_num);
+						LOG_MSG(LOG__ERROR, false, "Thread %d: Error executing code. Child has terminated.", params->thread_num);
 
 						SET_RESPAWN_NOTIFICATION(params->thread_num);
 
 						state = EXEC_ERROR;
 					} else {
-						err_msg(false, "Thread %d: Error executing code. Uknown error", params->thread_num);
+						LOG_MSG(LOG__ERROR, false, "Thread %d: Error executing code. Uknown error", params->thread_num);
 
 						SET_RESPAWN_NOTIFICATION(params->thread_num);
 
@@ -475,9 +472,9 @@ void worker_thread(worker_params *params)
 				case SEND_RESULT:
 					r_l = sizeof(r);
 					if (sendto(params->main_socket, &r, r_l, 0, (struct sockaddr *)&src_addr, (socklen_t)sizeof(src_addr)) != r_l)
-						err_msg(true, "Thread %d: Error sending result to client;", params->thread_num);
+						LOG_MSG(LOG__ERROR, true, "Thread %d: Error sending result to client;", params->thread_num);
 					else
-						INFO_MSG("Thread %d: Result send to %s", params->thread_num, src_addr.sun_path);
+						LOG_MSG(LOG__INFO, false, "Thread %d: Result send to %s", params->thread_num, src_addr.sun_path);
 					state = END;
 					break;
 				case END:
