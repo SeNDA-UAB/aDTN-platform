@@ -1,6 +1,0 @@
-#ifndef INC_COMMON_RIT_PATHS
-#define INC_COMMON_RIT_PATHS
-
-
-
-#endif
