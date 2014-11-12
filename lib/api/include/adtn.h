@@ -31,17 +31,13 @@ typedef struct {
 
 /* FUNCTIONS */
 
-//int adtn_socket();
 int adtn_var_socket(socket_params in);
 int adtn_bind(int fd, sock_addr_t *addr);
 int adtn_close(int fd);
 int adtn_shutdown(int fd);
 
-//int adtn_setcodopt(set_opt_args in);
 int adtn_rmcodopt(int fd, int option_name);
 int adtn_setsockopt(int fd, sock_opt_t options);
-//int adtn_addsockdata(int fd, const char* key, const char* value);
-//int adtn_rmsockdata(int fd, const char* key);
 
 int adtn_sendto(int fd, sock_addr_t addr, char *buffer);
 int adtn_recv(int fd, char *buffer, int max_len);

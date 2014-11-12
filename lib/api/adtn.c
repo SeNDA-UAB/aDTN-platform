@@ -65,31 +65,6 @@ typedef struct {
 
 bunsock_s *sockStore;
 
-/**
-    Creates a adtn sockets to send or recv information using the adtn platform.
-
-    aDTN is divided in two parts, one is the API for developers that allow to use functions to send and receive messages. The other one
-    is the core that manages and sends the messages.
-
-    ====================
-    |      Dev API     |
-    ====================
-    |      aDTN Core   |
-    ====================
-
-    The Core makes posible resilience to delay, disruptions and big taxes of errors. The implementation of the paltform allow more than one core to cohexist in
-    the same node(device).
-
-    ==========================
-    |         Dev API        |
-    ==========================
-    |  aDTN Core  | aDTN Core|
-    ==========================
-
-    Config_file allow to swpecify the platform associated with the socket.
-
-    @return a descriptor identifiyng the socket on succes or a value equal or minor to 0 on error.
-*/
 static int adtn_socket_base(const char *data_path)
 {
 	static int UID = 1;
@@ -125,20 +100,6 @@ static int adtn_socket_base(const char *data_path)
 	return sock_id;
 }
 
-/**
-    When adtn socket is created with adtn_socket() it exist in the space name but has no address associated. adtn_bind(2) associates the information
-    specified in the structure sock_addr_t of the second argument to the socket represented by the file descriptor.
-
-    @param fd The file descriptor that identifies the adtn_socket. This value can be obtained calling adtn_socket()
-    @param address A sock_addr_t structure containing information about the address that must be associated with the socket
-
-    @return 0 on succes, diferent from 0 otherwise. If the function return a value different from 0 the variable errno is set.
-
-    errno can take the values below:
-
-    ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-    EACCES      the program hasn't enough permisions to create bind the socket
-*/
 int adtn_var_socket(socket_params in)
 {
 	char default_config_file[CONFIG_FILE_PATH_L] = {0};
@@ -262,17 +223,6 @@ end:
 	return ret;
 }
 
-/**
-    Closes an adtn_socket and frees the memory associated to the socket. The structures associated to the socket
-    in adtn_bind(2) call are freed too.
-
-    @param fd A file descriptor identifying the socket.
-
-    @return 0 on succes, non 0 otherwise. If the function fails errno is set.
-
-    ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-    EACCES      the program hasn't enough permisions to eliminate the socket
-*/
 int adtn_close(int fd)
 {
 	int ret = 1, i = 0;
@@ -326,17 +276,6 @@ end:
 	return ret;
 }
 
-/**
-    Closes an adtn_socket and frees the memory associated to the socket. The structures associated to the socket
-    in adtn_bind(2) call are freed too. If some data are waiting to be readed it will be deleted.
-
-    @param fd A file descriptor identifying the socket.
-
-    @return 0 on succes, non 0 otherwise. If the function fails errno is set.
-
-    ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-    EACCES      the program hasn't enough permisions to eliminate the socket
-*/
 int adtn_shutdown(int fd)
 {
 	bunsock_s *identifier;
@@ -391,27 +330,6 @@ end:
 	return ret;
 }
 
-/**
-    Over ADTN platform the messages can carry codes with him to perform different tasks. [REF]
-    This function allows to add code options to the socket. Each code linked with the socket will be added to outcoming messages sent through the socket.
-    The kind of code associated to the socket is specified by the parameter option_name.
-
-    @param fd A file descriptor identifying the socket.
-    @param option_name determines what kind of code will be associated to the socket. R_CODE will add a routing code. This code will be executed in each hop of
-    the network to determine the next hop. L_CODE will add a life time code. This code will be executed in each node of the network to decide if the message is
-    lapsed or not. P_CODE will add a prioritzation code. This code will affect only to the messages in other nodes that pertain to same application. Is not possible
-    for a code to priorize messages from other applications.
-    @param code This parameter must contain a filename where the code is stored or the full code to associate to socket. The content of this parameter is associated
-    with parameter from_file
-    @param from_file [Optional] If is set to 1 the param code will contain a filename where the routing code is stored. If is set to 0 the param code must contain all
-    code. Default value is 0.
-    @param replace [Optional] If is set to 1 and exists an older code associated to the socket it will be replaced. If is set to 0 and a code is already binded with
-    the socket this function will return an error. Replace is 0 by default
-
-    @return 0 if the code is correctly associated to the socket or non 0 otherwise. If the function fails errno is set
-
-    ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-*/
 int adtn_setcodopt_base(int fd, code_type_e option, const char *code, int from_file, int replace)
 {
 	int ret = 1;
@@ -492,16 +410,6 @@ int adtn_var_setcodopt(set_opt_args in)
 	return ret;
 }
 
-/**
-    Allows to remove an associated code from a socket. See documentation of adtn_setcodopt(4) for more information.
-
-    @param fd A file descriptor identifying the socket
-    @param option_name determines what kind of code will be removed. If the code doesn't exist nothing happens.
-
-    @return 0 if the code is succefully removed of not exist or non 0 otherwise. If the function fails errno is set.
-
-    ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-*/
 int adtn_rmcodopt(int fd, int option)
 {
 	int ret = 1;
@@ -545,16 +453,6 @@ end:
 	return ret;
 }
 
-/**
-    In ADTN messages is posible specify the lifetime of the message and diferents options for headers.
-    These options can be associated to a socket using this function. After calling it, all messages send through the socket will ahve the specified
-    options.
-
-    @param fd A file descriptor identifying the socket
-    @param options a sock_opt_t structure containing the options that must be associated to the socket
-
-    @return 0 on succes or non 0 otherwise
-*/
 int adtn_setsockopt(int fd, sock_opt_t options)
 {
 	int ret = 1;
@@ -690,17 +588,6 @@ end:
 	return ret;
 }
 
-/**
-    Sends a message over ADTN platform. The fact that adtn_sendto call returns a success value doesn't mean that the message has been sent through the network.
-    adtn_sendto() only puts the message in queue to be sent. The platform will manage the send through the network. In opportunistic networks the time
-    until adtn_sendto() returns a succes value and the message is really send is impossible to determine.
-
-    @param fd A file descriptor identifying the socket
-    @param addr sock_addr_t structure containing the destination information. Must contain, the application port and ip of the destination.
-    @param buffer A buffer with the message to send
-
-    @return -1 on error or the number of bytes written on succes.
-*/
 int adtn_sendto(int fd, const sock_addr_t addr, char *buffer)
 {
 	int ret = 1;
@@ -856,18 +743,6 @@ end:
 	return raw_data;
 }
 
-/**
-    Recive a message from adtn_socket. If at the moment of perform the call there are no messages adtn_recv(3) will block
-    until can retrieve a message. After get a message it will be deleted from the socket queue.
-
-    @param fd A file descriptor identifying the socket.
-    @param buffer Char array where the mssg value will be stored
-    @param max_len The maximum number of bytes that will be written into buffer
-
-    @return The number of bytes received on succes or -1 on error. In case of error errno is set.
-
-    ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-*/
 int adtn_recv(int fd, char *buffer, int max_len)
 {
 	unsigned len = 0;
@@ -894,20 +769,6 @@ end:
 	return ret;
 }
 
-/**
-    Recive a message from adtn_socket. If at the moment of perform the call there are no messages adtn_recvfrom(4) will block
-    until can retrieve a message. After get a message it will be deleted from the socket queue. A sock_addr_t struct will be fill with
-    sender information like ip or port.
-
-    @param fd A file descriptor identifying the socket.
-    @param buffer Char array where the mssg value will be stored
-    @param max_len The maximum number of bytes that will be written into buffer
-    @param addr An empty structure that will be filled with information about the sender
-
-    @return The number of bytes received on succes or -1 on error. In case of error errno is set.
-
-    ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-*/
 int adtn_recvfrom(int fd, char *buffer, int max_len, sock_addr_t *addr)
 {
 	int ret = 1;
