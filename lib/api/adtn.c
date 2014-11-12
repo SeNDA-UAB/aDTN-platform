@@ -2,6 +2,7 @@
 #include "common/include/bundle.h"
 #include "common/include/shm.h"
 #include "common/include/config.h"
+#include "common/include/constants.h"
 #include "include/adtn.h"
 
 #include <stdio.h>
@@ -107,11 +108,7 @@ int adtn_var_socket(socket_params in)
 	int ret = -1;
 	char *data_path = NULL;
 
-	if (strcmp(PREFIX, "/usr") == 0)
-		snprintf(default_config_file, CONFIG_FILE_PATH_L, "/etc/adtn/adtn.ini");
-	else
-		snprintf(default_config_file, CONFIG_FILE_PATH_L, "%s/etc/adtn/adtn.ini", PREFIX);
-
+	snprintf(default_config_file, CONFIG_FILE_PATH_L, DEFAULT_CONF_FILE_PATH);
 	config_file = in.config_file ? strdup(in.config_file) : strdup(default_config_file);
 
 	struct conf_list ritm_configuration = {0};
