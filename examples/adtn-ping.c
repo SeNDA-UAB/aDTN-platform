@@ -136,7 +136,7 @@ static void parse_arguments(int argc, char *const argv[])
 		if (opt == -1)
 			break;
 	}
-	if (argc > 1) {
+	if (argc > 1 && optind < argc) {
 		conf.dest_platform_id = strdup(argv[optind]); // argv[optind] is the next argument after all option chars
 	} else {
 		help(argv[0]);
