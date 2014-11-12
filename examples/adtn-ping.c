@@ -98,12 +98,12 @@ static void parse_arguments(int argc, char *const argv[])
 {
 	int opt = -1, option_index = 0;
 	static struct option long_options[] = {
-		{"help",            no_argument,            0,      'h'},
-		{"conf_file",       no_argument,            0,      'f'},
-		{"count",           no_argument,            0,      'c'},
-		{"size",            no_argument,            0,      's'},
-		{"interval",        no_argument,            0,      'i'},
-		{"lifetime",        no_argument,            0,      'l'},
+		{"help",            no_argument,            	0,      'h'},
+		{"conf_file",       required_argument,			0,      'f'},
+		{"count",           required_argument,			0,      'c'},
+		{"size",            required_argument,			0,      's'},
+		{"interval",        required_argument,			0,      'i'},
+		{"lifetime",        required_argument,			0,      'l'},
 		{0, 0, 0, 0}
 	};
 	while ((opt = getopt_long(argc, argv, "hf:c:s:i:l:", long_options, &option_index))) {
