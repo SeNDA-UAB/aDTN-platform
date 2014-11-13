@@ -11,6 +11,78 @@
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 
+/* Administrative records */
+typedef enum {
+	SR_RECV    = 0x01,                      // Reporting node received bundle.
+	SR_ACC     = 0x02,                      // Reporting node accepted custody of bundle.
+	SR_FORW    = 0x04,                      // Reporting node forwarded the bundle. 
+	SR_DELI    = 0x08,                      // Reporting node delivered the bundle. 
+	SR_DEL     = 0x10,                      // Reporting node deleted the bundle.
+} sr_status_flags_e;
+
+typedef enum {
+    RC_NO_ADD_INFO          = 0x0,          // No additional information.       
+    RC_LIFE_EXPIRED         = 0x1,          // Lifetime expired. 
+    RC_UNI_FORW             = 0x2,          // Forwarded over unidirectional link.
+    RC_TRANS_CANCEL         = 0x3,          // Transmission canceled
+    RC_DEPELTED_STOR        = 0x4,          // Depleted storage.  
+    RC_DEST_END_UNIN        = 0x5,          // Destination endpoint ID unintelligible.
+    RC_NO_ROUTE_DEST        = 0x6,          // No known route to destination from here. 
+    RC_NO_TIMElY_CONT       = 0x7,          // No timely contact with next node on route.
+    RC_BLOCK_UNIN           = 0x8           // Block unintelligible.
+} sr_reason_codes_e;
+
+typedef struct _bundle_sr {
+	uint8_t status_flags;
+	uint8_t reason_codes;
+	int64_t fragment_offset; 			//SDNV
+	int64_t fragment_length; 			//SDNV
+	int64_t sec_time_of_receipt; 		//SDNV
+	int64_t usec_time_of_receipt; 		//SDNV
+
+	int64_t sec_time_of_qustody; 		//SDNV
+	int64_t usec_time_of_qustody; 		//SDNV
+
+	int64_t sec_time_of_forwarding; 	//SDNV
+	int64_t usec_time_of_forwarding; 	//SDNV
+
+	int64_t sec_time_of_delivery; 		//SDNV
+	int64_t usec_time_of_delivery; 		//SDNV
+
+	int64_t sec_time_of_deletion; 		//SDNV
+	int64_t usec_time_of_deletion; 		//SDNV
+
+	int64_t cp_creation_timestamp; 		//SDNV
+	int64_t cp_creation_ts_seq_num; 	//SDNV
+	int64_t source_EID_len; 			//SDNV
+	char *source_EID;
+} status_report_s;
+
+union _ar_body {
+	/* Status report */
+	status_report_s *sr;
+	/* TODO: custody signal */
+};
+
+typedef enum {
+	AR_SR = 0x01,
+	AR_CS = 0x02
+} ar_type_e;
+
+typedef enum {
+	AR_FRAGMENT = 0x01
+} ar_flags_s;
+
+typedef struct _adm_record_s {
+	uint8_t type:4;
+	uint8_t flags:4;
+	union _ar_body body;
+} adm_record_s;
+
+/**/
+
+/** Extension blocks **/
+
 typedef enum {
 	ROUTING_CODE = 0x01,
 	PRIO_CODE = 0x02,
@@ -33,7 +105,6 @@ typedef enum {
 typedef enum {
 	MMEB_B = 0x10
 } meta_block_type;
-/** Extension blocks **/
 
 /* Metadata extension blocks */
 
@@ -224,56 +295,13 @@ int bundle_create_raw(const bundle_s *bundle, /*out*/uint8_t **bundle_raw); // R
 /**************************/
 
 /************* Bundle status reports creation *************/
-typedef enum {
-	SR_RECV    = 0x01,                      // Reporting node received bundle.
-	SR_ACC     = 0x02,                      // Reporting node accepted custody of bundle.
-	SR_FORW    = 0x04,                      // Reporting node forwarded the bundle. 
-	SR_DELI    = 0x08,                      // Reporting node delivered the bundle. 
-	SR_DEL     = 0x16,                      // Reporting node deleted the bundle.
-} sr_status_flags_e;
+adm_record_s *bundle_ar_new(ar_type_e type);
+int bundle_ar_free(adm_record_s *ar);
+int bundle_ar_raw(adm_record_s *ar, /*out*/uint8_t **ar_raw );
 
-typedef enum {
-    RC_NO_ADD_INFO          = 0x0,          // No additional information.       
-    RC_LIFE_EXPIRED         = 0x1,          // Lifetime expired. 
-    RC_UNI_FORW             = 0x2,          // Forwarded over unidirectional link.
-    RC_TRANS_CANCEL         = 0x3,          // Transmission canceled
-    RC_DEPELTED_STOR        = 0x4,          // Depleted storage.  
-    RC_DEST_END_UNIN        = 0x5,          // Destination endpoint ID unintelligible.
-    RC_NO_ROUTE_DEST        = 0x6,          // No known route to destination from here. 
-    RC_NO_TIMElY_CONT       = 0x7,          // No timely contact with next node on route.
-    RC_BLOCK_UNIN           = 0x8           // Block unintelligible.
-} reason_codes_e;
-
-typedef struct _bundle_sr {
-	sr_status_flags_e status_flags;
-	reason_codes_e reason_codes;
-	uint64_t fragment_offset; //SDNV
-	uint64_t fragment_length; //SDNV
-	uint64_t sec_time_of_receipt; //SDNV
-	uint64_t usec_time_of_receipt; //SDNV
-
-	uint64_t sec_time_of_qustody; //SDNV
-	uint64_t usec_time_of_qustody; //SDNV
-
-	uint64_t sec_time_of_forwarding; //SDNV
-	uint64_t usec_time_of_forwarding; //SDNV
-
-	uint64_t sec_time_of_delivery; //SDNV
-	uint64_t usec_time_of_delivery; //SDNV
-
-	uint64_t sec_time_of_deletion; //SDNV
-	uint64_t usec_time_of_deletion; //SDNV
-
-	uint64_t cp_creation_timestamp; //SDNV
-	uint64_t cp_creation_ts_seq_num; //SDNV
-	uint64_t source_EID_len; //SDNV
-	char *source_EID;
-} bundle_sr;
-
-bundle_sr *bundle_sr_new();
-int bundle_sr_free(bundle_sr *sr);
-int bundle_sr_raw(bundle_sr *sr, /*out*/uint8_t **sr_raw);
-bundle_s *bundle_sr_new_reception_status(const char *src, struct timeval recv_time, const uint8_t *recv_bundle_raw, const int recv_bundle_raw_l);
+bundle_s *bundle_new_sr(
+	const sr_status_flags_e sr_status_flag, const uint8_t reason_codes, 
+	const char *source_eid, struct timeval orig_bundle_recv_time, const uint8_t *orig_bundle_raw);
 /**************************/
 
 

@@ -529,158 +529,242 @@ end:
 	return ret;
 }
 
-/* Bundle status report functions*/
-bundle_sr *bundle_sr_new()
+/* Administrative records functions*/
+adm_record_s *bundle_ar_new(ar_type_e type)
 {
-	bundle_sr *sr = (bundle_sr *)calloc(1, sizeof(bundle_sr));
+	adm_record_s *ar = (adm_record_s *)calloc(1, sizeof(adm_record_s));
 
-	return sr;
+	switch (type) {
+	case AR_SR:
+		ar->type = type;
+		ar->body.sr = (status_report_s *)malloc(sizeof(status_report_s));
+
+		// Set all fields to -1 so we could know when they are set.
+		memset(ar->body.sr, -1, sizeof(*ar->body.sr));
+		memset(&ar->body.sr->status_flags, 0 , sizeof(ar->body.sr->status_flags));
+		memset(&ar->body.sr->reason_codes, 0 , sizeof(ar->body.sr->reason_codes));
+
+		break;
+	case AR_CS:
+		fprintf(stderr, "Not implemented\n");
+		free(ar);
+		ar = NULL;
+		break;
+	}
+
+	return ar;
 }
 
-int bundle_sr_free(bundle_sr *sr)
+int bundle_ar_free(adm_record_s *ar)
 {
-	free(sr);
+	int ret = 0;
 
-	return 0;
+	switch (ar->type) {
+	case AR_SR:
+		if (ar) {
+			if (ar->body.sr)
+				free(ar->body.sr);
+			free(ar);
+		}
+		break;
+	case AR_CS:
+		fprintf(stderr, "Not implemented\n");
+		free(ar);
+		ar = NULL;
+		break;
+	}
+
+	return ret;
 }
 
-int bundle_sr_raw(bundle_sr *sr, /*out*/uint8_t **sr_raw)
+static int bundle_ar_sr_raw(status_report_s *ar_sr, /*out*/uint8_t **ar_sr_raw)
 {
-	int sr_raw_l, off = 0;;
+	int ar_sr_raw_l, off = 0;;
 
 	// Calculate sr length
-	sr_raw_l = sizeof(sr->status_flags) + sizeof(sr->reason_codes);
-	if (sr->fragment_offset)
-		sr_raw_l += sdnv_encoding_len(sr->fragment_offset);
-	if (sr->fragment_length)
-		sr_raw_l += sdnv_encoding_len(sr->fragment_length);
-	if (sr->sec_time_of_receipt)
-		sr_raw_l += sdnv_encoding_len(sr->sec_time_of_receipt);
-	//sr_raw_l += sizeof(sr->sec_time_of_receipt);
-	if (sr->usec_time_of_receipt)
-		sr_raw_l += sdnv_encoding_len(sr->usec_time_of_receipt);
-	//sr_raw_l += sizeof(sr->usec_time_of_receipt);
-	if (sr->sec_time_of_qustody)
-		sr_raw_l += sdnv_encoding_len(sr->sec_time_of_qustody);
-	if (sr->usec_time_of_qustody)
-		sr_raw_l += sdnv_encoding_len(sr->usec_time_of_qustody);
-	if (sr->sec_time_of_forwarding)
-		sr_raw_l += sdnv_encoding_len(sr->sec_time_of_forwarding);
-	if (sr->usec_time_of_forwarding)
-		sr_raw_l += sdnv_encoding_len(sr->usec_time_of_forwarding);
-	if (sr->sec_time_of_delivery)
-		sr_raw_l += sdnv_encoding_len(sr->sec_time_of_delivery);
-	if (sr->usec_time_of_delivery)
-		sr_raw_l += sdnv_encoding_len(sr->usec_time_of_delivery);
-	if (sr->sec_time_of_deletion)
-		sr_raw_l += sdnv_encoding_len(sr->sec_time_of_deletion);
-	if (sr->usec_time_of_deletion)
-		sr_raw_l += sdnv_encoding_len(sr->usec_time_of_deletion);
-	sr_raw_l += sdnv_encoding_len(sr->cp_creation_timestamp);
-	//sr_raw_l += sizeof(sr->cp_creation_timestamp);
-	sr_raw_l += sdnv_encoding_len(sr->cp_creation_ts_seq_num);
-	//sr_raw_l += sizeof(sr->cp_creation_ts_seq_num);
-	if (sr->source_EID_len) {
-		sr_raw_l += sdnv_encoding_len(sr->source_EID_len);
-		sr_raw_l += sr->source_EID_len;
+	ar_sr_raw_l = sizeof(ar_sr->status_flags) + sizeof(ar_sr->reason_codes);
+
+	// The fragment bit is set at the administrative record struct,
+	// to know if we should include fragment information into the status report raw,
+	// we check if the field has been initialized.
+	if (ar_sr->fragment_offset != -1) {
+		ar_sr_raw_l += sdnv_encoding_len(ar_sr->fragment_offset);
+		ar_sr_raw_l += sdnv_encoding_len(ar_sr->fragment_length);
 	}
 
-	*sr_raw = (uint8_t *)malloc(sr_raw_l);
+	if (ar_sr->sec_time_of_receipt != -1)
+		ar_sr_raw_l += sdnv_encoding_len(ar_sr->sec_time_of_receipt);
+	if (ar_sr->usec_time_of_receipt != -1)
+		ar_sr_raw_l += sdnv_encoding_len(ar_sr->usec_time_of_receipt);
+	if (ar_sr->sec_time_of_qustody != -1)
+		ar_sr_raw_l += sdnv_encoding_len(ar_sr->sec_time_of_qustody);
+	if (ar_sr->usec_time_of_qustody != -1)
+		ar_sr_raw_l += sdnv_encoding_len(ar_sr->usec_time_of_qustody);
+	if (ar_sr->sec_time_of_forwarding != -1)
+		ar_sr_raw_l += sdnv_encoding_len(ar_sr->sec_time_of_forwarding);
+	if (ar_sr->usec_time_of_forwarding != -1)
+		ar_sr_raw_l += sdnv_encoding_len(ar_sr->usec_time_of_forwarding);
+	if (ar_sr->sec_time_of_delivery != -1)
+		ar_sr_raw_l += sdnv_encoding_len(ar_sr->sec_time_of_delivery);
+	if (ar_sr->usec_time_of_delivery != -1)
+		ar_sr_raw_l += sdnv_encoding_len(ar_sr->usec_time_of_delivery);
+	if (ar_sr->sec_time_of_deletion != -1)
+		ar_sr_raw_l += sdnv_encoding_len(ar_sr->sec_time_of_deletion);
+	if (ar_sr->usec_time_of_deletion != -1)
+		ar_sr_raw_l += sdnv_encoding_len(ar_sr->usec_time_of_deletion);
+	if (ar_sr->cp_creation_timestamp != -1)
+		ar_sr_raw_l += sdnv_encoding_len(ar_sr->cp_creation_timestamp);
+	if (ar_sr->cp_creation_ts_seq_num != -1)
+		ar_sr_raw_l += sdnv_encoding_len(ar_sr->cp_creation_ts_seq_num);
+
+	if (ar_sr->source_EID_len != -1) {
+		ar_sr_raw_l += sdnv_encoding_len(ar_sr->source_EID_len);
+		ar_sr_raw_l += ar_sr->source_EID_len;
+	}
+
+	*ar_sr_raw = (uint8_t *)malloc(ar_sr_raw_l);
+
 	//Codify sr
-	memcpy(*sr_raw, &sr->status_flags, sizeof(sr->status_flags));
+	memcpy(*ar_sr_raw, &ar_sr->status_flags, sizeof(ar_sr->status_flags));
 	off++;
-	memcpy(*sr_raw + off, &sr->reason_codes, sizeof(sr->reason_codes));
+	memcpy(*ar_sr_raw + off, &ar_sr->reason_codes, sizeof(ar_sr->reason_codes));
 	off++;
 
-	if (sr->fragment_offset)
-		off += sdnv_encode(sr->fragment_offset, *sr_raw + off);
-	if (sr->fragment_length)
-		off += sdnv_encode(sr->fragment_length, *sr_raw + off);
-	if (sr->sec_time_of_receipt)
-		off += sdnv_encode(sr->sec_time_of_receipt, *sr_raw + off);
-	if (sr->usec_time_of_receipt)
-		off += sdnv_encode(sr->usec_time_of_receipt, *sr_raw + off);
-	// if (sr->sec_time_of_receipt){
-	//  memcpy(*sr_raw + off, &sr->sec_time_of_receipt, sizeof(sr->sec_time_of_receipt));
-	//  off += sizeof(sr->sec_time_of_receipt);
-	// }
-	// if (sr->usec_time_of_receipt){
-	//  memcpy(*sr_raw + off, &sr->usec_time_of_receipt, sizeof(sr->usec_time_of_receipt));
-	//  off += sizeof(sr->usec_time_of_receipt);
-	// }
-	if (sr->sec_time_of_qustody)
-		off += sdnv_encode(sr->sec_time_of_qustody, *sr_raw + off);
-	if (sr->usec_time_of_qustody)
-		off += sdnv_encode(sr->usec_time_of_qustody, *sr_raw + off);
-	if (sr->sec_time_of_forwarding)
-		off += sdnv_encode(sr->sec_time_of_forwarding, *sr_raw + off);
-	if (sr->usec_time_of_forwarding)
-		off += sdnv_encode(sr->usec_time_of_forwarding, *sr_raw + off);
-	if (sr->sec_time_of_delivery)
-		off += sdnv_encode(sr->sec_time_of_delivery, *sr_raw + off);
-	if (sr->usec_time_of_delivery)
-		off += sdnv_encode(sr->usec_time_of_delivery, *sr_raw + off);
-	if (sr->sec_time_of_deletion)
-		off += sdnv_encode(sr->sec_time_of_deletion, *sr_raw + off);
-	if (sr->usec_time_of_deletion)
-		off += sdnv_encode(sr->usec_time_of_deletion, *sr_raw + off);
-	off += sdnv_encode(sr->cp_creation_timestamp, *sr_raw + off);
-	off += sdnv_encode(sr->cp_creation_ts_seq_num, *sr_raw + off);
-	// if (sr->cp_creation_timestamp){
-	//  memcpy(*sr_raw + off, &sr->cp_creation_timestamp, sizeof(sr->cp_creation_timestamp));
-	//  off += sizeof(sr->cp_creation_timestamp);
-	// }
-	// if (sr->cp_creation_ts_seq_num){
-	//  memcpy(*sr_raw + off, &sr->cp_creation_ts_seq_num, sizeof(sr->cp_creation_ts_seq_num));
-	//  off += sizeof(sr->cp_creation_ts_seq_num);
-	// }
-	if (sr->source_EID_len) {
-		off += sdnv_encode(sr->source_EID_len, *sr_raw + off);
-		memcpy(*sr_raw + off, sr->source_EID, sr->source_EID_len);
+	if (ar_sr->fragment_offset != -1) {
+		off += sdnv_encode(ar_sr->fragment_offset, *ar_sr_raw + off);
+		off += sdnv_encode(ar_sr->fragment_length, *ar_sr_raw + off);
+	}
+	if (ar_sr->sec_time_of_receipt != -1)
+		off += sdnv_encode(ar_sr->sec_time_of_receipt, *ar_sr_raw + off);
+	if (ar_sr->usec_time_of_receipt != -1)
+		off += sdnv_encode(ar_sr->usec_time_of_receipt, *ar_sr_raw + off);
+	if (ar_sr->sec_time_of_qustody != -1)
+		off += sdnv_encode(ar_sr->sec_time_of_qustody, *ar_sr_raw + off);
+	if (ar_sr->usec_time_of_qustody != -1)
+		off += sdnv_encode(ar_sr->usec_time_of_qustody, *ar_sr_raw + off);
+	if (ar_sr->sec_time_of_forwarding != -1)
+		off += sdnv_encode(ar_sr->sec_time_of_forwarding, *ar_sr_raw + off);
+	if (ar_sr->usec_time_of_forwarding != -1)
+		off += sdnv_encode(ar_sr->usec_time_of_forwarding, *ar_sr_raw + off);
+	if (ar_sr->sec_time_of_delivery != -1)
+		off += sdnv_encode(ar_sr->sec_time_of_delivery, *ar_sr_raw + off);
+	if (ar_sr->usec_time_of_delivery != -1)
+		off += sdnv_encode(ar_sr->usec_time_of_delivery, *ar_sr_raw + off);
+	if (ar_sr->sec_time_of_deletion != -1)
+		off += sdnv_encode(ar_sr->sec_time_of_deletion, *ar_sr_raw + off);
+	if (ar_sr->usec_time_of_deletion != -1)
+		off += sdnv_encode(ar_sr->usec_time_of_deletion, *ar_sr_raw + off);
+	if (ar_sr->cp_creation_timestamp != -1)
+		off += sdnv_encode(ar_sr->cp_creation_timestamp, *ar_sr_raw + off);
+	if (ar_sr->cp_creation_ts_seq_num != -1)
+		off += sdnv_encode(ar_sr->cp_creation_ts_seq_num, *ar_sr_raw + off);
+	if (ar_sr->source_EID_len != -1) {
+		off += sdnv_encode(ar_sr->source_EID_len, *ar_sr_raw + off);
+		memcpy(*ar_sr_raw + off, ar_sr->source_EID, ar_sr->source_EID_len);
 	}
 
-	return sr_raw_l;
+	return ar_sr_raw_l;
 }
 
-bundle_s *bundle_sr_new_reception_status(const char *src, struct timeval recv_time, const uint8_t *recv_bundle_raw, const int recv_bundle_raw_l)
+int bundle_ar_raw(adm_record_s *ar, /*out*/uint8_t **ar_raw )
 {
-	int err = 1, sr_raw_l = 0;
+	int ar_raw_l = 0, ar_body_raw_l = 0;
+	uint8_t *ar_body_raw = NULL;
+
+	ar_raw_l += 1; // Type + flags size
+	switch (ar->type) {
+	case AR_SR:
+		ar_body_raw_l = bundle_ar_sr_raw(ar->body.sr, &ar_body_raw);
+		ar_raw_l += ar_body_raw_l;
+		break;
+	case AR_CS:
+		fprintf(stderr, "Not implemented\n");
+		free(ar);
+		ar = NULL;
+		break;
+	}
+
+	*ar_raw = (uint8_t *)malloc(ar_raw_l);
+	**ar_raw = 0;
+	**ar_raw |= ar->type;
+	**ar_raw |= ar->flags << 4;
+	memcpy(*ar_raw + 1, ar_body_raw, ar_body_raw_l);
+	free(ar_body_raw);
+
+	return ar_raw_l;
+}
+
+bundle_s *bundle_new_sr(
+	const sr_status_flags_e sr_status_flag, const uint8_t reason_codes, 
+	const char *source_eid, struct timeval orig_bundle_recv_time, const uint8_t *orig_bundle_raw)
+{
+	int err = 1, ar_raw_l = 0;
 	char *report_to;
-	bundle_sr *sr = NULL;
-	uint8_t *sr_raw = NULL;
+	adm_record_s *ar = NULL;
+	uint8_t *ar_raw = NULL;
 	uint64_t timestamp_time, timestamp_seq, lifetime;
 	bundle_s *sr_bundle = NULL;
 	payload_block_s *payload = NULL;
 
-	/* Get required information for creating the response */
+	/* Get required information for creating the status report */
 
 	// Get report-to to set it as destination
-	if ((bundle_raw_get_primary_field(recv_bundle_raw, REPORT_SCHEME, &report_to) != 0) || report_to == NULL || *report_to == '\0')
+	if ((bundle_raw_get_primary_field(orig_bundle_raw, REPORT_SCHEME, &report_to) != 0) || report_to == NULL || *report_to == '\0')
 		goto end;
-	if (bunlde_raw_get_timestamp_and_seq(recv_bundle_raw, &timestamp_time, &timestamp_seq) != 0)
+	if (bunlde_raw_get_timestamp_and_seq(orig_bundle_raw, &timestamp_time, &timestamp_seq) != 0)
 		goto end;
-	if (bundle_raw_get_lifetime(recv_bundle_raw, &lifetime))
+	if (bundle_raw_get_lifetime(orig_bundle_raw, &lifetime))
 		goto end;
 	/**/
 
 	// Prepare sr
-	sr = bundle_sr_new();
-	sr->status_flags = sr->status_flags | SR_RECV;
-	sr->reason_codes = sr->reason_codes | RC_NO_ADD_INFO;
-	sr->sec_time_of_receipt = recv_time.tv_sec - RFC_DATE_2000;
-	sr->usec_time_of_receipt = recv_time.tv_usec;
-	sr->cp_creation_timestamp = timestamp_time;
-	sr->cp_creation_ts_seq_num = timestamp_seq;
-	sr->source_EID_len = strlen(src);
-	sr->source_EID = (char *)malloc(sr->source_EID_len);
-	strncpy(sr->source_EID, src, sr->source_EID_len);
-	sr_raw_l = bundle_sr_raw(sr, &sr_raw);
-	if (sr_raw_l <= 0)
+	ar = bundle_ar_new(AR_SR);
+
+	if (!reason_codes)
+		ar->body.sr->reason_codes = RC_NO_ADD_INFO;
+	else
+		ar->body.sr->reason_codes = reason_codes;
+	
+	switch(sr_status_flag){
+		case SR_RECV:
+			ar->body.sr->status_flags = SR_RECV;
+			ar->body.sr->sec_time_of_receipt = orig_bundle_recv_time.tv_sec - RFC_DATE_2000;
+			ar->body.sr->usec_time_of_receipt = orig_bundle_recv_time.tv_usec;
+			break;
+		case SR_ACC:
+			ar->body.sr->status_flags = SR_ACC;
+			ar->body.sr->sec_time_of_qustody = orig_bundle_recv_time.tv_sec - RFC_DATE_2000;
+			ar->body.sr->usec_time_of_qustody = orig_bundle_recv_time.tv_usec;
+			break;
+		case SR_FORW:
+			ar->body.sr->status_flags = SR_FORW;
+			ar->body.sr->sec_time_of_qustody = orig_bundle_recv_time.tv_sec - RFC_DATE_2000;
+			ar->body.sr->usec_time_of_qustody = orig_bundle_recv_time.tv_usec;
+			break;
+		case SR_DELI:
+			ar->body.sr->status_flags = SR_DELI;
+			ar->body.sr->sec_time_of_qustody = orig_bundle_recv_time.tv_sec - RFC_DATE_2000;
+			ar->body.sr->usec_time_of_qustody = orig_bundle_recv_time.tv_usec;
+			break;
+		case SR_DEL:
+			ar->body.sr->status_flags = SR_DEL;
+			ar->body.sr->sec_time_of_qustody = orig_bundle_recv_time.tv_sec - RFC_DATE_2000;
+			ar->body.sr->usec_time_of_qustody = orig_bundle_recv_time.tv_usec;
+			break;
+	}
+
+	ar->body.sr->cp_creation_timestamp = timestamp_time;
+	ar->body.sr->cp_creation_ts_seq_num = timestamp_seq;
+	ar->body.sr->source_EID_len = strlen(source_eid);
+	ar->body.sr->source_EID = (char *)malloc(ar->body.sr->source_EID_len);
+	strncpy(ar->body.sr->source_EID, source_eid, ar->body.sr->source_EID_len);
+	ar_raw_l = bundle_ar_raw(ar, &ar_raw);
+	if (ar_raw_l <= 0)
 		goto end;
 
 	// Put sr into a payload block
 	payload = bundle_new_payload_block();
-	if (bundle_set_payload(payload, sr_raw, sr_raw_l) != 0)
+	if (bundle_set_payload(payload, ar_raw, ar_raw_l) != 0)
 		goto end;
 
 	// Put payload into bundle
@@ -689,17 +773,17 @@ bundle_s *bundle_sr_new_reception_status(const char *src, struct timeval recv_ti
 		goto end;
 	if (bundle_set_lifetime(sr_bundle, lifetime) != 0)
 		goto end;
-	if (bundle_set_source(sr_bundle, src) != 0)
+	if (bundle_set_source(sr_bundle, source_eid) != 0)
 		goto end;
 	if (bundle_set_destination(sr_bundle, report_to) != 0)
 		goto end;
 
 	err = 0;
 end:
-	if (sr)
-		bundle_sr_free(sr);
-	if (sr_raw)
-		free(sr_raw);
+	if (ar)
+		bundle_ar_free(ar);
+	if (ar_raw)
+		free(ar_raw);
 	if (payload)
 		free(payload);
 
