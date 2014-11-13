@@ -17,3 +17,4 @@ target_link_libraries(adtn-ping adtnAPI)
 target_link_libraries(adtn-neighbours adtn)
 
 install(TARGETS adtn-ping DESTINATION bin)
+install(TARGETS adtn-neighbours DESTINATION bin)
