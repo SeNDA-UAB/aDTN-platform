@@ -305,7 +305,7 @@ int process_status_report_req_flags(const uint8_t *raw_bundle, const int raw_bun
 			goto end;
 
 		//Create reply bundle
-		if ((bundle_sr = bundle_sr_new_reception_status(origin, tv, raw_bundle, raw_bundle_l)) == NULL) {
+		if ((bundle_sr = bundle_new_sr(SR_RECV, 0, origin, tv, raw_bundle)) == NULL) {
 			LOG_MSG(LOG__ERROR, false, "Error creating response bundle to the bundle reception reporting request");
 			goto end_SR_RECV;
 		}

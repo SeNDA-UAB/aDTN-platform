@@ -217,12 +217,6 @@ int create_ping(uint8_t **raw_bundle, int payload_size, uint64_t *timestamp_time
 		goto end;
 	}
 
-	// Check for errors
-	if (bundle_raw_check(*raw_bundle, bundle_raw_l) != 0) {
-		printf("BUNDLE WITH EROORS\n");
-		pause();
-	}
-
 	ret = bundle_raw_l;
 end:
 	if (payload_content)
@@ -261,18 +255,19 @@ void show_stats()
 
 }
 
-int sr_exctract_ping_timestamp(uint8_t *sr,  uint64_t *timestamp)
+int ar_exctract_ping_timestamp(uint8_t *ar,  uint64_t *timestamp)
 {
-	int off = 2;
-	off += bundle_raw_get_sdnv_off((uint8_t *)sr + off, 2);
-	sdnv_decode((uint8_t *)sr + off, (uint64_t *)timestamp);
+	int off = 3; // first byte is ar flags, next two status record flags
+	off += bundle_raw_get_sdnv_off((uint8_t *)ar + off, 2);
+	sdnv_decode((uint8_t *)ar + off, (uint64_t *)timestamp);
 
 	return 0;
 }
 
-int sr_extract_pong_reception_time(uint8_t *sr,  uint64_t *reception_time)
+int ar_extract_pong_reception_time(uint8_t *ar,  uint64_t *reception_time)
 {
-	sdnv_decode((uint8_t *)sr + 2, (uint64_t *)reception_time);
+	int off = 3; // first byte is ar flags, next two status record flags
+	sdnv_decode((uint8_t *)ar + off, (uint64_t *)reception_time);
 	*reception_time += RFC_DATE_2000;
 
 	return 0;
@@ -297,7 +292,7 @@ void *recv_pings(int *s)
 			return (void *)1;
 		}
 
-		sr_exctract_ping_timestamp((uint8_t *)buf, &ts_time);
+		ar_exctract_ping_timestamp((uint8_t *)buf, &ts_time);
 
 		/* Retrieve ping info */
 		HASH_FIND(hh, pings_sent, &ts_time, sizeof(long), recv_ping);
@@ -316,7 +311,7 @@ void *recv_pings(int *s)
 			/**/
 
 			/* Extract reception time */
-			sr_extract_pong_reception_time((uint8_t *)buf, (uint64_t *)&tv.tv_sec);
+			ar_extract_pong_reception_time((uint8_t *)buf, (uint64_t *)&tv.tv_sec);
 			time_to_str(tv, strtime, sizeof(strtime));
 			/**/
 
