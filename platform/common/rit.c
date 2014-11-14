@@ -26,14 +26,14 @@ static pthread_mutex_t ritM = PTHREAD_MUTEX_INITIALIZER;
 int rit_lock()
 {
 	struct flock f1;
-	f1.l_type = F_WRLCK;
+	f1.l_type = F_RDLCK;
 	f1.l_whence = SEEK_SET;
 	f1.l_start = 0;
 	f1.l_len = 0;
 	f1.l_pid = getpid();
 
 	if (fcntl(fileno(rit_fd), F_SETLKW, &f1) == -1) {
-		LOG_MSG(LOG__ERROR, false, "Can't lock RIT");
+		LOG_MSG(LOG__ERROR, true, "Can't lock RIT");
 		return 1;
 	}
 
@@ -50,7 +50,7 @@ int rit_unlock()
 	f1.l_pid = getpid();
 
 	if (fcntl(fileno(rit_fd), F_SETLK, &f1) == -1) {
-		LOG_MSG(LOG__ERROR, false, "Can't lock RIT");
+		LOG_MSG(LOG__ERROR, true, "Can't unlock RIT");
 		return 1;
 	}
 
@@ -166,10 +166,8 @@ static cJSON *get_full_rit(int only_block)
 		}
 		char *data_path = get_option_value("data", &global_configuration);
 		snprintf(rit_path, 99, "%s/RIT", data_path);
-
 		free_options_list(&global_configuration);
 	}
-
 	if (rit_fd != NULL) {
 		query_started = 1;
 	} else {
