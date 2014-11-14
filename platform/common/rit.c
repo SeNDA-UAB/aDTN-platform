@@ -26,7 +26,7 @@ static pthread_mutex_t ritM = PTHREAD_MUTEX_INITIALIZER;
 int rit_lock()
 {
 	struct flock f1;
-	f1.l_type = F_RDLCK;
+	f1.l_type = F_WRLCK;
 	f1.l_whence = SEEK_SET;
 	f1.l_start = 0;
 	f1.l_len = 0;
@@ -171,7 +171,7 @@ static cJSON *get_full_rit(int only_block)
 	if (rit_fd != NULL) {
 		query_started = 1;
 	} else {
-		rit_fd = fopen(rit_path, "rb");
+		rit_fd = fopen(rit_path, "r+b");
 	}
 	if (rit_fd == NULL)
 		return NULL;
