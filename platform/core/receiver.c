@@ -285,7 +285,6 @@ int send_status_report(const sr_status_flags_e status_flag, const uint8_t *raw_b
 	bundle_s *bundle_sr = NULL;
 	struct timeval tv;
 
-	LOG_MSG(LOG__INFO, false, "Received bundle with bit SR_RECV set");
 	LOG_MSG(LOG__INFO, false, "Creating response to bundle with SR_RECV bit");
 
 	if (snprintf(origin, sizeof(origin), "%s:%d", g_vars.platform_id, PING_APP) <= 0) {
@@ -325,7 +324,7 @@ end:
 	return ret;
 }
 
-int process_forwarding_report_request_flag(const uint8_t *raw_bundle, const int raw_bundle_l)
+int process_custody_report_request_flag(const uint8_t *raw_bundle, const int raw_bundle_l)
 {
 	int ret = 1;
 	uint64_t flags;
@@ -335,8 +334,9 @@ int process_forwarding_report_request_flag(const uint8_t *raw_bundle, const int 
 	}
 
 	// If SR_RECV bit is set we have to send a reception notification
-	if ((flags & H_SR_BFRW) == H_SR_BFRW) {
-		if (send_status_report(SR_FORW, raw_bundle, raw_bundle_l) != 0)
+	if ((flags & H_SR_CACC) == H_SR_CACC) {
+		LOG_MSG(LOG__INFO, false, "Received bundle with bit H_SR_CACC set");		
+		if (send_status_report(SR_CACC, raw_bundle, raw_bundle_l) != 0)
 			goto end;
 	} 
 
@@ -357,6 +357,7 @@ int process_reception_report_request_flag(const uint8_t *raw_bundle, const int r
 
 	// If SR_RECV bit is set we have to send a reception notification
 	if ((flags & H_SR_BREC) == H_SR_BREC) {
+		LOG_MSG(LOG__INFO, false, "Received bundle with bit H_SR_RECV set");
 		if (send_status_report(SR_RECV, raw_bundle, raw_bundle_l) != 0)
 			goto end;
 	} 
@@ -420,7 +421,7 @@ int process_bundle(const uint8_t *raw_bundle, const int raw_bundle_l)
 
 		LOG_MSG(LOG__INFO, false, "The bundle is not for us. Putting bundle into queue");
 
-		if (process_forwarding_report_request_flag(raw_bundle, raw_bundle_l) != 0) {
+		if (process_custody_report_request_flag(raw_bundle, raw_bundle_l) != 0) {
 			LOG_MSG(LOG__ERROR, false, "Error processing status report request flags");
 			goto end;
 		}
