@@ -15,46 +15,46 @@
 typedef enum {
 	SR_RECV    = 0x01,                      // Reporting node received bundle.
 	SR_ACC     = 0x02,                      // Reporting node accepted custody of bundle.
-	SR_FORW    = 0x04,                      // Reporting node forwarded the bundle. 
-	SR_DELI    = 0x08,                      // Reporting node delivered the bundle. 
+	SR_FORW    = 0x04,                      // Reporting node forwarded the bundle.
+	SR_DELI    = 0x08,                      // Reporting node delivered the bundle.
 	SR_DEL     = 0x10,                      // Reporting node deleted the bundle.
 } sr_status_flags_e;
 
 typedef enum {
-    RC_NO_ADD_INFO          = 0x0,          // No additional information.       
-    RC_LIFE_EXPIRED         = 0x1,          // Lifetime expired. 
-    RC_UNI_FORW             = 0x2,          // Forwarded over unidirectional link.
-    RC_TRANS_CANCEL         = 0x3,          // Transmission canceled
-    RC_DEPELTED_STOR        = 0x4,          // Depleted storage.  
-    RC_DEST_END_UNIN        = 0x5,          // Destination endpoint ID unintelligible.
-    RC_NO_ROUTE_DEST        = 0x6,          // No known route to destination from here. 
-    RC_NO_TIMElY_CONT       = 0x7,          // No timely contact with next node on route.
-    RC_BLOCK_UNIN           = 0x8           // Block unintelligible.
+	RC_NO_ADD_INFO          = 0x0,          // No additional information.
+	RC_LIFE_EXPIRED         = 0x1,          // Lifetime expired.
+	RC_UNI_FORW             = 0x2,          // Forwarded over unidirectional link.
+	RC_TRANS_CANCEL         = 0x3,          // Transmission canceled
+	RC_DEPELTED_STOR        = 0x4,          // Depleted storage.
+	RC_DEST_END_UNIN        = 0x5,          // Destination endpoint ID unintelligible.
+	RC_NO_ROUTE_DEST        = 0x6,          // No known route to destination from here.
+	RC_NO_TIMElY_CONT       = 0x7,          // No timely contact with next node on route.
+	RC_BLOCK_UNIN           = 0x8           // Block unintelligible.
 } sr_reason_codes_e;
 
 typedef struct _bundle_sr {
 	uint8_t status_flags;
 	uint8_t reason_codes;
-	int64_t fragment_offset; 			//SDNV
-	int64_t fragment_length; 			//SDNV
-	int64_t sec_time_of_receipt; 		//SDNV
-	int64_t usec_time_of_receipt; 		//SDNV
+	int64_t fragment_offset;            //SDNV
+	int64_t fragment_length;            //SDNV
+	int64_t sec_time_of_receipt;        //SDNV
+	int64_t usec_time_of_receipt;       //SDNV
 
-	int64_t sec_time_of_qustody; 		//SDNV
-	int64_t usec_time_of_qustody; 		//SDNV
+	int64_t sec_time_of_qustody;        //SDNV
+	int64_t usec_time_of_qustody;       //SDNV
 
-	int64_t sec_time_of_forwarding; 	//SDNV
-	int64_t usec_time_of_forwarding; 	//SDNV
+	int64_t sec_time_of_forwarding;     //SDNV
+	int64_t usec_time_of_forwarding;    //SDNV
 
-	int64_t sec_time_of_delivery; 		//SDNV
-	int64_t usec_time_of_delivery; 		//SDNV
+	int64_t sec_time_of_delivery;       //SDNV
+	int64_t usec_time_of_delivery;      //SDNV
 
-	int64_t sec_time_of_deletion; 		//SDNV
-	int64_t usec_time_of_deletion; 		//SDNV
+	int64_t sec_time_of_deletion;       //SDNV
+	int64_t usec_time_of_deletion;      //SDNV
 
-	int64_t cp_creation_timestamp; 		//SDNV
-	int64_t cp_creation_ts_seq_num; 	//SDNV
-	int64_t source_EID_len; 			//SDNV
+	int64_t cp_creation_timestamp;      //SDNV
+	int64_t cp_creation_ts_seq_num;     //SDNV
+	int64_t source_EID_len;             //SDNV
 	char *source_EID;
 } status_report_s;
 
@@ -74,8 +74,8 @@ typedef enum {
 } ar_flags_s;
 
 typedef struct _adm_record_s {
-	uint8_t type:4;
-	uint8_t flags:4;
+	uint8_t type: 4;
+	uint8_t flags: 4;
 	union _ar_body body;
 } adm_record_s;
 
@@ -300,8 +300,8 @@ int bundle_ar_free(adm_record_s *ar);
 int bundle_ar_raw(adm_record_s *ar, /*out*/uint8_t **ar_raw );
 
 bundle_s *bundle_new_sr(
-	const sr_status_flags_e sr_status_flag, const uint8_t reason_codes, 
-	const char *source_eid, struct timeval orig_bundle_recv_time, const uint8_t *orig_bundle_raw);
+    const sr_status_flags_e sr_status_flag, const uint8_t reason_codes,
+    const char *source_eid, struct timeval orig_bundle_recv_time, const uint8_t *orig_bundle_raw);
 /**************************/
 
 
@@ -354,6 +354,11 @@ int bundle_get_destination(const uint8_t *bundle_raw, /*out*/uint8_t **dest);
 int bundle_set_destination(bundle_s *bundle, const char *destination);
 int bundle_get_source(const uint8_t *bundle_raw, /*out*/uint8_t **source);
 int bundle_set_source(bundle_s *bundle, const char *source);
+int bundle_get_report(const uint8_t *bundle_raw, /*out*/uint8_t **report);
+int bundle_set_report(bundle_s *bundle, const char *report);
+int bundle_get_custom(const uint8_t *bundle_raw, /*out*/uint8_t **cust);
+int bundle_set_custom(bundle_s *bundle, const char *custom);
+
 
 /**************************/
 

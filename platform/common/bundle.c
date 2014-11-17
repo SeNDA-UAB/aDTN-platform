@@ -695,8 +695,8 @@ int bundle_ar_raw(adm_record_s *ar, /*out*/uint8_t **ar_raw )
 }
 
 bundle_s *bundle_new_sr(
-	const sr_status_flags_e sr_status_flag, const uint8_t reason_codes, 
-	const char *source_eid, struct timeval orig_bundle_recv_time, const uint8_t *orig_bundle_raw)
+    const sr_status_flags_e sr_status_flag, const uint8_t reason_codes,
+    const char *source_eid, struct timeval orig_bundle_recv_time, const uint8_t *orig_bundle_raw)
 {
 	int err = 1, ar_raw_l = 0;
 	char *report_to;
@@ -724,33 +724,33 @@ bundle_s *bundle_new_sr(
 		ar->body.sr->reason_codes = RC_NO_ADD_INFO;
 	else
 		ar->body.sr->reason_codes = reason_codes;
-	
-	switch(sr_status_flag){
-		case SR_RECV:
-			ar->body.sr->status_flags = SR_RECV;
-			ar->body.sr->sec_time_of_receipt = orig_bundle_recv_time.tv_sec - RFC_DATE_2000;
-			ar->body.sr->usec_time_of_receipt = orig_bundle_recv_time.tv_usec;
-			break;
-		case SR_ACC:
-			ar->body.sr->status_flags = SR_ACC;
-			ar->body.sr->sec_time_of_qustody = orig_bundle_recv_time.tv_sec - RFC_DATE_2000;
-			ar->body.sr->usec_time_of_qustody = orig_bundle_recv_time.tv_usec;
-			break;
-		case SR_FORW:
-			ar->body.sr->status_flags = SR_FORW;
-			ar->body.sr->sec_time_of_qustody = orig_bundle_recv_time.tv_sec - RFC_DATE_2000;
-			ar->body.sr->usec_time_of_qustody = orig_bundle_recv_time.tv_usec;
-			break;
-		case SR_DELI:
-			ar->body.sr->status_flags = SR_DELI;
-			ar->body.sr->sec_time_of_qustody = orig_bundle_recv_time.tv_sec - RFC_DATE_2000;
-			ar->body.sr->usec_time_of_qustody = orig_bundle_recv_time.tv_usec;
-			break;
-		case SR_DEL:
-			ar->body.sr->status_flags = SR_DEL;
-			ar->body.sr->sec_time_of_qustody = orig_bundle_recv_time.tv_sec - RFC_DATE_2000;
-			ar->body.sr->usec_time_of_qustody = orig_bundle_recv_time.tv_usec;
-			break;
+
+	switch (sr_status_flag) {
+	case SR_RECV:
+		ar->body.sr->status_flags = SR_RECV;
+		ar->body.sr->sec_time_of_receipt = orig_bundle_recv_time.tv_sec - RFC_DATE_2000;
+		ar->body.sr->usec_time_of_receipt = orig_bundle_recv_time.tv_usec;
+		break;
+	case SR_ACC:
+		ar->body.sr->status_flags = SR_ACC;
+		ar->body.sr->sec_time_of_qustody = orig_bundle_recv_time.tv_sec - RFC_DATE_2000;
+		ar->body.sr->usec_time_of_qustody = orig_bundle_recv_time.tv_usec;
+		break;
+	case SR_FORW:
+		ar->body.sr->status_flags = SR_FORW;
+		ar->body.sr->sec_time_of_qustody = orig_bundle_recv_time.tv_sec - RFC_DATE_2000;
+		ar->body.sr->usec_time_of_qustody = orig_bundle_recv_time.tv_usec;
+		break;
+	case SR_DELI:
+		ar->body.sr->status_flags = SR_DELI;
+		ar->body.sr->sec_time_of_qustody = orig_bundle_recv_time.tv_sec - RFC_DATE_2000;
+		ar->body.sr->usec_time_of_qustody = orig_bundle_recv_time.tv_usec;
+		break;
+	case SR_DEL:
+		ar->body.sr->status_flags = SR_DEL;
+		ar->body.sr->sec_time_of_qustody = orig_bundle_recv_time.tv_sec - RFC_DATE_2000;
+		ar->body.sr->usec_time_of_qustody = orig_bundle_recv_time.tv_usec;
+		break;
 	}
 
 	ar->body.sr->cp_creation_timestamp = timestamp_time;
@@ -1652,4 +1652,21 @@ int bundle_set_source(bundle_s *bundle, const char *source)
 {
 	return bundle_set_primary_entry(bundle, SOURCE_SCHEME, source);
 }
+int bundle_get_report(const uint8_t *bundle_raw, /*out*/uint8_t **report)
+{
+	return bundle_raw_get_primary_field(bundle_raw, REPORT_SCHEME, (char **)report);
+}
+int bundle_set_report(bundle_s *bundle, const char *report)
+{
+	return bundle_set_primary_entry(bundle, REPORT_SCHEME, report);
+}
+int bundle_get_custom(const uint8_t *bundle_raw, /*out*/uint8_t **cust)
+{
+	return bundle_raw_get_primary_field(bundle_raw, CUST_SCHEME, (char **)cust);
+}
+int bundle_set_custom(bundle_s *bundle, const char *custom)
+{
+	return bundle_set_primary_entry(bundle, CUST_SCHEME, custom);
+}
+
 /**************************/

@@ -60,6 +60,7 @@ typedef struct {
 	sock_opt_t sopt; ///< structure with header options
 	bundle_data_s *bdata; ///< data
 	UT_hash_handle hh;
+	sock_get_t gval;  ///< Last bundle send values
 } bunsock_s;
 
 /* VARIABLES */
@@ -88,6 +89,11 @@ static int adtn_socket_base(const char *data_path)
 		identifier->sopt.proc_flags = H_DESS | H_NOTF;
 		identifier->sopt.block_flags = B_DEL_NP;
 		identifier->sopt.lifetime = 100000; //this time is in seconds
+		identifier->sopt.report = NULL;
+		identifier->sopt.custom = NULL;
+		identifier->sopt.dest = NULL;
+		identifier->sopt.source = NULL;
+		identifier->gval.last_timestamp = 0;
 		len = strlen(data_path) + 1;
 		identifier->data_path = (char *)calloc(len, sizeof(char));
 		strncpy(identifier->data_path, data_path, len);
@@ -450,19 +456,105 @@ end:
 	return ret;
 }
 
-int adtn_setsockopt(int fd, sock_opt_t options)
+int adtn_setsockopt(int fd, int optname, const void *optval)
 {
-	int ret = 1;
+	int ret = -1;
 	bunsock_s *identifier;
 	HASH_FIND_INT( sockStore, &fd, identifier );
 	if (identifier == NULL) {
 		errno = ENOTSOCK;
 		goto end;
 	}
-	identifier->sopt.lifetime = (options.lifetime > 1) ? options.lifetime : identifier->sopt.lifetime;
-	identifier->sopt.proc_flags = options.proc_flags ? options.proc_flags : H_DESS | H_NOTF;
-	identifier->sopt.block_flags = options.block_flags ? options.block_flags : B_DEL_NP;
+	switch (optname) {
+	case OP_PROC_FLAGS:
+		identifier->sopt.proc_flags = * (uint32_t *)optval;
+		break;
+	case OP_LIFETIME:
+		identifier->sopt.lifetime = * (uint32_t *)optval;
+		break;
+	case OP_BLOCK_FLAGS:
+		identifier->sopt.block_flags = * (uint32_t *)optval;
+		break;
+	case OP_DEST:
+		identifier->sopt.dest = (char *)optval;
+		break;
+	case OP_SOURCE:
+		identifier->sopt.source = (char *)optval;
+		break;
+	case OP_REPORT:
+		identifier->sopt.report = (char *)optval;
+		break;
+	case OP_CUSTOM:
+		identifier->sopt.custom = (char *)optval;
+		break;
+	default:
+		errno = ENOTSUP;
+		goto end;
+	}
+	ret = 0;
+end:
 
+	return ret;
+}
+
+int adtn_getsockopt(int fd, int optname, void *optval, int *optlen)
+{
+	int ret = -1;
+	bunsock_s *identifier;
+	HASH_FIND_INT( sockStore, &fd, identifier );
+	if (identifier == NULL) {
+		errno = ENOTSOCK;
+		goto end;
+	}
+	switch (optname) {
+	case OP_PROC_FLAGS:
+		if (*optlen >= sizeof(identifier->sopt.proc_flags)) {
+			*(uint32_t *)optval = (identifier->sopt.proc_flags);
+			*optlen = sizeof(identifier->sopt.proc_flags);
+		} else {
+			*optlen = 0;
+		}
+		break;
+	case OP_LIFETIME:
+		if (*optlen >= sizeof(identifier->sopt.lifetime)) {
+			*(uint32_t *)optval = (identifier->sopt.lifetime);
+			*optlen = sizeof(identifier->sopt.lifetime);
+		} else {
+			*optlen = 0;
+		}
+		break;
+	case OP_BLOCK_FLAGS:
+		if (*optlen >= sizeof(identifier->sopt.block_flags)) {
+			*(uint32_t *)optval = (identifier->sopt.block_flags);
+			*optlen = sizeof(identifier->sopt.block_flags);
+		} else {
+			*optlen = 0;
+		}
+		break;
+	case OP_DEST:
+		*optlen = snprintf((char *)optval, *optlen, "%s", identifier->sopt.dest);
+		break;
+	case OP_SOURCE:
+		*optlen = snprintf((char *)optval, *optlen, "%s", identifier->sopt.source);
+		break;
+	case OP_REPORT:
+		*optlen = snprintf((char *)optval, *optlen, "%s", identifier->sopt.report);
+		break;
+	case OP_CUSTOM:
+		*optlen = snprintf((char *)optval, *optlen, "%s", identifier->sopt.custom);
+		break;
+	case OP_LAST_TIMESTAMP:
+		if (*optlen >= sizeof(identifier->gval.last_timestamp)) {
+			*(uint64_t *)optval = (identifier->gval.last_timestamp);
+			*optlen = sizeof(identifier->gval.last_timestamp);
+		} else {
+			*optlen = 0;
+		}
+		break;
+	default:
+		errno = ENOTSUP;
+		goto end;
+	}
 	ret = 0;
 end:
 
@@ -541,7 +633,7 @@ end:
 	return ret;
 }
 
-static int delegate_bundle(const bundle_s *bundle, const char *file_prefix)
+static int delegate_bundle(const bundle_s *bundle, const char *file_prefix, bunsock_s *identifier)
 {
 	int ret = 1;
 	int len;
@@ -563,11 +655,7 @@ static int delegate_bundle(const bundle_s *bundle, const char *file_prefix)
 	if ((bundle_raw_l = bundle_create_raw(bundle, &bundle_raw)) <= 0) {
 		goto end;
 	}
-
-	printf("Printing bundle %s\nSize of bundle: %d\n", full_path, bundle_raw_l);
-	bundle_get_printable(bundle, &msg);
-	printf("%s\n", msg);
-	if (msg) free(msg);
+	identifier->gval.last_timestamp = bundle->primary->timestamp_time;
 
 	f = fopen(full_path, "wb");
 	if (!f)
@@ -624,17 +712,29 @@ int adtn_sendto(int fd, const sock_addr_t addr, char *buffer)
 	snprintf(full_src, ENDPOINT_LENGTH - 1, "%s:%d", identifier->addr.id, identifier->addr.adtn_port);
 
 	bundle = bundle_new();
-	bundle_set_destination(bundle, full_dest);
-	bundle_set_source(bundle, full_src);
+	if (identifier->sopt.dest) {
+		bundle_set_destination(bundle, identifier->sopt.dest);
+	} else {
+		bundle_set_destination(bundle, full_dest);
+	}
+	if (identifier->sopt.source) {
+		bundle_set_source(bundle, identifier->sopt.source);
+	} else {
+		bundle_set_source(bundle, full_src);
+	}
 	bundle_set_proc_flags(bundle, identifier->sopt.proc_flags);
 	bundle_set_lifetime(bundle, identifier->sopt.lifetime);
+	if (identifier->sopt.report)
+		bundle_set_report(bundle, identifier->sopt.report);
+	if (identifier->sopt.custom)
+		bundle_set_custom(bundle, identifier->sopt.custom);
 	payload = bundle_new_payload_block();
 	bundle_set_payload(payload, (uint8_t *) buffer, strlen(buffer));
 	bundle_add_ext_block(bundle, (ext_block_s *) payload);
 	if (bundle_add_codes(bundle, identifier) != 0) {
 		goto end;
 	}
-	if (delegate_bundle(bundle, shm->data_path) != 0) {
+	if (delegate_bundle(bundle, shm->data_path, identifier) != 0) {
 		goto end;
 	}
 	ret = 0;

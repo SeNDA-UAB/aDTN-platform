@@ -11,6 +11,10 @@ typedef struct {
 	uint32_t lifetime; ///< lifetime of bundle
 	uint32_t proc_flags; ///< proc flags for main header
 	uint32_t block_flags; ///< proc flags for extension blocks
+	char *report;
+	char *custom;
+	char *dest;
+	char *source;
 } sock_opt_t;
 
 typedef struct {
@@ -25,6 +29,20 @@ typedef struct {
 	const char *config_file;
 } socket_params;
 
+typedef struct {
+	uint64_t last_timestamp;
+} sock_get_t;
+
+/* Option codes */
+#define OP_PROC_FLAGS 1
+#define OP_LIFETIME 2
+#define OP_BLOCK_FLAGS 3
+#define OP_DEST 4
+#define OP_SOURCE 5
+#define OP_REPORT 6
+#define OP_CUSTOM 7
+#define OP_LAST_TIMESTAMP 8
+
 /* MACROS */
 #define adtn_setcodopt(...) adtn_var_setcodopt((set_opt_args){__VA_ARGS__});
 #define adtn_socket(...) adtn_var_socket((socket_params){__VA_ARGS__});
@@ -37,7 +55,9 @@ int adtn_close(int fd);
 int adtn_shutdown(int fd);
 
 int adtn_rmcodopt(int fd, int option_name);
-int adtn_setsockopt(int fd, sock_opt_t options);
+//int adtn_setsockopt(int fd, sock_opt_t options);
+int adtn_setsockopt(int fd, int optname, const void *optval);
+int adtn_getsockopt(int fd, int optname, void *optval, int *optlen);
 
 int adtn_sendto(int fd, sock_addr_t addr, char *buffer);
 int adtn_recv(int fd, char *buffer, int max_len);
