@@ -40,19 +40,11 @@ typedef struct queue {
 
 /* global vars */
 queue_t queue = {0};
-volatile sig_atomic_t working = 1;
 pthread_mutex_t queue_mutex;
 int queue_socket;
 struct sockaddr_un exec_addr = {0};
 struct common *shm = NULL;
 /**/
-
-static void sigint_handler(int sign)
-{
-	if (sign == SIGINT)
-		working = 0;
-	signal(SIGINT, sigint_handler);
-}
 
 /** Queue functions **/
 static int insert(queue_t *queue, char *bundle_id, int prio)
@@ -292,8 +284,6 @@ static int connect_executor(char *data_path)
 
 	timeout.tv_sec = EXEC_TIMEOUT / 1000000;
 	timeout.tv_usec = EXEC_TIMEOUT - (timeout.tv_sec * 1000000);
-	//setsockopt(queue_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout));
-	//setsockopt(queue_socket, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout));
 	ret = 0;
 end:
 	if (sockname)
@@ -499,7 +489,7 @@ void *scheduler_thread(void *path)
 {
 	int size;
 	char *bundles_queue_path = (char *)path;
-	while (working == 1) {
+	while (true) {
 		size = get_queue_size(&queue);
 		if (size > 0) {
 			pthread_mutex_lock(&queue_mutex);
@@ -510,8 +500,6 @@ void *scheduler_thread(void *path)
 			usleep(SCHEDULER_TIMER);
 		}
 	}
-	free(bundles_queue_path);
-	pthread_exit((void *)0);
 }
 
 void petitions_handler(int sock, char *str, struct sockaddr_un remote)
@@ -566,10 +554,7 @@ void *process_thread()
 
 	timeout.tv_sec = PROC_TIMEOUT / 1000000;
 	timeout.tv_usec = PROC_TIMEOUT - (timeout.tv_sec * 1000000);
-	//setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout));
-	//setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout));
-
-	while (working == 1) {
+	while (true) {
 		memset(str, 0, MAX_BUFFER);
 		received = recvfrom(sock, str, MAX_BUFFER, 0, (struct sockaddr *)&remote, (socklen_t *)&remote_addr_l);
 		if (received <= 0) {
@@ -577,18 +562,16 @@ void *process_thread()
 		}
 		petitions_handler(sock, str, remote);
 	}
-	unlink(local.sun_path);
-	close(sock);
-	pthread_exit((void *)0);
 }
 
 int main(int argc, char *const argv[])
 {
-	int len;
+	int len, sig = 0;
 	char *path; // Valgrind will indicates one more alloc than frees due to this variable. It is freed in scheduler_thread, dont free again!
 	pthread_attr_t tattr;
 	pthread_t proc_thread;
 	pthread_t sche_thread;
+	sigset_t blockedSigs = {{0}};
 
 	pthread_mutex_init(&queue_mutex, NULL);
 	if (init_adtn_process(argc, argv, &shm) != 0) {
@@ -597,13 +580,6 @@ int main(int argc, char *const argv[])
 		exit(1);
 	}
 
-	struct sigaction act = {{0}};
-	sigemptyset(&act.sa_mask);
-	sigaddset(&act.sa_mask, SIGINT);
-	act.sa_handler = sigint_handler;
-	if (sigaction(SIGINT, &act, NULL) != 0)
-		return 1;
-	signal(SIGPIPE, SIG_IGN);
 	len = strlen(shm->data_path) + 1 + strlen(QUEUE_PATH);
 	path = calloc(len, sizeof(char));
 	snprintf(path, len, "%s/"QUEUE_PATH, shm->data_path);
@@ -615,13 +591,56 @@ int main(int argc, char *const argv[])
 	printf("We have %d bundles in queue\n", get_queue_size(&queue));
 	fflush(0);
 
+	/* Start threads */
+
+	/* Block signals so the signals will not be received by the newly created threads */
+
+	//Block signals	
+	if (sigaddset(&blockedSigs, SIGINT) != 0)
+		LOG_MSG(LOG__ERROR, true, "sigaddset()");
+	if (sigaddset(&blockedSigs, SIGTERM) != 0)
+		LOG_MSG(LOG__ERROR, true, "sigaddset()");
+	if (sigaddset(&blockedSigs, SIGUSR1) != 0)
+		LOG_MSG(LOG__ERROR, true, "sigaddset()");
+	if (sigaddset(&blockedSigs, SIGUSR2) != 0)
+		LOG_MSG(LOG__ERROR, true, "sigaddset()");
+
+	if (sigprocmask(SIG_BLOCK, &blockedSigs, NULL) == -1)
+		LOG_MSG(LOG__ERROR, true, "sigprocmask()");
+	/**/	
+
+	//Launch main threads
 	pthread_attr_init(&tattr);
-	pthread_create(&proc_thread, &tattr, process_thread, NULL);
-	pthread_create(&sche_thread, &tattr, scheduler_thread, (void *)path);
+	if (pthread_create(&proc_thread, &tattr, process_thread, NULL) != 0)
+		LOG_MSG(LOG__WARNING, true, "pthread_create()");
+	if(pthread_create(&sche_thread, &tattr, scheduler_thread, (void *)path) != 0)
+		LOG_MSG(LOG__WARNING, true, "pthread_create()");
 
-	pthread_join(proc_thread, NULL);
-	pthread_join(sche_thread, NULL);
+	//Wait synchronously for signals.
+	//SIGINT and SIGTERM exit the program nicely
+	siginfo_t si;
+	for (;;) {
+		sig = sigwaitinfo(&blockedSigs, &si);
 
+		if (sig == SIGINT || sig == SIGTERM)
+			break;
+	}
+
+	/*Terminate threads nicely and free main memory*/
+
+	//Cancel threads
+	if (pthread_cancel(proc_thread) != 0)
+		LOG_MSG(LOG__ERROR, true, "pthread_cancel()");
+	if (pthread_cancel(sche_thread) != 0)
+		LOG_MSG(LOG__ERROR, true, "pthread_cancel()");
+
+	//Wait until all threads exited nicely
+	if (pthread_join(proc_thread, NULL) != 0)
+		LOG_MSG(LOG__ERROR, true, "pthread_join()");
+	if (pthread_join(sche_thread, NULL) != 0)
+		LOG_MSG(LOG__ERROR, true, "pthread_join()");
+
+	//Main clean
 	empty_queue(&queue);
 	disconnect_executor(shm->data_path);
 	pthread_mutex_destroy(&queue_mutex);
