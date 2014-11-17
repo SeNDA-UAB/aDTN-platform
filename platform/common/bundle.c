@@ -1652,4 +1652,21 @@ int bundle_set_source(bundle_s *bundle, const char *source)
 {
 	return bundle_set_primary_entry(bundle, SOURCE_SCHEME, source);
 }
+int bundle_get_report(const uint8_t *bundle_raw, /*out*/uint8_t **report)
+{
+	return bundle_raw_get_primary_field(bundle_raw, REPORT_SCHEME, (char **)report);
+}
+int bundle_set_report(bundle_s *bundle, const char *report)
+{
+	return bundle_set_primary_entry(bundle, REPORT_SCHEME, report);
+}
+int bundle_get_custom(const uint8_t *bundle_raw, /*out*/uint8_t **cust)
+{
+	return bundle_raw_get_primary_field(bundle_raw, CUST_SCHEME, (char **)cust);
+}
+int bundle_set_custom(bundle_s *bundle, const char *custom)
+{
+	return bundle_set_primary_entry(bundle, CUST_SCHEME, custom);
+}
+
 /**************************/
