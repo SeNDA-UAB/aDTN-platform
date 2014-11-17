@@ -12,16 +12,16 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include "common/include/constants.h"
-#include "common/include/config.h"
-#include "common/include/bundle.h"
-#include "common/include/log.h"
-#include "common/include/utils.h"
-#include "common/include/queue.h"
-#include "common/include/init.h"
+#include "platform/common/include/constants.h"
+#include "platform/common/include/config.h"
+#include "platform/common/include/bundle.h"
+#include "platform/common/include/log.h"
+#include "platform/common/include/utils.h"
+#include "platform/common/include/queue.h"
+#include "platform/common/include/init.h"
 
-#include "api/include/adtn.h"
-#include "api/include/uthash.h"
+#include "lib/api/include/adtn.h"
+#include "lib/api/include/uthash.h"
 
 #define DEFAULT_LIFETIME 30
 #define DEFAULT_PAYLOAD_SIZE 64

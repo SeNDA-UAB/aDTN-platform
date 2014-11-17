@@ -275,71 +275,101 @@ end:
 	return ret;
 }
 
-int process_status_report_req_flags(const uint8_t *raw_bundle, const int raw_bundle_l)
+
+int send_status_report(const sr_status_flags_e status_flag, const uint8_t *raw_bundle, const int raw_bundle_l)
 {
-	int ret = -1;
+	char origin[MAX_PLATFORM_ID_LEN];
+	char *report_to = NULL;
+	uint8_t *bundle_sr_raw = NULL;
+	int bundle_sr_raw_l = 0, ret = 1;
+	bundle_s *bundle_sr = NULL;
+	struct timeval tv;
+
+	LOG_MSG(LOG__INFO, false, "Creating response to bundle with SR_RECV bit");
+
+	if (snprintf(origin, sizeof(origin), "%s:%d", g_vars.platform_id, PING_APP) <= 0) {
+		LOG_MSG(LOG__ERROR, true, "snprintf()");
+		goto end;
+	}
+
+	if (gettimeofday(&tv, NULL) != 0)
+		goto end;
+
+	//Create reply bundle
+	if ((bundle_sr = bundle_new_sr(status_flag, 0, origin, tv, raw_bundle)) == NULL) {
+		LOG_MSG(LOG__ERROR, false, "Error creating response bundle to the bundle reception reporting request");
+		goto end;
+	}
+	if ((bundle_sr_raw_l = bundle_create_raw(bundle_sr, &bundle_sr_raw)) <= 0) {
+		LOG_MSG(LOG__ERROR, false, "Error creating raw response bundle to the bundle reception reporting request");
+		goto end;
+	}
+
+	//Reprocess bundle
+	if (delegate_bundle_to_receiver(bundle_sr_raw, bundle_sr_raw_l) != 0) {
+		LOG_MSG(LOG__ERROR, false, "Error putting response bundle to the bundle reception reporting request into the queue");
+	}
+
+	ret = 0;
+end:
+	if (ret == 1)
+		LOG_MSG(LOG__ERROR, false, "Response bundle has not been created");
+	if (report_to)
+		free(report_to);
+	if (bundle_sr)
+		bundle_free(bundle_sr);
+	if (bundle_sr_raw)
+		free(bundle_sr_raw);
+
+	return ret;
+}
+
+int process_custody_report_request_flag(const uint8_t *raw_bundle, const int raw_bundle_l)
+{
+	int ret = 1;
 	uint64_t flags;
 	if (bundle_raw_get_proc_flags(raw_bundle, &flags) != 0) {
 		LOG_MSG(LOG__ERROR, false, "Error getting proc flags.");
 		goto end;
 	}
 
-	// If SR_RECV bit is set we have to create a reception notification bundle and put it into the queue
-	if ((flags & H_SR_BREC) == H_SR_BREC) {
-		char origin[MAX_PLATFORM_ID_LEN];
-		char *report_to = NULL;
-		uint8_t *bundle_sr_raw = NULL;
-		int bundle_sr_raw_l = 0;
-		bundle_s *bundle_sr = NULL;
-		struct timeval tv;
-
-		LOG_MSG(LOG__INFO, false, "Received bundle with bit SR_RECV set");
-		LOG_MSG(LOG__INFO, false, "Creating response to bundle with SR_RECV bit");
-
-		if (snprintf(origin, sizeof(origin), "%s:%d", g_vars.platform_id, PING_APP) <= 0) {
-			LOG_MSG(LOG__ERROR, true, "snprintf()");
-			goto end_SR_RECV;
-		}
-
-		if (gettimeofday(&tv, NULL) != 0)
+	// If SR_RECV bit is set we have to send a reception notification
+	if ((flags & H_SR_CACC) == H_SR_CACC) {
+		LOG_MSG(LOG__INFO, false, "Received bundle with bit H_SR_CACC set");		
+		if (send_status_report(SR_CACC, raw_bundle, raw_bundle_l) != 0)
 			goto end;
+	} 
 
-		//Create reply bundle
-		if ((bundle_sr = bundle_new_sr(SR_RECV, 0, origin, tv, raw_bundle)) == NULL) {
-			LOG_MSG(LOG__ERROR, false, "Error creating response bundle to the bundle reception reporting request");
-			goto end_SR_RECV;
-		}
-		if ((bundle_sr_raw_l = bundle_create_raw(bundle_sr, &bundle_sr_raw)) <= 0) {
-			LOG_MSG(LOG__ERROR, false, "Error creating raw response bundle to the bundle reception reporting request");
-			goto end_SR_RECV;
-		}
-
-		//Reprocess bundle
-		if (delegate_bundle_to_receiver(bundle_sr_raw, bundle_sr_raw_l) != 0) {
-			LOG_MSG(LOG__ERROR, false, "Error putting response bundle to the bundle reception reporting request into the queue");
-		}
-
-		ret = 2;
-end_SR_RECV:
-		if (ret == -1)
-			LOG_MSG(LOG__ERROR, false, "Response bundle has not been created");
-		if (report_to)
-			free(report_to);
-		if (bundle_sr)
-			bundle_free(bundle_sr);
-		if (bundle_sr_raw)
-			free(bundle_sr_raw);
-	} else {
-		ret = 0;
-	}
+	ret = 0;
 end:
+	return ret;
+}
 
+
+int process_reception_report_request_flag(const uint8_t *raw_bundle, const int raw_bundle_l)
+{
+	int ret = 1;
+	uint64_t flags;
+	if (bundle_raw_get_proc_flags(raw_bundle, &flags) != 0) {
+		LOG_MSG(LOG__ERROR, false, "Error getting proc flags.");
+		goto end;
+	}
+
+	// If SR_RECV bit is set we have to send a reception notification
+	if ((flags & H_SR_BREC) == H_SR_BREC) {
+		LOG_MSG(LOG__INFO, false, "Received bundle with bit H_SR_RECV set");
+		if (send_status_report(SR_RECV, raw_bundle, raw_bundle_l) != 0)
+			goto end;
+	} 
+
+	ret = 0;
+end:
 	return ret;
 }
 
 int process_bundle(const uint8_t *raw_bundle, const int raw_bundle_l)
 {
-	int ret = 1, err = 0;
+	int ret = 1;
 	char *full_dest = NULL;
 	endpoint_t ep = {0};
 
@@ -361,8 +391,7 @@ int process_bundle(const uint8_t *raw_bundle, const int raw_bundle_l)
 
 		LOG_MSG(LOG__INFO, false, "The bundle is for us. Storing bundle into %s", g_vars.destination_path);
 
-		err = process_status_report_req_flags(raw_bundle, raw_bundle_l);
-		if (err < 0) {
+		if (process_reception_report_request_flag(raw_bundle, raw_bundle_l) != 0) {
 			LOG_MSG(LOG__ERROR, false, "Error processing status report request flags");
 			goto end;
 		}
@@ -391,6 +420,11 @@ int process_bundle(const uint8_t *raw_bundle, const int raw_bundle_l)
 		// Otherwise put bundle into the queue
 
 		LOG_MSG(LOG__INFO, false, "The bundle is not for us. Putting bundle into queue");
+
+		if (process_custody_report_request_flag(raw_bundle, raw_bundle_l) != 0) {
+			LOG_MSG(LOG__ERROR, false, "Error processing status report request flags");
+			goto end;
+		}
 
 		if (put_bundle_into_queue(raw_bundle, raw_bundle_l) != 0) {
 			LOG_MSG(LOG__ERROR, false, "Error putting bundle into the queue");

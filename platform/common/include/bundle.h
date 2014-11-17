@@ -14,7 +14,7 @@
 /* Administrative records */
 typedef enum {
 	SR_RECV    = 0x01,                      // Reporting node received bundle.
-	SR_ACC     = 0x02,                      // Reporting node accepted custody of bundle.
+	SR_CACC    = 0x02,                      // Reporting node accepted custody of bundle.
 	SR_FORW    = 0x04,                      // Reporting node forwarded the bundle. 
 	SR_DELI    = 0x08,                      // Reporting node delivered the bundle. 
 	SR_DEL     = 0x10,                      // Reporting node deleted the bundle.
@@ -301,7 +301,7 @@ int bundle_ar_raw(adm_record_s *ar, /*out*/uint8_t **ar_raw );
 
 bundle_s *bundle_new_sr(
 	const sr_status_flags_e sr_status_flag, const uint8_t reason_codes, 
-	const char *source_eid, struct timeval orig_bundle_recv_time, const uint8_t *orig_bundle_raw);
+	const char *source_eid, struct timeval reception_time, const uint8_t *orig_bundle_raw);
 /**************************/
 
 
