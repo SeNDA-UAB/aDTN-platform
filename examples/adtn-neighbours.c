@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <getopt.h>
 
-#include "common/include/neighbours.h"
+#include "platform/common/include/neighbours.h"
 
 long time;
 
