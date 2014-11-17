@@ -140,7 +140,7 @@ end:
 
 int adtn_bind(int fd, sock_addr_t *address)
 {
-	int ret = 1;
+	int ret = -1;
 	int i = 0, j = 0, lines = 0;
 	int adtn_port, pid;
 	int shm_fd = -1;
@@ -228,7 +228,7 @@ end:
 
 int adtn_close(int fd)
 {
-	int ret = 1, i = 0;
+	int ret = -1, i = 0;
 	int adtn_port, pid;
 	int _pid;
 	FILE *src = NULL, *dest = NULL;
@@ -335,7 +335,7 @@ end:
 
 int adtn_setcodopt_base(int fd, code_type_e option, const char *code, int from_file, int replace)
 {
-	int ret = 1;
+	int ret = -1;
 	bunsock_s *identifier;
 
 	HASH_FIND_INT(sockStore, &fd, identifier);
@@ -675,7 +675,7 @@ end:
 
 int adtn_sendto(int fd, const sock_addr_t addr, char *buffer)
 {
-	int ret = 1;
+	int ret = -1;
 	int shm_fd = -1;
 	char *first_oc;
 	char full_dest[ENDPOINT_LENGTH] = {0};
