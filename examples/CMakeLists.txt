@@ -22,3 +22,4 @@ target_link_libraries(adtn-traceroute adtnAPI)
 
 install(TARGETS adtn-ping DESTINATION bin)
 install(TARGETS adtn-neighbours DESTINATION bin)
+install(TARGETS adtn-traceroute DESTINATION bin)
