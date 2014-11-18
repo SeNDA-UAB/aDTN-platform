@@ -152,7 +152,7 @@ int bundle_set_proc_flags(bundle_s *bundle, uint64_t flags)
 		goto end;
 	}
 
-	bundle->primary->proc_flags = bundle->primary->proc_flags | flags;
+	bundle->primary->proc_flags = flags;
 
 end:
 	return ret;
