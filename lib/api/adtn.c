@@ -138,7 +138,7 @@ end:
 	return ret;
 }
 
-int adtn_bind(int fd, sock_addr_t *address)
+int adtn_bind(int fd, sock_addr_t *addr)
 {
 	int ret = -1;
 	int i = 0, j = 0, lines = 0;
@@ -159,7 +159,7 @@ int adtn_bind(int fd, sock_addr_t *address)
 		errno = ENOENT;
 		goto end;
 	}
-	address->id = address->id ? address->id : shm->platform_id;
+	addr->id = addr->id ? addr->id : shm->platform_id;
 	f = fopen(SOCK_SPOOL, "r");
 	if (f != NULL) {
 		while (EOF != (fscanf(f, "%*[^\n]"), fscanf(f, "%*c")))
@@ -169,7 +169,7 @@ int adtn_bind(int fd, sock_addr_t *address)
 			fscanf(f, "%s %d", idport, &pid);
 			platform_id = strtok_r(idport, ":", &strk_state);
 			adtn_port = atoi(strtok_r(NULL, ":", &strk_state));
-			if ((adtn_port == address->adtn_port) && (strcmp(address->id, platform_id) == 0)) {
+			if ((adtn_port == addr->adtn_port) && (strcmp(addr->id, platform_id) == 0)) {
 				kill(pid, 0);
 				if (errno != ESRCH) {
 					errno = EADDRINUSE;
@@ -207,9 +207,9 @@ int adtn_bind(int fd, sock_addr_t *address)
 		errno = EACCES;
 		goto close_f;
 	}
-	fprintf(f, "%s:%d %d\n", address->id, address->adtn_port, getpid());
-	identifier->addr.id = strdup(address->id);
-	identifier->addr.adtn_port = address->adtn_port;
+	fprintf(f, "%s:%d %d\n", addr->id, addr->adtn_port, getpid());
+	identifier->addr.id = strdup(addr->id);
+	identifier->addr.adtn_port = addr->adtn_port;
 	ret = 0;
 
 close_f:
@@ -413,7 +413,7 @@ int adtn_var_setcodopt(set_opt_args in)
 	return ret;
 }
 
-int adtn_rmcodopt(int fd, int option)
+int adtn_rmcodopt(int fd, const int option)
 {
 	int ret = 1;
 	bunsock_s *identifier;
@@ -456,7 +456,7 @@ end:
 	return ret;
 }
 
-int adtn_setsockopt(int fd, int optname, const void *optval)
+int adtn_setsockopt(int fd, const int optname, const void *optval)
 {
 	int ret = -1;
 	bunsock_s *identifier;
@@ -467,25 +467,33 @@ int adtn_setsockopt(int fd, int optname, const void *optval)
 	}
 	switch (optname) {
 	case OP_PROC_FLAGS:
-		identifier->sopt.proc_flags = * (uint32_t *)optval;
+		identifier->sopt.proc_flags = *(uint32_t *)optval;
 		break;
 	case OP_LIFETIME:
-		identifier->sopt.lifetime = * (uint32_t *)optval;
+		identifier->sopt.lifetime = *(uint32_t *)optval;
 		break;
 	case OP_BLOCK_FLAGS:
-		identifier->sopt.block_flags = * (uint32_t *)optval;
+		identifier->sopt.block_flags = *(uint32_t *)optval;
 		break;
 	case OP_DEST:
-		identifier->sopt.dest = (char *)optval;
+		if (identifier->sopt.dest != NULL)
+			free(identifier->sopt.dest);
+		identifier->sopt.dest = strdup((char *)optval);
 		break;
 	case OP_SOURCE:
-		identifier->sopt.source = (char *)optval;
+		if (identifier->sopt.source != NULL)
+			free(identifier->sopt.source);
+		identifier->sopt.source = strdup((char *)optval);
 		break;
 	case OP_REPORT:
-		identifier->sopt.report = (char *)optval;
+		if (identifier->sopt.report != NULL)
+			free(identifier->sopt.report);
+		identifier->sopt.report = strdup((char *)optval);
 		break;
 	case OP_CUSTOM:
-		identifier->sopt.custom = (char *)optval;
+		if (identifier->sopt.custom != NULL)
+			free(identifier->sopt.custom);
+		identifier->sopt.custom = strdup((char *)optval);
 		break;
 	default:
 		errno = ENOTSUP;
@@ -497,7 +505,7 @@ end:
 	return ret;
 }
 
-int adtn_getsockopt(int fd, int optname, void *optval, int *optlen)
+int adtn_getsockopt(int fd, const int optname,  void *optval, int *optlen)
 {
 	int ret = -1;
 	bunsock_s *identifier;
@@ -643,7 +651,6 @@ static int delegate_bundle(const bundle_s *bundle, const char *file_prefix, buns
 	char bundle_name[BUNDLE_NAME_LENGTH] = {0};
 	struct timeval curr_t;
 	FILE *f = NULL;
-	char *msg = NULL;
 
 	gettimeofday(&curr_t, NULL);
 	snprintf(bundle_name, BUNDLE_NAME_LENGTH, "%ld-%ld-A.bundle", curr_t.tv_sec, curr_t.tv_usec);
@@ -673,7 +680,7 @@ end:
 	return ret;
 }
 
-int adtn_sendto(int fd, const sock_addr_t addr, char *buffer)
+int adtn_sendto(int fd, const void *buffer, size_t buffer_l, const sock_addr_t addr)
 {
 	int ret = -1;
 	int shm_fd = -1;
@@ -685,7 +692,7 @@ int adtn_sendto(int fd, const sock_addr_t addr, char *buffer)
 	bundle_s *bundle = NULL;
 	payload_block_s *payload;
 
-	if (addr.id == NULL || strcmp(addr.id, "") == 0 || buffer == NULL || strcmp(buffer, "") == 0) {
+	if (addr.id == NULL || strcmp(addr.id, "") == 0 || buffer_l <= 0 || (buffer_l > 0 && buffer == NULL)) {
 		errno = EINVAL;
 		goto end;
 	}
@@ -729,7 +736,7 @@ int adtn_sendto(int fd, const sock_addr_t addr, char *buffer)
 	if (identifier->sopt.custom)
 		bundle_set_custom(bundle, identifier->sopt.custom);
 	payload = bundle_new_payload_block();
-	bundle_set_payload(payload, (uint8_t *) buffer, strlen(buffer));
+	bundle_set_payload(payload, (uint8_t *) buffer, buffer_l);
 	bundle_add_ext_block(bundle, (ext_block_s *) payload);
 	if (bundle_add_codes(bundle, identifier) != 0) {
 		goto end;
@@ -737,7 +744,7 @@ int adtn_sendto(int fd, const sock_addr_t addr, char *buffer)
 	if (delegate_bundle(bundle, shm->data_path, identifier) != 0) {
 		goto end;
 	}
-	ret = strlen(buffer);
+	ret = buffer_l;
 end:
 	if (shm_fd != -1)
 		close(fd);
@@ -840,25 +847,25 @@ end:
 	return raw_data;
 }
 
-int adtn_recv(int fd, char *buffer, int max_len)
+int adtn_recv(int fd, void *buffer, size_t len)
 {
-	unsigned len = 0;
+	unsigned payload_len = 0;
 	int ret = -1;
 	char *raw_data = NULL;
 	uint8_t *payload;
 
-	if (!buffer || max_len < 1) {
+	if (!buffer || len < 1) {
 		errno = EINVAL;
 		goto end;
 	}
 	raw_data = adtn_recv_base(fd);
 	if (!raw_data)
 		goto end;
-	len = bundle_raw_get_payload((uint8_t *)raw_data, &payload);
-	if (len > max_len)
-		len =  max_len;
-	memcpy(buffer, (char *)payload, len);
-	ret = len;
+	payload_len = bundle_raw_get_payload((uint8_t *)raw_data, &payload);
+	if (payload_len > len)
+		payload_len =  len;
+	memcpy(buffer, (char *)payload, payload_len);
+	ret = payload_len;
 end:
 	if (raw_data)
 		free(raw_data);
@@ -866,16 +873,16 @@ end:
 	return ret;
 }
 
-int adtn_recvfrom(int fd, char *buffer, int max_len, sock_addr_t *addr)
+int adtn_recvfrom(int fd, void *buffer, size_t len, sock_addr_t *addr)
 {
 	int ret = -1;
-	int len;
+	int payload_len;
 	char *raw_data = NULL;
 	char *full_src = NULL;
 	char *strk_state;
 	uint8_t *payload;
 
-	if (!buffer || max_len < 1) {
+	if (!buffer || len < 1) {
 		errno = EINVAL;
 		goto end;
 	}
@@ -889,11 +896,11 @@ int adtn_recvfrom(int fd, char *buffer, int max_len, sock_addr_t *addr)
 	addr->id = strtok_r(full_src, ":", &strk_state);
 	addr->adtn_port = atoi(strtok_r(NULL, ":", &strk_state));
 
-	len = bundle_raw_get_payload((uint8_t *)raw_data, &payload);
-	if (len > max_len)
-		len =  max_len;
-	memcpy(buffer, (char *)payload, len);
-	ret = len;
+	payload_len = bundle_raw_get_payload((uint8_t *)raw_data, &payload);
+	if (payload_len > len)
+		payload_len =  len;
+	memcpy(buffer, (char *)payload, payload_len);
+	ret = payload_len;
 
 end:
 	if (raw_data)

@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <stdint.h>
+#include <sys/types.h>
 
 typedef struct {
 	int adtn_port; ///< port to identify the own application
@@ -54,15 +55,15 @@ int adtn_bind(int fd, sock_addr_t *addr);
 int adtn_close(int fd);
 int adtn_shutdown(int fd);
 
-int adtn_rmcodopt(int fd, int option_name);
+int adtn_rmcodopt(int fd, const int option);
 int adtn_var_setcodopt(set_opt_args in);
 
-int adtn_setsockopt(int fd, int optname, const void *optval);
-int adtn_getsockopt(int fd, int optname, void *optval, int *optlen);
+int adtn_setsockopt(int fd, const int optname, const void *optval);
+int adtn_getsockopt(int fd, const int optname,  void *optval, int *optlen);
 
-int adtn_sendto(int fd, sock_addr_t addr, char *buffer);
-int adtn_recv(int fd, char *buffer, int max_len);
-int adtn_recvfrom(int fd, char *buffer, int max_len, sock_addr_t *addr);
+int adtn_sendto(int fd, const void *buffer, size_t buffer_l, const sock_addr_t addr);
+int adtn_recv(int fd, void *buffer, size_t len);
+int adtn_recvfrom(int fd, void *buffer, size_t len, sock_addr_t *addr);
 
 
 /**
@@ -223,7 +224,7 @@ Options available:
 errno can take the values below:
 
 ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-ENOTSUP   	invalid option.
+ENOTSUP     invalid option.
 */
 
 /**
@@ -251,7 +252,7 @@ Options available:
 errno can take the values below:
 
 ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-ENOTSUP   	invalid option.
+ENOTSUP     invalid option.
 */
 
 /**
