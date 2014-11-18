@@ -14,7 +14,7 @@ add_subdirectory(executor)
 # Configure adtnd script: Installation prefix and default configuration file path.
 file(READ "${PLATFORM_SOURCE_DIR}/adtnd/adtnd.sh" FILE_CONTENT)
 string(REGEX REPLACE "INSTALL_PREFIX=[^ \n]*" "INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}" MODIFIED_FILE_CONTENT "${FILE_CONTENT}")
-string(REGEX REPLACE "config_file=\\$INSTALL_PREFIX[^ \n]*" "config_file=${SYSCONFDIR}/${ADTN_CONF_SUBDIR}/adtn.ini" MODIFIED_FILE_CONTENT "${FILE_CONTENT}")
+string(REGEX REPLACE "config_file=\\$INSTALL_PREFIX[^ \n]*" "config_file=$INSTALL_PREFIX/adtn.ini" MODIFIED_FILE_CONTENT "${MODIFIED_FILE_CONTENT}")
 file(WRITE "${PLATFORM_BINARY_DIR}/adtnd/adtnd" "${MODIFIED_FILE_CONTENT}")
 
 # Configure adtn.ini: change platofrm id to computer's hostname and set where are the default codes located.
