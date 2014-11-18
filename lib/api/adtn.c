@@ -737,7 +737,7 @@ int adtn_sendto(int fd, const sock_addr_t addr, char *buffer)
 	if (delegate_bundle(bundle, shm->data_path, identifier) != 0) {
 		goto end;
 	}
-	ret = 0;
+	ret = strlen(buffer);
 end:
 	if (shm_fd != -1)
 		close(fd);
@@ -868,7 +868,7 @@ end:
 
 int adtn_recvfrom(int fd, char *buffer, int max_len, sock_addr_t *addr)
 {
-	int ret = 1;
+	int ret = -1;
 	int len;
 	char *raw_data = NULL;
 	char *full_src = NULL;

@@ -68,6 +68,7 @@ int adtn_recvfrom(int fd, char *buffer, int max_len, sock_addr_t *addr);
 /**
     @fn int adtn_socket(socket_params in)
     @brief Creates a adtn sockets to send or recv information using the adtn platform.
+
     aDTN is divided in two parts, one is the API for developers that allow to use functions to send and receive messages. The other one
     is the core that manages and sends the messages.
     ====================
@@ -75,7 +76,7 @@ int adtn_recvfrom(int fd, char *buffer, int max_len, sock_addr_t *addr);
     ====================
     |      aDTN Core   |
     ====================
-    The Core makes posible resilience to delay, disruptions and big taxes of errors. The implementation of the paltform allow more than one core to cohexist in
+    The Core makes posible resilience to delay, disruptions and big taxes of errors. The implementation of the platform allow more than one core to cohexist in
     the same node(device).
     ==========================
     |         Dev API        |
@@ -97,11 +98,12 @@ int adtn_recvfrom(int fd, char *buffer, int max_len, sock_addr_t *addr);
 /**
     @fn int adtn_bind(int fd, sock_addr_t *address)
     @brief Associates the information given to the socket.
+
     When adtn socket is created with adtn_socket(1) it exist in the space name but has no address associated. adtn_bind(2) associates the information
     specified in the structure sock_addr_t of the second argument to the socket represented by the file descriptor.
 
-    @param fd The file descriptor that identifies the adtn_socket. This value can be obtained calling adtn_socket(1)
-    @param address A sock_addr_t structure containing information about the address that must be associated with the socket
+    @param fd The file descriptor that identifies the adtn_socket. This value can be obtained calling adtn_socket(1).
+    @param address A sock_addr_t structure containing information about the address that must be associated with the socket.
 
     @return 0 on succes, -1 on error. If the function fails errno is set.
 
@@ -116,6 +118,7 @@ int adtn_recvfrom(int fd, char *buffer, int max_len, sock_addr_t *addr);
 /**
     @fn int adtn_close(int fd)
     @brief Closes an adtn_socket and frees the memory associated to the socket.
+
     Closes an adtn_socket and frees the memory associated to the socket. The structures associated to the socket
     in adtn_bind(2) call are freed too.
 
@@ -130,8 +133,9 @@ int adtn_recvfrom(int fd, char *buffer, int max_len, sock_addr_t *addr);
 */
 
 /**
-	@fn int adtn_shutdown(int fd)
-	@brief Same as adtn_close(1), deleting also waiting data.
+    @fn int adtn_shutdown(int fd)
+    @brief Same as adtn_close(1), deleting also waiting data.
+
     Closes an adtn_socket and frees the memory associated to the socket. The structures associated to the socket
     in adtn_bind(2) call are freed too. If some data are waiting to be readed it will be deleted.
 
@@ -147,8 +151,9 @@ int adtn_recvfrom(int fd, char *buffer, int max_len, sock_addr_t *addr);
 */
 
 /**
-	@fn int adtn_setcodopt(set_opt_args in)
-	@brief Associate codes to a socket.
+    @fn int adtn_setcodopt(set_opt_args in)
+    @brief Associate codes to a socket.
+
     Over ADTN platform the messages can carry codes with him to perform different tasks.
     This function allows to add code options to the socket. Each code linked with the socket will be added to outcoming messages sent through the socket.
     The kind of code associated to the socket is specified by the parameter option_name.
@@ -159,127 +164,158 @@ int adtn_recvfrom(int fd, char *buffer, int max_len, sock_addr_t *addr);
     lapsed or not. P_CODE will add a prioritzation code. This code will affect only to the messages in other nodes that pertain to same application. Is not possible
     for a code to priorize messages from other applications.
     @param code This parameter must contain a filename where the code is stored or the full code to associate to socket. The content of this parameter is associated
-    with parameter from_file
+    with parameter from_file.
     @param from_file [Optional] If is set to 1 the param code will contain a filename where the routing code is stored. If is set to 0 the param code must contain all
     code. Default value is 0.
     @param replace [Optional] If is set to 1 and exists an older code associated to the socket it will be replaced. If is set to 0 and a code is already binded with
-    the socket this function will return an error. Replace is 0 by default
+    the socket this function will return an error. Replace is 0 by default.
 
-	@return 0 on succes, -1 on error. If the function fails errno is set.
+    @return 0 on succes, -1 on error. If the function fails errno is set.
 
     errno can take the values below:
-	
+
     ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-    EINVAL 		invalid code or from_file value.
-    EOPNOTSUPP 	invalid option code.
+    EINVAL      invalid code or from_file value.
+    EOPNOTSUPP  existing code binded.
 */
 
 /**
-	@fn int adtn_rmcodopt(int fd, int option)
-	@brief Remoces an associated code from a socket.
-    Allows to remove an associated code from a socket. See documentation of adtn_setcodopt(4) for more information.
+    @fn int adtn_rmcodopt(int fd, int option)
+    @brief Removes an associated code from a socket.
 
-    @param fd A file descriptor identifying the socket
+    Allows to remove an associated code from a socket. See documentation of adtn_setcodopt(1) for more information.
+
+    @param fd A file descriptor identifying the socket.
     @param option_name determines what kind of code will be removed. If the code doesn't exist nothing happens.
 
     @return 0 on succes, -1 on error. If the function fails errno is set.
 
-	errno can take the values below:
+    errno can take the values below:
 
     ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-    EINVAL 		invalid code option.
+    EINVAL      invalid code option.
 */
 
- /**
- 	@fn int adtn_setsockopt(int fd, int optname, const void *optval)
- 	@brief Set message options.
-    In ADTN messages is posible specify the lifetime of the message and diferents options for headers.
-    These options can be associated to a socket using this function. After calling it, all messages send through the socket will ahve the specified
-    options.
+/**
+   @fn int adtn_setsockopt(int fd, int optname, const void *optval)
+   @brief Set message options.
 
-    @param fd A file descriptor identifying the socket
-    @param optname determines the option to set, the possible values are listed below.
-    @param optval the value to set.
+   In ADTN messages is posible specify the lifetime of the message and diferents options for headers.
+   These options can be associated to a socket using this function. After calling it, all messages send through the socket will ahve the specified
+   options.
 
-    @return 0 on succes, -1 on error. If the function fails errno is set.
+   @param fd A file descriptor identifying the socket.
+   @param optname determines the option to set, the possible values are listed below.
+   @param optval the value to set.
 
-	Options available:
+   @return 0 on succes, -1 on error. If the function fails errno is set.
 
-		OP_PROC_FLAGS		Set the flags for the primary block
-		OP_LIFETIME			Set the lifetime of the messages
-		OP_BLOCK_FLAGS		Set the flags for the rest of blocks
-		OP_DEST				Set the destination of the messages
-		OP_SOURCE 			Set the source of the message
-		OP_REPORT			Set the report of the message
-		OP_CUSTOM			Set the custom value of the message
+Options available:
 
-	errno can take the values below:
+   OP_PROC_FLAGS       Set the flags for the primary block.
+   OP_LIFETIME         Set the lifetime of the messages.
+   OP_BLOCK_FLAGS      Set the flags for the rest of blocks.
+   OP_DEST             Set the destination of the messages.
+   OP_SOURCE           Set the source of the message.
+   OP_REPORT           Set the report of the message.
+   OP_CUSTOM           Set the custom value of the message.
 
-	ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-	ENOTSUP 	invalid option.
-*/  
+errno can take the values below:
 
- /**
- 	@fn int adtn_getsockopt(int fd, int optname, void *optval, int *optlen)
- 	@brief Get message options.
-    
-    @param fd A file descriptor identifying the socket
-    @param optname determines the option to set, the possible values are listed below.
-    @param optval where to save the value obtined.
-    @param optlen number of bytes to get, after calling is set to the number of bytes returned.
-
-    @return 0 on succes, -1 on error. If the function fails errno is set.
-
-	Options available:
-
-		OP_PROC_FLAGS		Get the flags for the primary block
-		OP_LIFETIME			Get the lifetime of the messages
-		OP_BLOCK_FLAGS		Get the flags for the rest of blocks
-		OP_DEST				Get the destination of the messages
-		OP_SOURCE 			Get the source of the message
-		OP_REPORT			Get the report of the message
-		OP_CUSTOM			Get the custom value of the message
-		OP_LAST_TIMESTAMP	Get the last message timestamp
-
-	errno can take the values below:
-
-	ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-	ENOTSUP 	invalid option.
-*/  
+ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
+ENOTSUP   	invalid option.
+*/
 
 /**
-	@fn int adtn_sendto(int fd, const sock_addr_t addr, char *buffer)
-	@brief Sends a message over ADTN platform.
+   @fn int adtn_getsockopt(int fd, int optname, void *optval, int *optlen)
+   @brief Get message options.
+
+   @param fd A file descriptor identifying the socket.
+   @param optname determines the option to set, the possible values are listed below.
+   @param optval where to save the value obtined.
+   @param optlen number of bytes to get, after calling is set to the number of bytes returned.
+
+   @return 0 on succes, -1 on error. If the function fails errno is set.
+
+Options available:
+
+   OP_PROC_FLAGS       Get the flags for the primary block.
+   OP_LIFETIME         Get the lifetime of the messages.
+   OP_BLOCK_FLAGS      Get the flags for the rest of blocks.
+   OP_DEST             Get the destination of the messages.
+   OP_SOURCE           Get the source of the message.
+   OP_REPORT           Get the report of the message.
+   OP_CUSTOM           Get the custom value of the message.
+   OP_LAST_TIMESTAMP   Get the last message timestamp.
+
+errno can take the values below:
+
+ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
+ENOTSUP   	invalid option.
+*/
+
+/**
+    @fn int adtn_sendto(int fd, const sock_addr_t addr, char *buffer)
+    @brief Sends a message over ADTN platform.
+
     Sends a message over ADTN platform. The fact that adtn_sendto call returns a success value doesn't mean that the message has been sent through the network.
-    adtn_sendto() only puts the message in queue to be sent. The platform will manage the send through the network. In opportunistic networks the time
-    until adtn_sendto() returns a succes value and the message is really send is impossible to determine.
+    adtn_sendto(3) only puts the message in queue to be sent. The platform will manage the send through the network. In opportunistic networks the time
+    until adtn_sendto(3) returns a succes value and the message is really send is impossible to determine.
 
-    @param fd A file descriptor identifying the socket
+    @param fd A file descriptor identifying the socket.
     @param addr sock_addr_t structure containing the destination information. Must contain, the application port and ip of the destination.
-    @param buffer A buffer with the message to send
-    
-    @return -1 on error or the number of bytes written on succes.
+    @param buffer A buffer with the message to send.
+
+    @return The number of bytes written on succes or -1 on error. If the function fails errno is set.
+
+    errno can take the values below:
+
+    EINVAL      invalid address or null buffer.
+    ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
+    ENOENT      cannot load the shared memory.
+
 */
 
 /**
+    @fn int adtn_recv(int fd, char *buffer, int max_len)
+    @brief Recive a message.
+
     Recive a message from adtn_socket. If at the moment of perform the call there are no messages adtn_recv(3) will block
     until can retrieve a message. After get a message it will be deleted from the socket queue.
+
     @param fd A file descriptor identifying the socket.
-    @param buffer Char array where the mssg value will be stored
-    @param max_len The maximum number of bytes that will be written into buffer
-    @return The number of bytes received on succes or -1 on error. In case of error errno is set.
+    @param buffer Char array where the mssg value will be stored.
+    @param max_len The maximum number of bytes that will be written into buffer.
+
+    @return The number of bytes received on succes or -1 on error. If the function fails errno is set.
+
+    errno can take the values below:
+
+    EINVAL      invalid buffer or max_len.
     ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
+    ENOENT      cannot load the shared memory.
+
 */
 
 /**
+    @fn int adtn_recvfrom(int fd, char *buffer, int max_len, sock_addr_t *addr)
+    @brief Recive a message, filling sender information.
+
     Recive a message from adtn_socket. If at the moment of perform the call there are no messages adtn_recvfrom(4) will block
     until can retrieve a message. After get a message it will be deleted from the socket queue. A sock_addr_t struct will be fill with
     sender information like ip or port.
+
     @param fd A file descriptor identifying the socket.
-    @param buffer Char array where the mssg value will be stored
-    @param max_len The maximum number of bytes that will be written into buffer
-    @param addr An empty structure that will be filled with information about the sender
-    @return The number of bytes received on succes or -1 on error. In case of error errno is set.
+    @param buffer Char array where the mssg value will be stored.
+    @param max_len The maximum number of bytes that will be written into buffer.
+    @param addr An empty structure that will be filled with information about the sender.
+
+    @return The number of bytes received on succes or -1 on error. If the function fails errno is set.
+
+    errno can take the values below:
+
+    EINVAL      invalid buffer or max_len.
     ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
+    ENOENT      cannot load the shared memory.
 */
 
