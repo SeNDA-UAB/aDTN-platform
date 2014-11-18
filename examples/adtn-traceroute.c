@@ -39,6 +39,7 @@
 struct _conf {
 	struct common *shm;
 	sock_addr_t local;
+	sock_addr_t dest;
 	char *config_file;
 	char *dest_platform_id;
 	char *incoming_path;
@@ -192,7 +193,6 @@ void *recv_forwarded_sr(int *s)
 	struct timespec rtt_end;
 	sock_addr_t recv_addr;
 
-
 	printf("adtn-traceroute to %s, %d seconds timeout, %ld seconds lifetime, %ld bytes bundles\n", conf.dest_platform_id, conf.timeout, conf.bundle_lifetime, conf.payload_size);
 
 	for (;;) {
@@ -249,108 +249,6 @@ void *recv_forwarded_sr(int *s)
 			}
 		}
 	}
-}
-
-int create_tracerouted_bundle(/*out*/uint8_t **raw_bundle,/*out*/ uint64_t *timestamp_time)
-{
-	int ret = -1, bundle_raw_l = 0;
-	uint64_t flags;
-	uint8_t *payload_content = NULL;
-	bundle_s *new_bundle;
-	payload_block_s *payload;
-	char ping_dest[MAX_PLATFORM_ID_LEN], ping_origin[MAX_PLATFORM_ID_LEN];
-
-	// We will create the bundle manually.
-	new_bundle = bundle_new();
-	*timestamp_time = new_bundle->primary->timestamp_time;
-
-	// Set flags
-	flags = H_SR_CACC | H_SR_BREC;
-	if (bundle_set_proc_flags(new_bundle, flags) != 0) {
-		printf("Error setting processor falgs.");
-		goto end;
-	}
-
-	// Set destiantion
-	SNPRINTF(ping_dest, MAX_PLATFORM_ID_LEN, "%s:%d", conf.dest_platform_id, PING_APP);
-	if (bundle_set_destination(new_bundle, ping_dest) != 0) {
-		printf("Error setting destination");
-		goto end;
-	}
-
-	// Set origin. Also at the report-to field
-	SNPRINTF(ping_origin, MAX_PLATFORM_ID_LEN, "%s:%d", conf.shm->platform_id, conf.local.adtn_port);
-	if (bundle_set_source(new_bundle, ping_origin) != 0) {
-		printf("Error setting origin as report-to");
-		goto end;
-	}
-	if (bundle_set_primary_entry(new_bundle, REPORT_SCHEME, ping_origin) != 0) {
-		printf("Error setting origin as report-to");
-		goto end;
-	}
-
-	// Set paylaod
-	payload = bundle_new_payload_block();
-	payload_content = (uint8_t *)calloc(1, sizeof(uint8_t) * conf.payload_size);
-	if (bundle_set_payload(payload, payload_content, conf.payload_size) != 0) {
-		printf("Error setting payload");
-		goto end;
-	}
-
-	if (bundle_add_ext_block(new_bundle, (ext_block_s *)payload)) {
-		printf("Error adding payload block to bundle.");
-		goto end;
-	}
-
-	// Set lifeimte
-	new_bundle->primary->lifetime = conf.bundle_lifetime;
-
-	//Create raw bundle
-	if ((bundle_raw_l = bundle_create_raw(new_bundle, raw_bundle)) <= 0) {
-		printf("Error creating raw bundle");
-		goto end;
-	}
-
-	ret = bundle_raw_l;
-end:
-	if (payload)
-		free(payload);
-	if (payload_content)
-		free(payload_content);
-	if (new_bundle)
-		bundle_free(new_bundle);
-
-	return ret;
-}
-
-int send_tracerouted_bundle(const char *dest_id, const int app_port)
-{
-	char *bundle_name = NULL;
-	int ret = 1, bundle_raw_l = 0;
-
-	uint8_t *bundle_raw = NULL;
-
-	bundle_name = generate_bundle_name();
-	bundle_raw_l = create_tracerouted_bundle(&bundle_raw, &route.start_timestamp);
-	if (bundle_raw_l <= 0) {
-		printf("Error creating tracerouted bundle");
-		goto end;
-	}
-
-	clock_gettime(CLOCK_MONOTONIC_RAW, &route.start);
-	if (write_to(conf.input_path, bundle_name, bundle_raw, bundle_raw_l) != 0) {
-		printf("Error puting bundle into the queue.\n");
-		goto end;
-	}
-
-	ret = 0;
-end:
-	if (bundle_raw)
-		free(bundle_raw);
-	if (bundle_name)
-		free(bundle_name);
-
-	return ret;
 }
 
 static void help(const char *program_name)
@@ -421,10 +319,11 @@ static void parse_arguments(int argc, char *const argv[])
 
 int main(int argc,  char *const *argv)
 {
-	int s = 0, shm_fd = 0, adtn_port = 0, fd = 0, sig = 0;
-	char *data_path = NULL;
+	int s = 0, shm_fd = 0, adtn_port = 0, fd = 0, sig = 0, ping_flags = 0, timestamp_time_l = sizeof(route.start_timestamp);
+	char *data_path = NULL, ping_origin[MAX_PLATFORM_ID_LEN] = {0};
 	struct stat st;
 	pthread_t recv_reports_t;
+	uint8_t *payload_content;
 
 	/* Initialization */
 	sigset_t blocked_sigs = {{0}};
@@ -493,8 +392,11 @@ int main(int argc,  char *const *argv)
 		}
 	} while (1);
 
-	conf.local.id = strdup(conf.dest_platform_id);
+	conf.local.id = strdup(conf.shm->platform_id);
 	conf.local.adtn_port = adtn_port;
+
+	conf.dest.id = conf.dest_platform_id;
+	conf.dest.adtn_port = adtn_port;
 
 	/* Prepare reception */
 	s = adtn_socket(conf.shm->config_file);
@@ -505,7 +407,28 @@ int main(int argc,  char *const *argv)
 	}
 	/***/
 
-	send_tracerouted_bundle(conf.dest_platform_id, adtn_port);
+	/* Send tracerotued bundle */
+	ping_flags = H_DESS | H_NOTF | H_SR_BREC | H_SR_CACC;
+	if (adtn_setsockopt(s, OP_PROC_FLAGS, &ping_flags) != 0)
+		goto end;
+	SNPRINTF(ping_origin, MAX_PLATFORM_ID_LEN, "%s:%d", conf.shm->platform_id, conf.local.adtn_port);
+	if (adtn_setsockopt(s, OP_REPORT, ping_origin) != 0)
+		goto end;
+	if (adtn_setsockopt(s, OP_LIFETIME, &conf.bundle_lifetime) != 0)
+		goto end;
+
+	payload_content = (uint8_t *)calloc(1, sizeof(uint8_t) * conf.payload_size);
+	if (adtn_sendto(s, payload_content, conf.payload_size, conf.dest) != conf.payload_size) {
+		printf("Error sending bundle to tracerotue.\n");
+		goto end;
+	}
+	clock_gettime(CLOCK_MONOTONIC_RAW, &route.start);
+
+	if (adtn_getsockopt(s, OP_LAST_TIMESTAMP, &route.start_timestamp, &timestamp_time_l) != 0 || timestamp_time_l == 0){
+		printf("Error getting timestamp of the bundle to traceroute");
+		goto end;
+	}
+	/**/
 
 	pthread_create(&recv_reports_t, NULL, (void *)recv_forwarded_sr, &s);
 
