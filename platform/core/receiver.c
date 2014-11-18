@@ -721,6 +721,11 @@ static void *socket_thread()
 			LOG_MSG(LOG__ERROR, true, "pthread_create()");
 			continue;
 		}
+
+		if (pthread_detach(get_and_process_bundle_t) != 0){
+			LOG_MSG(LOG__ERROR, true, "pthread_detach()");
+			continue;
+		}
 	}
 
 end:
