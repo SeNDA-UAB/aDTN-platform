@@ -34,7 +34,7 @@
 	</target>
 	
 	<target name="javadoc" description="Generates javadoc for AdtnSocket classes only">
-		<javadoc sourcepath="${src}" packagenames="cat.uab.senda.adtn.adtnlibj" destdir="${doc}"/>
+		<javadoc sourcepath="${src}" packagenames="cat.uab.senda.adtn.adtnlibj,cat.uab.senda.adtn.adtnlibj.comm" destdir="${doc}"/>
 	</target>
 	
 	<target name="examplesdist" depends="dist">
