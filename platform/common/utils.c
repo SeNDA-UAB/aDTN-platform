@@ -1,7 +1,13 @@
+#ifndef _GNU_SOURCE
+	#define _GNU_SOURCE
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include <sys/time.h>
+#include <time.h>
 
 #include "include/log.h"
 #include "include/constants.h"
@@ -69,3 +75,20 @@ int get_file_size(FILE *fd)
 	return total_bytes;
 }
 
+/* time functions */
+double diff_time(struct timespec *start, struct timespec *end)
+{
+	return ((double)(end->tv_sec - start->tv_sec) * 1.0e9 + (double)(end->tv_nsec - start->tv_nsec));
+}
+
+void time_to_str(const struct timeval tv, char *time_str, int time_str_l)
+{
+	int off = 0;
+	struct tm *nowtm;
+	nowtm = localtime(&tv.tv_sec);
+
+	off = strftime(time_str, time_str_l, "%Y-%m-%d %H:%M:%S", nowtm);
+	sprintf(time_str + off, ".%.6ld", tv.tv_usec);
+
+}
+/**/

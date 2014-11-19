@@ -89,11 +89,11 @@ static void help(char *program_name)
 	        "Usage: %s [options] [platform_id]\n"
 	        "Supported options:\n"
 	        "       [-f | --conf_file] config_file\t\tUse {config_file} config file instead of the default found at "DEFAULT_CONF_FILE_PATH"\n"
-	        "       [-c | --count] count\t\t\tStop after sending {count} adtn pings\n"
-	        "       [-s | --size] size\t\t\tSet a payload of {size} bytes\n"
-	        "       [-i | --interval] interval \t\tWait {interval} milliseconds between adtn pings\n"
-	        "       [-l | --lifetime] lifetime\t\tSet adtn pings {lifetime} seconds of lifetime\n"
-	        "       [-h | --help]\t\t\t\tShows this help message\n"
+	        "       [-s | --size] size\t\t\tSet a payload of {size} bytes to ping bundles.\n"
+	        "       [-l | --lifetime] lifetime\t\tSet {lifetime} seconds of lifetime to the ping bundles.\n"
+	        "       [-c | --count] count\t\t\tStop after sending {count} ping bundles.\n"
+	        "       [-i | --interval] interval \t\tWait {interval} milliseconds between pings.\n"
+	        "       [-h | --help]\t\t\t\tShows this help message.\n"
 	        , program_name, program_name);
 }
 
@@ -101,34 +101,34 @@ static void parse_arguments(int argc, char *const argv[])
 {
 	int opt = -1, option_index = 0;
 	static struct option long_options[] = {
-		{"help",            no_argument,                0,      'h'},
 		{"conf_file",       required_argument,          0,      'f'},
-		{"count",           required_argument,          0,      'c'},
 		{"size",            required_argument,          0,      's'},
-		{"interval",        required_argument,          0,      'i'},
 		{"lifetime",        required_argument,          0,      'l'},
+		{"count",           required_argument,          0,      'c'},
+		{"interval",        required_argument,          0,      'i'},
+		{"help",            no_argument,                0,      'h'},		
 		{0, 0, 0, 0}
 	};
-	while ((opt = getopt_long(argc, argv, "hf:c:s:i:l:", long_options, &option_index))) {
+	while ((opt = getopt_long(argc, argv, "f:s:l:c:i:h", long_options, &option_index))) {
 		switch (opt) {
-		case 'h':
-			help(argv[0]);
-			exit(0);
 		case 'f':
 			conf.config_file = strdup(optarg);
-			break;
-		case 'c':
-			conf.ping_count = strtol(optarg, NULL, 10);
 			break;
 		case 's':
 			conf.payload_size = strtol(optarg, NULL, 10);
 			break;
+		case 'l':
+			conf.ping_lifetime = strtol(optarg, NULL, 10);
+			break;		
+		case 'c':
+			conf.ping_count = strtol(optarg, NULL, 10);
+			break;
 		case 'i':
 			conf.ping_interval = strtol(optarg, NULL, 10);
 			break;
-		case 'l':
-			conf.ping_lifetime = strtol(optarg, NULL, 10);
-			break;
+		case 'h':
+			help(argv[0]);
+			exit(0);
 		case '?':           //Unexpected parameter
 			help(argv[0]);
 			exit(0);
@@ -148,18 +148,6 @@ static void parse_arguments(int argc, char *const argv[])
 
 }
 
-double diff_time(struct timespec *start, struct timespec *end)
-{
-	return (double)(end->tv_sec - start->tv_sec) * 1.0e9 + (double)(end->tv_nsec - start->tv_nsec);
-}
-
-void time_to_str(const struct timeval tv, char *time_str, int time_str_l)
-{
-	struct tm *nowtm;
-	nowtm = localtime(&tv.tv_sec);
-
-	strftime(time_str, time_str_l, "%Y-%m-%d %H:%M:%S", nowtm);
-}
 
 void show_stats()
 {
@@ -189,24 +177,6 @@ void show_stats()
 
 }
 
-int ar_exctract_ping_timestamp(uint8_t *ar,  uint64_t *timestamp)
-{
-	int off = 3; // first byte is ar flags, next two status record flags
-	off += bundle_raw_get_sdnv_off((uint8_t *)ar + off, 2);
-	sdnv_decode((uint8_t *)ar + off, (uint64_t *)timestamp);
-
-	return 0;
-}
-
-int ar_extract_pong_reception_time(uint8_t *ar,  uint64_t *reception_time)
-{
-	int off = 3; // first byte is ar flags, next two status record flags
-	sdnv_decode((uint8_t *)ar + off, (uint64_t *)reception_time);
-	*reception_time += RFC_DATE_2000;
-
-	return 0;
-}
-
 void recv_pings(int *s)
 {
 	char buf[1024] = {0}, strtime[128];
@@ -228,7 +198,7 @@ void recv_pings(int *s)
 		while (last_ping_added != stats.ping_seq)
 			pthread_cond_wait(&ping_cond, &ping_mutex);
 
-		ar_exctract_ping_timestamp((uint8_t *)buf, &ts_time);
+		ar_sr_extract_cp_timestamp((uint8_t *)buf, &ts_time);
 
 		/* Retrieve ping info */
 		HASH_FIND(hh, pings_sent, &ts_time, sizeof(long), recv_ping);
@@ -247,7 +217,7 @@ void recv_pings(int *s)
 			/**/
 
 			/* Extract reception time */
-			ar_extract_pong_reception_time((uint8_t *)buf, (uint64_t *)&tv.tv_sec);
+			ar_sr_extract_time_of((uint8_t *)buf, &tv);
 			time_to_str(tv, strtime, sizeof(strtime));
 			/**/
 

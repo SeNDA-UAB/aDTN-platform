@@ -80,6 +80,7 @@ size_t sdnv_len(const uint8_t *bp)
 
 	return val_len;
 }
+/**/
 
 // int get_dtn_time(/*out*/uint8_t **dtn_time, /*out*/ int *dtn_time_l)
 // {
@@ -107,8 +108,6 @@ size_t sdnv_len(const uint8_t *bp)
 //  return ret;
 // }
 
-
-/**/
 
 /* Primary Block Block RFC5050 */
 bundle_s *bundle_new()
@@ -596,10 +595,10 @@ static int bundle_ar_sr_raw(status_report_s *ar_sr, /*out*/uint8_t **ar_sr_raw)
 		ar_sr_raw_l += sdnv_encoding_len(ar_sr->sec_time_of_receipt);
 	if (ar_sr->usec_time_of_receipt != -1)
 		ar_sr_raw_l += sdnv_encoding_len(ar_sr->usec_time_of_receipt);
-	if (ar_sr->sec_time_of_qustody != -1)
-		ar_sr_raw_l += sdnv_encoding_len(ar_sr->sec_time_of_qustody);
-	if (ar_sr->usec_time_of_qustody != -1)
-		ar_sr_raw_l += sdnv_encoding_len(ar_sr->usec_time_of_qustody);
+	if (ar_sr->sec_time_of_custody != -1)
+		ar_sr_raw_l += sdnv_encoding_len(ar_sr->sec_time_of_custody);
+	if (ar_sr->usec_time_of_custody != -1)
+		ar_sr_raw_l += sdnv_encoding_len(ar_sr->usec_time_of_custody);
 	if (ar_sr->sec_time_of_forwarding != -1)
 		ar_sr_raw_l += sdnv_encoding_len(ar_sr->sec_time_of_forwarding);
 	if (ar_sr->usec_time_of_forwarding != -1)
@@ -638,10 +637,10 @@ static int bundle_ar_sr_raw(status_report_s *ar_sr, /*out*/uint8_t **ar_sr_raw)
 		off += sdnv_encode(ar_sr->sec_time_of_receipt, *ar_sr_raw + off);
 	if (ar_sr->usec_time_of_receipt != -1)
 		off += sdnv_encode(ar_sr->usec_time_of_receipt, *ar_sr_raw + off);
-	if (ar_sr->sec_time_of_qustody != -1)
-		off += sdnv_encode(ar_sr->sec_time_of_qustody, *ar_sr_raw + off);
-	if (ar_sr->usec_time_of_qustody != -1)
-		off += sdnv_encode(ar_sr->usec_time_of_qustody, *ar_sr_raw + off);
+	if (ar_sr->sec_time_of_custody != -1)
+		off += sdnv_encode(ar_sr->sec_time_of_custody, *ar_sr_raw + off);
+	if (ar_sr->usec_time_of_custody != -1)
+		off += sdnv_encode(ar_sr->usec_time_of_custody, *ar_sr_raw + off);
 	if (ar_sr->sec_time_of_forwarding != -1)
 		off += sdnv_encode(ar_sr->sec_time_of_forwarding, *ar_sr_raw + off);
 	if (ar_sr->usec_time_of_forwarding != -1)
@@ -733,23 +732,23 @@ bundle_s *bundle_new_sr(
 			break;
 		case SR_CACC:
 			ar->body.sr->status_flags = SR_CACC;
-			ar->body.sr->sec_time_of_qustody = reception_time.tv_sec - RFC_DATE_2000;
-			ar->body.sr->usec_time_of_qustody = reception_time.tv_usec;
+			ar->body.sr->sec_time_of_custody = reception_time.tv_sec - RFC_DATE_2000;
+			ar->body.sr->usec_time_of_custody = reception_time.tv_usec;
 			break;
 		case SR_FORW:
 			ar->body.sr->status_flags = SR_FORW;
-			ar->body.sr->sec_time_of_qustody = reception_time.tv_sec - RFC_DATE_2000;
-			ar->body.sr->usec_time_of_qustody = reception_time.tv_usec;
+			ar->body.sr->sec_time_of_forwarding = reception_time.tv_sec - RFC_DATE_2000;
+			ar->body.sr->usec_time_of_forwarding = reception_time.tv_usec;
 			break;
 		case SR_DELI:
 			ar->body.sr->status_flags = SR_DELI;
-			ar->body.sr->sec_time_of_qustody = reception_time.tv_sec - RFC_DATE_2000;
-			ar->body.sr->usec_time_of_qustody = reception_time.tv_usec;
+			ar->body.sr->sec_time_of_delivery = reception_time.tv_sec - RFC_DATE_2000;
+			ar->body.sr->usec_time_of_delivery = reception_time.tv_usec;
 			break;
 		case SR_DEL:
 			ar->body.sr->status_flags = SR_DEL;
-			ar->body.sr->sec_time_of_qustody = reception_time.tv_sec - RFC_DATE_2000;
-			ar->body.sr->usec_time_of_qustody = reception_time.tv_usec;
+			ar->body.sr->sec_time_of_deletion = reception_time.tv_sec - RFC_DATE_2000;
+			ar->body.sr->usec_time_of_deletion = reception_time.tv_usec;
 			break;
 	}
 
@@ -796,8 +795,27 @@ end:
 
 	return sr_bundle;
 }
-/**/
 
+int ar_sr_extract_cp_timestamp(uint8_t *ar,  uint64_t *timestamp)
+{
+	int off = 3; // first byte is ar flags, next two status record flags and reason codes
+	off += bundle_raw_get_sdnv_off((uint8_t *)ar + off, 2);
+	sdnv_decode((uint8_t *)ar + off, (uint64_t *)timestamp);
+
+	return 0;
+}
+
+int ar_sr_extract_time_of(uint8_t *ar,  struct timeval *tv)
+{
+	int off = 3; // first byte is ar flags, next two status record flags and reason codes
+	off += sdnv_decode((uint8_t *)ar + off, (uint64_t *)&tv->tv_sec);
+	sdnv_decode((uint8_t *)ar + off, (uint64_t *)&tv->tv_usec);
+
+	tv->tv_sec += RFC_DATE_2000;
+
+	return 0;
+}
+/**/
 
 /* Bundle raw creation functions */
 static int bundle_primary_raw(primary_block_s *primary_block, uint8_t **raw)
