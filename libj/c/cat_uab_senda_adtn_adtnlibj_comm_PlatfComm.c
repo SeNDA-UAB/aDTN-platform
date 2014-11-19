@@ -125,73 +125,116 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnRemov
 		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
 }
 
-/* void adtnSetSocketOption(int s, int optionCode, int value); */
-JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSetSocketOption__III
-  (JNIEnv *env, jobject thisObj, jint s, jint opt, jint val)
+/* void adtnSetSocketOption(int s, int optionCode, Object value); */
+JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSetSocketOption
+(JNIEnv *env, jobject thisObj, jint s, jint opt, jobject val)
 {
-	int r = adtn_setsockopt(s, opt, &val);
-
-	if(r != 0)
+	int r;
+	jclass c;
+	jmethodID meth;
+	switch (opt) {
+	case OP_PROC_FLAGS:
+	case OP_LIFETIME:
+	case OP_BLOCK_FLAGS: {
+		c = (*env)->FindClass(env, "java/lang/Integer");
+		if (c == NULL) {
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Class java/lang/Integer cannot be found.");
+		}
+		meth = (*env)->GetMethodID(env, c, "intValue", "()I");
+		if (meth == NULL) {
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Method intValue ()I cannot be found.");
+		}
+		uint32_t toSet = (*env)->CallIntMethod(env, val, meth);
+		r = adtn_setsockopt(s, opt, &toSet);
+		break;
+	}
+	case OP_LAST_TIMESTAMP: {
+		c = (*env)->FindClass(env, "java/lang/Long");
+		if (c == NULL) {
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Class java/lang/Long cannot be found.");
+		}
+		meth = (*env)->GetMethodID(env, c, "longValue", "()J");
+		if (meth == NULL) {
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Method longValue ()J cannot be found.");
+		}
+		uint64_t toSet = (*env)->CallLongMethod(env, val, meth);
+		r = adtn_setsockopt(s, opt, &toSet);
+		break;
+	}
+	case OP_DEST :
+	case OP_SOURCE :
+	case OP_REPORT :
+	case OP_CUSTOM : {
+		const char *code = (*env)->GetStringUTFChars(env, val, 0);
+		r = adtn_setsockopt(s, opt, code);
+		(*env)->ReleaseStringUTFChars(env, val, code);
+		break;
+	}
+	}
+	if (r != 0)
 		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
 }
 
-/* void adtnSetSocketOption(int s, int optionCode, long value); */
-JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSetSocketOption__IIJ
-  (JNIEnv *env, jobject thisObj, jint s, jint opt, jlong val)
+/* Object adtnGetSocketIntOption(int s, int optionCode); */
+JNIEXPORT jobject JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnGetSocketOption
+(JNIEnv *env, jobject thisObj, jint s, jint opt)
 {
-	int r = adtn_setsockopt(s, opt, &val);
+	jobject a;
+	jclass c;
+	jmethodID meth;
+	int len, r;
+	switch (opt) {
+	case OP_PROC_FLAGS:
+	case OP_LIFETIME:
+	case OP_BLOCK_FLAGS: {
+		len = sizeof(uint32_t);
+		uint32_t val;
+		r = adtn_getsockopt(s, opt, &val, &len);
+		if (r != 0)
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
+		c = (*env)->FindClass(env, "java/lang/Integer");
+		if (c == NULL) {
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Class java/lang/Integer cannot be found.");
+		}
+		meth = (*env)->GetMethodID(env, c, "<init>", "(I)V");
+		if (meth == NULL) {
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Method <init> (I)V cannot be found.");
+		}
+		a = (*env)->NewObject(env, c, meth, val);
+		break;
+	}
+	case OP_LAST_TIMESTAMP: {
+		len = sizeof(uint64_t);
+		uint64_t val1;
+		r = adtn_getsockopt(s, opt, &val1, &len);
+		if (r != 0)
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
+		c = (*env)->FindClass(env, "java/lang/Long");
+		if (c == NULL) {
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Class java/lang/Long cannot be found.");
+		}
+		meth = (*env)->GetMethodID(env, c, "<init>", "(J)V");
+		if (meth == NULL) {
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Method <init> (J)V cannot be found.");
+		}
+		a = (*env)->NewObject(env, c, meth, val1);
+		break;
+	}
+	case OP_DEST :
+	case OP_SOURCE :
+	case OP_REPORT :
+	case OP_CUSTOM : {
+		char buff[512];
+		len = 512;
+		r = adtn_getsockopt(s, opt, buff, &len);
+		if (r != 0)
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
+		a = (*env)->NewStringUTF(env, buff);
+		break;
+	}
+	}
 
-	if(r != 0)
-		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));	
-}
-
-/* void adtnSetSocketOption(int s, int optionCode, String value); */
-JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSetSocketOption__IILjava_lang_String_2
-  (JNIEnv *env, jobject thisObj, jint s, jint opt, jstring val)
-{
-	const char *code = (*env)->GetStringUTFChars(env, val, 0);
-	int r = adtn_setsockopt(s, opt, code);
-	(*env)->ReleaseStringUTFChars(env, val, code);
-	if(r != 0)
-		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));	
-}
-
-/* int adtnGetSocketIntOption(int s, int optionCode) */
-JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnGetSocketIntOption
-  (JNIEnv *env, jobject thisObj, jint s, jint opt)
-{
-	int len = sizeof(uint32_t);
-	uint32_t val;
-	int r = adtn_getsockopt(s, opt, &val, &len);
-	if(r != 0)
-		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));	
-	return val;
-}
-
-/* long adtnGetSocketLongOption(int s, int optionCode) */
-JNIEXPORT jlong JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnGetSocketLongOption
-  (JNIEnv *env, jobject thisObj, jint s, jint opt)
-{
-	int len = sizeof(uint64_t);
-	uint64_t val;
-	int r = adtn_getsockopt(s, opt, &val, &len);
-	printf("long value is %ld\n", val);
-	if(r != 0)
-		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));	
-	return val;
-}
-
-/* String adtnGetSocketStringOption(int s, int optionCode) */
-JNIEXPORT jstring JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnGetSocketStringOption
-  (JNIEnv *env, jobject thisObj, jint s, jint opt)
-{
-	char buff[512];
-	int len = 512;
-	int r = adtn_getsockopt(s, opt, buff, &len);
-	if(r != 0)
-		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));	
-	jstring val = (*env)->NewStringUTF(env, buff);
-	return val;
+	return a;
 }
 
 /* int adtnSendTo(int s, SockAddrT addr, byte[] data); */
