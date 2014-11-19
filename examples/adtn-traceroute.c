@@ -39,6 +39,7 @@
 struct _conf {
 	struct common *shm;
 	sock_addr_t local;
+	sock_addr_t dest;
 	char *config_file;
 	char *dest_platform_id;
 	char *incoming_path;
@@ -75,23 +76,71 @@ struct _route {
 struct _route route = {{0}};
 struct _conf conf = {0};
 
-/* time functions */
-double diff_time(struct timespec *start, struct timespec *end)
+static void help(const char *program_name)
 {
-	return ((double)(end->tv_sec - start->tv_sec) * 1.0e9 + (double)(end->tv_nsec - start->tv_nsec)) / 10e3;
+	printf( "%s is part of the SeNDA aDTN platform\n"
+	        "Usage: %s [options] [platform_id]\n"
+	        "Supported options:\n"
+	        "       [-f | --conf_file] config_file\t\tUse {config_file} config file instead of the default found at "DEFAULT_CONF_FILE_PATH".\n"
+	        "       [-s | --size] size\t\t\tSet a payload of {size} bytes to the tracerouted bundle.\n"
+	        "       [-l | --lifetime] lifetime \t\tSet {lifetime} seconds of lifetime to the tracerouted bundle.\n"
+	        "       [-t | --timeout] timeout \t\tWait {timeout} seconds for custody report signals.\n"
+	        "       [-n | --not-ordered] \t\t\tDo not show ordered route at each custody report received.\n"
+	        "       [-h | --help]\t\t\t\tShows this help message.\n"
+	        , program_name, program_name
+	      );
 }
 
-void time_to_str(const struct timeval tv, char *time_str, int time_str_l)
+static void parse_arguments(int argc, char *const argv[])
 {
-	int off = 0;
-	struct tm *nowtm;
-	nowtm = localtime(&tv.tv_sec);
+	int opt = -1, option_index = 0;
+	static struct option long_options[] = {
+		{"conf_file",       required_argument,      0,      'f'},
+		{"size",            required_argument,      0,      's'},
+		{"lifetime",        required_argument,      0,      'l'},
+		{"timeout",         required_argument,      0,      't'},
+		{"not-ordered",     no_argument,        	0,  	'o'},
+		{"help",            no_argument,            0,      'h'},
+		{0, 0, 0, 0}
+	};
+	while ((opt = getopt_long(argc, argv, "f:s:l:t:nh", long_options, &option_index))) {
+		switch (opt) {
+		case 'f':
+			conf.config_file = strdup(optarg);
+			break;
+		case 's':
+			conf.payload_size = strtol(optarg, NULL, 10);
+			break;
+		case 'l':
+			conf.bundle_lifetime = strtol(optarg, NULL, 10);
+			break;			
+		case 't':
+			conf.timeout = strtol(optarg, NULL, 10);
+			break;
+		case 'n':
+			conf.not_ordered = 1;
+			break;
+		case 'h':
+			help(argv[0]);
+			exit(0);			
+		case '?': //Unexpected parameter
+			help(argv[0]);
+			exit(0);
+		default:
+			break;
+		}
 
-	off = strftime(time_str, time_str_l, "%Y-%m-%d %H:%M:%S", nowtm);
-	sprintf(time_str + off, ".%ld", tv.tv_usec);
+		if (opt == -1)
+			break;
+	}
+	if (argc > 1) {
+		conf.dest_platform_id = strdup(argv[optind]); // argv[optind] is the next argument after all option chars
+	} else {
+		help(argv[0]);
+		exit(0);
+	}
 
 }
-/**/
 
 int cmp_hops(hop *a, hop *b)
 {
@@ -153,7 +202,7 @@ void print_full_route()
 
 }
 
-void clear_term()
+void clear_route()
 {
 	int i = 0, removed_chars = 0;
 	for (; i < route.term_lines; i++) {
@@ -161,26 +210,6 @@ void clear_term()
 	}
 	fseek(stdout, SEEK_CUR, -removed_chars);
 	route.term_lines = 0;
-}
-
-int ar_extract_cp_timestamp(uint8_t *ar,  uint64_t *timestamp)
-{
-	int off = 3; // first byte is ar flags, next two status record flags and reason codes
-	off += bundle_raw_get_sdnv_off((uint8_t *)ar + off, 2);
-	sdnv_decode((uint8_t *)ar + off, (uint64_t *)timestamp);
-
-	return 0;
-}
-
-int ar_extract_report_timestamp(uint8_t *ar,  struct timeval *tv)
-{
-	int off = 3; // first byte is ar flags, next two status record flags and reason codes
-	off += sdnv_decode((uint8_t *)ar + off, (uint64_t *)&tv->tv_sec);
-	sdnv_decode((uint8_t *)ar + off, (uint64_t *)&tv->tv_usec);
-
-	tv->tv_sec += RFC_DATE_2000;
-
-	return 0;
 }
 
 void *recv_forwarded_sr(int *s)
@@ -191,7 +220,6 @@ void *recv_forwarded_sr(int *s)
 	uint64_t cp_timestamp;
 	struct timespec rtt_end;
 	sock_addr_t recv_addr;
-
 
 	printf("adtn-traceroute to %s, %d seconds timeout, %ld seconds lifetime, %ld bytes bundles\n", conf.dest_platform_id, conf.timeout, conf.bundle_lifetime, conf.payload_size);
 
@@ -211,13 +239,13 @@ void *recv_forwarded_sr(int *s)
 		if ((*buf & AR_SR) != AR_SR)
 			continue;
 
-		ar_extract_cp_timestamp(buf, &cp_timestamp);
+		ar_sr_extract_cp_timestamp(buf, &cp_timestamp);
 		if (cp_timestamp != route.start_timestamp)
 			continue;
 
 		// Check if it is a reception or a forwarding report
-		ar_extract_report_timestamp(buf, &report_tv);
-		rtt = diff_time(&route.start, &rtt_end);
+		ar_sr_extract_time_of(buf, &report_tv);
+		rtt = diff_time(&route.start, &rtt_end) / 1.0e6;
 		off++; // We now point to the status report body.
 		if ((*(buf + off) & SR_CACC) == SR_CACC) {
 			hop *new_hop = (hop *)calloc(1, sizeof(hop));
@@ -230,7 +258,7 @@ void *recv_forwarded_sr(int *s)
 				print_hop(route.next_seq, new_hop);
 				route.next_seq++;				
 			} else {
-				clear_term();
+				clear_route();
 				print_full_route();
 			}
 		} else if ((*(buf + off) & SR_RECV) == SR_RECV) {
@@ -244,187 +272,20 @@ void *recv_forwarded_sr(int *s)
 			if (conf.not_ordered) {
 				print_hop(route.next_seq, route.dest);
 			} else {
-				clear_term();
+				clear_route();
 				print_full_route();				
 			}
 		}
 	}
 }
 
-int create_tracerouted_bundle(/*out*/uint8_t **raw_bundle,/*out*/ uint64_t *timestamp_time)
-{
-	int ret = -1, bundle_raw_l = 0;
-	uint64_t flags;
-	uint8_t *payload_content = NULL;
-	bundle_s *new_bundle;
-	payload_block_s *payload;
-	char ping_dest[MAX_PLATFORM_ID_LEN], ping_origin[MAX_PLATFORM_ID_LEN];
-
-	// We will create the bundle manually.
-	new_bundle = bundle_new();
-	*timestamp_time = new_bundle->primary->timestamp_time;
-
-	// Set flags
-	flags = H_SR_CACC | H_SR_BREC;
-	if (bundle_set_proc_flags(new_bundle, flags) != 0) {
-		printf("Error setting processor falgs.");
-		goto end;
-	}
-
-	// Set destiantion
-	SNPRINTF(ping_dest, MAX_PLATFORM_ID_LEN, "%s:%d", conf.dest_platform_id, PING_APP);
-	if (bundle_set_destination(new_bundle, ping_dest) != 0) {
-		printf("Error setting destination");
-		goto end;
-	}
-
-	// Set origin. Also at the report-to field
-	SNPRINTF(ping_origin, MAX_PLATFORM_ID_LEN, "%s:%d", conf.shm->platform_id, conf.local.adtn_port);
-	if (bundle_set_source(new_bundle, ping_origin) != 0) {
-		printf("Error setting origin as report-to");
-		goto end;
-	}
-	if (bundle_set_primary_entry(new_bundle, REPORT_SCHEME, ping_origin) != 0) {
-		printf("Error setting origin as report-to");
-		goto end;
-	}
-
-	// Set paylaod
-	payload = bundle_new_payload_block();
-	payload_content = (uint8_t *)calloc(1, sizeof(uint8_t) * conf.payload_size);
-	if (bundle_set_payload(payload, payload_content, conf.payload_size) != 0) {
-		printf("Error setting payload");
-		goto end;
-	}
-
-	if (bundle_add_ext_block(new_bundle, (ext_block_s *)payload)) {
-		printf("Error adding payload block to bundle.");
-		goto end;
-	}
-
-	// Set lifeimte
-	new_bundle->primary->lifetime = conf.bundle_lifetime;
-
-	//Create raw bundle
-	if ((bundle_raw_l = bundle_create_raw(new_bundle, raw_bundle)) <= 0) {
-		printf("Error creating raw bundle");
-		goto end;
-	}
-
-	ret = bundle_raw_l;
-end:
-	if (payload)
-		free(payload);
-	if (payload_content)
-		free(payload_content);
-	if (new_bundle)
-		bundle_free(new_bundle);
-
-	return ret;
-}
-
-int send_tracerouted_bundle(const char *dest_id, const int app_port)
-{
-	char *bundle_name = NULL;
-	int ret = 1, bundle_raw_l = 0;
-
-	uint8_t *bundle_raw = NULL;
-
-	bundle_name = generate_bundle_name();
-	bundle_raw_l = create_tracerouted_bundle(&bundle_raw, &route.start_timestamp);
-	if (bundle_raw_l <= 0) {
-		printf("Error creating tracerouted bundle");
-		goto end;
-	}
-
-	clock_gettime(CLOCK_MONOTONIC_RAW, &route.start);
-	if (write_to(conf.input_path, bundle_name, bundle_raw, bundle_raw_l) != 0) {
-		printf("Error puting bundle into the queue.\n");
-		goto end;
-	}
-
-	ret = 0;
-end:
-	if (bundle_raw)
-		free(bundle_raw);
-	if (bundle_name)
-		free(bundle_name);
-
-	return ret;
-}
-
-static void help(const char *program_name)
-{
-	printf( "%s is part of the SeNDA aDTN platform\n"
-	        "Usage: %s [options] [platform_id]\n"
-	        "Supported options:\n"
-	        "       [-f | --conf_file] config_file\t\tUse {config_file} config file instead of the default found at "DEFAULT_CONF_FILE_PATH"\n"
-	        "       [-s | --size] size\t\t\tSet a payload of {size} bytes to the tracerouted bundle\n"
-	        "       [-l | --lifetime] lifetime \t\tSet {lifetime} seconds of lifetime to the tracerouted bundle\n"
-	        "       [-t | --timeout] timeout \t\tSet timeout as {timeout} seconds.\n"
-	        "       [-n | --not-ordered] \t\t\tDo not show ordered route at each forward report received\n"
-	        "       [-h | --help]\t\t\t\tShows this help message\n"
-	        , program_name, program_name
-	      );
-}
-
-static void parse_arguments(int argc, char *const argv[])
-{
-	int opt = -1, option_index = 0;
-	static struct option long_options[] = {
-		{"conf_file",       required_argument,      0,      'f'},
-		{"size",            required_argument,      0,      's'},
-		{"lifetime",        required_argument,      0,      'l'},
-		{"timeout",         required_argument,      0,      't'},
-		{"not-ordered",     no_argument,        	0,  	'o'},
-		{"help",            no_argument,            0,      'h'},
-		{0, 0, 0, 0}
-	};
-	while ((opt = getopt_long(argc, argv, "f:s:l:t:nh", long_options, &option_index))) {
-		switch (opt) {
-		case 'f':
-			conf.config_file = strdup(optarg);
-			break;
-		case 's':
-			conf.payload_size = strtol(optarg, NULL, 10);
-			break;
-		case 'l':
-			conf.bundle_lifetime = strtol(optarg, NULL, 10);
-			break;			
-		case 't':
-			conf.timeout = strtol(optarg, NULL, 10);
-			break;
-		case 'n':
-			conf.not_ordered = 1;
-			break;
-		case 'h':
-			help(argv[0]);
-			exit(0);			
-		case '?': //Unexpected parameter
-			help(argv[0]);
-			exit(0);
-		default:
-			break;
-		}
-
-		if (opt == -1)
-			break;
-	}
-	if (argc > 1) {
-		conf.dest_platform_id = strdup(argv[optind]); // argv[optind] is the next argument after all option chars
-	} else {
-		help(argv[0]);
-		exit(0);
-	}
-
-}
-
 int main(int argc,  char *const *argv)
 {
-	int s = 0, shm_fd = 0, adtn_port = 0, fd = 0, sig = 0;
-	char *data_path = NULL;
+	int s = 0, shm_fd = 0, adtn_port = 0, fd = 0, sig = 0, ping_flags = 0, timestamp_time_l = sizeof(route.start_timestamp);
+	char *data_path = NULL, ping_origin[MAX_PLATFORM_ID_LEN] = {0};
 	struct stat st;
 	pthread_t recv_reports_t;
+	uint8_t *payload_content;
 
 	/* Initialization */
 	sigset_t blocked_sigs = {{0}};
@@ -493,8 +354,11 @@ int main(int argc,  char *const *argv)
 		}
 	} while (1);
 
-	conf.local.id = strdup(conf.dest_platform_id);
+	conf.local.id = strdup(conf.shm->platform_id);
 	conf.local.adtn_port = adtn_port;
+
+	conf.dest.id = conf.dest_platform_id;
+	conf.dest.adtn_port = adtn_port;
 
 	/* Prepare reception */
 	s = adtn_socket(conf.shm->config_file);
@@ -505,7 +369,28 @@ int main(int argc,  char *const *argv)
 	}
 	/***/
 
-	send_tracerouted_bundle(conf.dest_platform_id, adtn_port);
+	/* Send tracerotued bundle */
+	ping_flags = H_DESS | H_NOTF | H_SR_BREC | H_SR_CACC;
+	if (adtn_setsockopt(s, OP_PROC_FLAGS, &ping_flags) != 0)
+		goto end;
+	SNPRINTF(ping_origin, MAX_PLATFORM_ID_LEN, "%s:%d", conf.shm->platform_id, conf.local.adtn_port);
+	if (adtn_setsockopt(s, OP_REPORT, ping_origin) != 0)
+		goto end;
+	if (adtn_setsockopt(s, OP_LIFETIME, &conf.bundle_lifetime) != 0)
+		goto end;
+
+	payload_content = (uint8_t *)calloc(1, sizeof(uint8_t) * conf.payload_size);
+	if (adtn_sendto(s, payload_content, conf.payload_size, conf.dest) != conf.payload_size) {
+		printf("Error sending bundle to tracerotue.\n");
+		goto end;
+	}
+	clock_gettime(CLOCK_MONOTONIC_RAW, &route.start);
+
+	if (adtn_getsockopt(s, OP_LAST_TIMESTAMP, &route.start_timestamp, &timestamp_time_l) != 0 || timestamp_time_l == 0){
+		printf("Error getting timestamp of the bundle to traceroute");
+		goto end;
+	}
+	/**/
 
 	pthread_create(&recv_reports_t, NULL, (void *)recv_forwarded_sr, &s);
 

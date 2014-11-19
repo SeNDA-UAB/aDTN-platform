@@ -54,6 +54,7 @@ struct _stats {
 struct _conf {
 	struct common *shm;
 	sock_addr_t local;
+	sock_addr_t dest;
 	char *config_file;
 	char *dest_platform_id;
 	char *incoming_path;
@@ -64,19 +65,22 @@ struct _conf {
 	long ping_lifetime;
 };
 
-struct _ping_sent {
+typedef struct _ping {
 	long timestamp;
 	int num_seq;
 	struct timespec time_sent;
 	struct timespec time_recv;
 	UT_hash_handle hh;
-};
+} ping;
 
 /* Glboals*/
 struct _conf conf = {0};
 struct _stats stats = {0};
-struct _ping_sent *pings_sent = NULL;
-int ping_seq = 0;
+ping *pings_sent = NULL;
+
+pthread_mutex_t ping_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t ping_cond = PTHREAD_COND_INITIALIZER;
+int last_ping_added = -1;
 /**/
 
 static void help(char *program_name)
@@ -85,11 +89,11 @@ static void help(char *program_name)
 	        "Usage: %s [options] [platform_id]\n"
 	        "Supported options:\n"
 	        "       [-f | --conf_file] config_file\t\tUse {config_file} config file instead of the default found at "DEFAULT_CONF_FILE_PATH"\n"
-	        "       [-c | --count] count\t\t\tStop after sending {count} adtn pings\n"
-	        "       [-s | --size] size\t\t\tSet a payload of {size} bytes\n"
-	        "       [-i | --interval] interval \t\tWait {interval} milliseconds between adtn pings\n"
-	        "       [-l | --lifetime] lifetime\t\tSet adtn pings {lifetime} seconds of lifetime\n"
-	        "       [-h | --help]\t\t\t\tShows this help message\n"
+	        "       [-s | --size] size\t\t\tSet a payload of {size} bytes to ping bundles.\n"
+	        "       [-l | --lifetime] lifetime\t\tSet {lifetime} seconds of lifetime to the ping bundles.\n"
+	        "       [-c | --count] count\t\t\tStop after sending {count} ping bundles.\n"
+	        "       [-i | --interval] interval \t\tWait {interval} milliseconds between pings.\n"
+	        "       [-h | --help]\t\t\t\tShows this help message.\n"
 	        , program_name, program_name);
 }
 
@@ -97,34 +101,34 @@ static void parse_arguments(int argc, char *const argv[])
 {
 	int opt = -1, option_index = 0;
 	static struct option long_options[] = {
-		{"help",            no_argument,            	0,      'h'},
-		{"conf_file",       required_argument,			0,      'f'},
-		{"count",           required_argument,			0,      'c'},
-		{"size",            required_argument,			0,      's'},
-		{"interval",        required_argument,			0,      'i'},
-		{"lifetime",        required_argument,			0,      'l'},
+		{"conf_file",       required_argument,          0,      'f'},
+		{"size",            required_argument,          0,      's'},
+		{"lifetime",        required_argument,          0,      'l'},
+		{"count",           required_argument,          0,      'c'},
+		{"interval",        required_argument,          0,      'i'},
+		{"help",            no_argument,                0,      'h'},		
 		{0, 0, 0, 0}
 	};
-	while ((opt = getopt_long(argc, argv, "hf:c:s:i:l:", long_options, &option_index))) {
+	while ((opt = getopt_long(argc, argv, "f:s:l:c:i:h", long_options, &option_index))) {
 		switch (opt) {
-		case 'h':
-			help(argv[0]);
-			exit(0);
 		case 'f':
 			conf.config_file = strdup(optarg);
-			break;
-		case 'c':
-			conf.ping_count = strtol(optarg, NULL, 10);
 			break;
 		case 's':
 			conf.payload_size = strtol(optarg, NULL, 10);
 			break;
+		case 'l':
+			conf.ping_lifetime = strtol(optarg, NULL, 10);
+			break;		
+		case 'c':
+			conf.ping_count = strtol(optarg, NULL, 10);
+			break;
 		case 'i':
 			conf.ping_interval = strtol(optarg, NULL, 10);
 			break;
-		case 'l':
-			conf.ping_lifetime = strtol(optarg, NULL, 10);
-			break;
+		case 'h':
+			help(argv[0]);
+			exit(0);
 		case '?':           //Unexpected parameter
 			help(argv[0]);
 			exit(0);
@@ -144,88 +148,6 @@ static void parse_arguments(int argc, char *const argv[])
 
 }
 
-double diff_time(struct timespec *start, struct timespec *end)
-{
-	return (double)(end->tv_sec - start->tv_sec) * 1.0e9 + (double)(end->tv_nsec - start->tv_nsec);
-}
-
-void time_to_str(const struct timeval tv, char *time_str, int time_str_l)
-{
-	struct tm *nowtm;
-	nowtm = localtime(&tv.tv_sec);
-
-	strftime(time_str, time_str_l, "%Y-%m-%d %H:%M:%S", nowtm);
-}
-
-int create_ping(uint8_t **raw_bundle, int payload_size, uint64_t *timestamp_time)
-{
-	int ret = -1, bundle_raw_l = 0;
-	uint64_t flags;
-	uint8_t *payload_content = NULL;
-	bundle_s *new_bundle;
-	payload_block_s *payload;
-	char ping_dest[MAX_PLATFORM_ID_LEN], ping_origin[MAX_PLATFORM_ID_LEN];
-
-	// We will create the bundle manually.
-	new_bundle = bundle_new();
-	*timestamp_time = new_bundle->primary->timestamp_time;
-
-	// Set flags
-	flags = H_SR_BREC;
-	if (bundle_set_proc_flags(new_bundle, flags) != 0) {
-		printf("Error stting processor falgs.");
-		goto end;
-	}
-
-	// Set destiantion
-	SNPRINTF(ping_dest, MAX_PLATFORM_ID_LEN, "%s:%d", conf.dest_platform_id, PING_APP);
-	if (bundle_set_destination(new_bundle, ping_dest) != 0) {
-		printf("Error setting destination");
-		goto end;
-	}
-
-	// Set origin. Also at the report-to field
-	SNPRINTF(ping_origin, MAX_PLATFORM_ID_LEN, "%s:%d", conf.shm->platform_id, conf.local.adtn_port);
-	if (bundle_set_source(new_bundle, ping_origin) != 0) {
-		printf("Error setting origin as report-to");
-		goto end;
-	}
-	if (bundle_set_primary_entry(new_bundle, REPORT_SCHEME, ping_origin) != 0) {
-		printf("Error setting origin as report-to");
-		goto end;
-	}
-
-	// Set paylaod
-	payload = bundle_new_payload_block();
-	payload_content = (uint8_t *)calloc(1, sizeof(uint8_t) * conf.payload_size);
-	if (bundle_set_payload(payload, payload_content, conf.payload_size) != 0) {
-		printf("Error setting payload");
-		goto end;
-	}
-
-	if (bundle_add_ext_block(new_bundle, (ext_block_s *)payload)) {
-		printf("Error addind payload block to bundle.");
-		goto end;
-	}
-
-	// Set lifeimte
-	new_bundle->primary->lifetime = conf.ping_lifetime;
-
-	//Create raw bundle
-	if ((bundle_raw_l = bundle_create_raw(new_bundle, raw_bundle)) <= 0) {
-		printf("Error creating raw bundle");
-		goto end;
-	}
-
-	ret = bundle_raw_l;
-end:
-	if (payload_content)
-		free(payload_content);
-	if (new_bundle)
-		bundle_free(new_bundle);
-
-	return ret;
-}
 
 void show_stats()
 {
@@ -255,25 +177,7 @@ void show_stats()
 
 }
 
-int ar_exctract_ping_timestamp(uint8_t *ar,  uint64_t *timestamp)
-{
-	int off = 3; // first byte is ar flags, next two status record flags
-	off += bundle_raw_get_sdnv_off((uint8_t *)ar + off, 2);
-	sdnv_decode((uint8_t *)ar + off, (uint64_t *)timestamp);
-
-	return 0;
-}
-
-int ar_extract_pong_reception_time(uint8_t *ar,  uint64_t *reception_time)
-{
-	int off = 3; // first byte is ar flags, next two status record flags
-	sdnv_decode((uint8_t *)ar + off, (uint64_t *)reception_time);
-	*reception_time += RFC_DATE_2000;
-
-	return 0;
-}
-
-void *recv_pings(int *s)
+void recv_pings(int *s)
 {
 	char buf[1024] = {0}, strtime[128];
 	int readed = 0;
@@ -284,15 +188,17 @@ void *recv_pings(int *s)
 
 	// Wait pong
 	for (;;) {
-		struct _ping_sent *recv_ping = NULL;
+		ping *recv_ping = NULL;
 
 		readed = adtn_recvfrom(*s, buf, sizeof(buf), &recv_addr);
 		if (readed <= 0) {
 			printf("Something went wrong.\n");
-			return (void *)1;
+			goto end;
 		}
+		while (last_ping_added != stats.ping_seq)
+			pthread_cond_wait(&ping_cond, &ping_mutex);
 
-		ar_exctract_ping_timestamp((uint8_t *)buf, &ts_time);
+		ar_sr_extract_cp_timestamp((uint8_t *)buf, &ts_time);
 
 		/* Retrieve ping info */
 		HASH_FIND(hh, pings_sent, &ts_time, sizeof(long), recv_ping);
@@ -311,7 +217,7 @@ void *recv_pings(int *s)
 			/**/
 
 			/* Extract reception time */
-			ar_extract_pong_reception_time((uint8_t *)buf, (uint64_t *)&tv.tv_sec);
+			ar_sr_extract_time_of((uint8_t *)buf, &tv);
 			time_to_str(tv, strtime, sizeof(strtime));
 			/**/
 
@@ -326,49 +232,59 @@ void *recv_pings(int *s)
 				kill(getpid(), SIGINT);
 			}
 		}
+		pthread_mutex_unlock(&ping_mutex);
 	}
+
+end:
+	kill(getpid(), SIGINT);	
 }
 
-void *send_pings(int *s)
+void send_pings(int *s)
 {
-	char *bundle_name = NULL;
-	int bundle_raw_l = 0;
+	char ping_origin[MAX_PLATFORM_ID_LEN];
 
-	uint8_t *bundle_raw = NULL;
+	uint8_t *payload_content = NULL;
+	uint32_t ping_flags;
 	uint64_t timestamp_time = 0;
+	int timestamp_time_l = sizeof(timestamp_time);
 
-	struct _ping_sent *new_ping = NULL;
+	ping *new_ping = NULL;
 
 	printf("PING %s %ld bytes of payload. %ld seconds of lifetime\n", conf.dest_platform_id, conf.payload_size, conf.ping_lifetime);
 
+	// Configure socket
+	ping_flags = H_DESS | H_NOTF | H_SR_BREC;
+	if (adtn_setsockopt(*s, OP_PROC_FLAGS, &ping_flags) != 0)
+		goto end;
+	SNPRINTF(ping_origin, MAX_PLATFORM_ID_LEN, "%s:%d", conf.shm->platform_id, conf.local.adtn_port);
+	if (adtn_setsockopt(*s, OP_REPORT, ping_origin) != 0)
+		goto end;
+	if (adtn_setsockopt(*s, OP_LIFETIME, &conf.ping_lifetime) != 0)
+		goto end;
+
+	payload_content = (uint8_t *)calloc(1, sizeof(uint8_t) * conf.payload_size);
+
 	for (;;) {
+		pthread_mutex_lock(&ping_mutex);
+		if (adtn_sendto(*s, payload_content, conf.payload_size, conf.dest) != conf.payload_size) {
+			printf("Error sending ping.\n");
+		} else {
+			/* Store ping info */
+			if (adtn_getsockopt(*s, OP_LAST_TIMESTAMP, &timestamp_time, &timestamp_time_l) != 0 || timestamp_time_l == 0)
+				continue;
 
-		/* Prepare ping */
-		bundle_name = generate_bundle_name();
-		bundle_raw_l = create_ping(&bundle_raw, conf.payload_size, &timestamp_time);
-		/**/
+			new_ping = (ping *)malloc(sizeof(ping));
+			new_ping->timestamp = timestamp_time;
+			new_ping->num_seq = ++stats.ping_seq;
+			clock_gettime(CLOCK_MONOTONIC_RAW, &new_ping->time_sent);
+			HASH_ADD(hh, pings_sent, timestamp, sizeof(long), new_ping);
+			/**/
 
-		/* Store ping info */
-		new_ping = (struct _ping_sent *)malloc(sizeof(struct _ping_sent));
-		new_ping->timestamp = timestamp_time;
-		new_ping->num_seq = ++ping_seq;
-		clock_gettime(CLOCK_MONOTONIC_RAW, &new_ping->time_sent);
-		HASH_ADD(hh, pings_sent, timestamp, sizeof(long), new_ping);
-		/**/
-
-		if (write_to(conf.input_path, bundle_name, bundle_raw, bundle_raw_l) != 0) {
-			printf("Error puting bundle into the queue.\n");
+			stats.bundles_sent++;
 		}
-
-		/* Update stats*/
-		stats.bundles_sent++;
-		stats.ping_seq++;
-		/**/
-
-		if (bundle_name)
-			free(bundle_name);
-		if (bundle_raw)
-			free(bundle_raw);
+		last_ping_added = new_ping->num_seq;
+		pthread_cond_broadcast(&ping_cond);
+		pthread_mutex_unlock(&ping_mutex);
 
 		if (stats.ping_seq == conf.ping_count) {
 			sleep(conf.ping_lifetime);
@@ -377,6 +293,9 @@ void *send_pings(int *s)
 
 		usleep(conf.ping_interval * 1000);
 	}
+
+end:
+	kill(getpid(), SIGINT);
 }
 
 /*
@@ -458,8 +377,11 @@ int main(int argc,  char *const *argv)
 		}
 	} while (1);
 
-	conf.local.id = strdup(conf.dest_platform_id);
+	conf.local.id = strdup(conf.shm->platform_id);
 	conf.local.adtn_port = adtn_port;
+
+	conf.dest.id = conf.dest_platform_id;
+	conf.dest.adtn_port = adtn_port;
 
 	/* Prepare reception */
 	s = adtn_socket(conf.shm->config_file);

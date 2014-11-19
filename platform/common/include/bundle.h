@@ -40,8 +40,8 @@ typedef struct _bundle_sr {
 	int64_t sec_time_of_receipt;        //SDNV
 	int64_t usec_time_of_receipt;       //SDNV
 
-	int64_t sec_time_of_qustody;        //SDNV
-	int64_t usec_time_of_qustody;       //SDNV
+	int64_t sec_time_of_custody;        //SDNV
+	int64_t usec_time_of_custody;       //SDNV
 
 	int64_t sec_time_of_forwarding;     //SDNV
 	int64_t usec_time_of_forwarding;    //SDNV
@@ -302,6 +302,10 @@ int bundle_ar_raw(adm_record_s *ar, /*out*/uint8_t **ar_raw );
 bundle_s *bundle_new_sr(
 	const sr_status_flags_e sr_status_flag, const uint8_t reason_codes, 
 	const char *source_eid, struct timeval reception_time, const uint8_t *orig_bundle_raw);
+
+int ar_sr_extract_cp_timestamp(uint8_t *ar,  uint64_t *timestamp);
+int ar_sr_extract_time_of(uint8_t *ar,  struct timeval *tv);
+
 /**************************/
 
 
