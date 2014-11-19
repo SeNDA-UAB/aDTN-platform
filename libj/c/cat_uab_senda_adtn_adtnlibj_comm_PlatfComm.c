@@ -125,32 +125,73 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnRemov
 		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
 }
 
-/* void adtnSetSocketOption(int s, SockOptT options); */
-JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSetSocketOption
-(JNIEnv *env, jobject thisObj, jint s, jobject opt)
+/* void adtnSetSocketOption(int s, int optionCode, int value); */
+JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSetSocketOption__III
+  (JNIEnv *env, jobject thisObj, jint s, jint opt, jint val)
 {
+	int r = adtn_setsockopt(s, opt, &val);
 
-	jclass SockOptT_cls = (*env)->GetObjectClass(env, opt);
-
-	jfieldID flife = (*env)->GetFieldID(env, SockOptT_cls, "lifetime", "I");
-	const int lifetime = (*env)->GetIntField(env, opt, flife);
-
-	jfieldID fproc = (*env)->GetFieldID(env, SockOptT_cls, "procFlags", "I");
-	const int procFlags = (*env)->GetIntField(env, opt, fproc);
-
-	jfieldID fblock = (*env)->GetFieldID(env, SockOptT_cls, "blockFlags", "I");
-	const int blockFlags = (*env)->GetIntField(env, opt, fblock);
-
-	sock_opt_t sockOptions;
-
-	sockOptions.lifetime = lifetime;
-	sockOptions.proc_flags = procFlags;
-	sockOptions.block_flags = blockFlags;
-
-	int r = adtn_setsockopt(s, sockOptions);
-
-	if (r != 0)
+	if(r != 0)
 		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
+}
+
+/* void adtnSetSocketOption(int s, int optionCode, long value); */
+JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSetSocketOption__IIJ
+  (JNIEnv *env, jobject thisObj, jint s, jint opt, jlong val)
+{
+	int r = adtn_setsockopt(s, opt, &val);
+
+	if(r != 0)
+		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));	
+}
+
+/* void adtnSetSocketOption(int s, int optionCode, String value); */
+JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSetSocketOption__IILjava_lang_String_2
+  (JNIEnv *env, jobject thisObj, jint s, jint opt, jstring val)
+{
+	const char *code = (*env)->GetStringUTFChars(env, val, 0);
+	int r = adtn_setsockopt(s, opt, code);
+	(*env)->ReleaseStringUTFChars(env, val, code);
+	if(r != 0)
+		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));	
+}
+
+/* int adtnGetSocketIntOption(int s, int optionCode) */
+JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnGetSocketIntOption
+  (JNIEnv *env, jobject thisObj, jint s, jint opt)
+{
+	int len = sizeof(uint32_t);
+	uint32_t val;
+	int r = adtn_getsockopt(s, opt, &val, &len);
+	if(r != 0)
+		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));	
+	return val;
+}
+
+/* long adtnGetSocketLongOption(int s, int optionCode) */
+JNIEXPORT jlong JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnGetSocketLongOption
+  (JNIEnv *env, jobject thisObj, jint s, jint opt)
+{
+	int len = sizeof(uint64_t);
+	uint64_t val;
+	int r = adtn_getsockopt(s, opt, &val, &len);
+	printf("long value is %ld\n", val);
+	if(r != 0)
+		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));	
+	return val;
+}
+
+/* String adtnGetSocketStringOption(int s, int optionCode) */
+JNIEXPORT jstring JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnGetSocketStringOption
+  (JNIEnv *env, jobject thisObj, jint s, jint opt)
+{
+	char buff[512];
+	int len = 512;
+	int r = adtn_getsockopt(s, opt, buff, &len);
+	if(r != 0)
+		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));	
+	jstring val = (*env)->NewStringUTF(env, buff);
+	return val;
 }
 
 /* int adtnSendTo(int s, SockAddrT addr, byte[] data); */
@@ -183,7 +224,7 @@ JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSendT
 	memcpy(buffer_string, buffer, buffer_l);
 	buffer_string[buffer_l] = '\0';
 
-	int ret = adtn_sendto(s, destination, buffer_string);
+	int ret = adtn_sendto(s, buffer_string, buffer_l, destination);
 
 	free(buffer_string);
 	//Inform VM that buffer is no longer needed
