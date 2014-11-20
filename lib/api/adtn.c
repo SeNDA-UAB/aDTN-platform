@@ -662,6 +662,10 @@ static int delegate_bundle(const bundle_s *bundle, const char *file_prefix, buns
 	if ((bundle_raw_l = bundle_create_raw(bundle, &bundle_raw)) <= 0) {
 		goto end;
 	}
+	if (bundle_raw_check(bundle_raw, bundle_raw_l) != 0) {
+		errno = EMSGSIZE;
+		goto end;
+	}
 	identifier->gval.last_timestamp = bundle->primary->timestamp_time;
 
 	f = fopen(full_path, "wb");

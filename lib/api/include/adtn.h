@@ -256,7 +256,7 @@ ENOTSUP     invalid option.
 */
 
 /**
-    @fn int adtn_sendto(int fd, const sock_addr_t addr, char *buffer)
+    @fn int adtn_sendto(int fd, const void *buffer, size_t buffer_l, const sock_addr_t addr)
     @brief Sends a message over ADTN platform.
 
     Sends a message over ADTN platform. The fact that adtn_sendto call returns a success value doesn't mean that the message has been sent through the network.
@@ -264,9 +264,10 @@ ENOTSUP     invalid option.
     until adtn_sendto(3) returns a succes value and the message is really send is impossible to determine.
 
     @param fd A file descriptor identifying the socket.
-    @param addr sock_addr_t structure containing the destination information. Must contain, the application port and ip of the destination.
     @param buffer A buffer with the message to send.
-
+    @param buffer_l the length to send of  the buffer.
+    @param addr sock_addr_t structure containing the destination information. Must contain, the application port and ip of the destination.
+    
     @return The number of bytes written on succes or -1 on error. If the function fails errno is set.
 
     errno can take the values below:
@@ -274,19 +275,20 @@ ENOTSUP     invalid option.
     EINVAL      invalid address or null buffer.
     ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
     ENOENT      cannot load the shared memory.
+    EMSGSIZE    message size is too big.
 
 */
 
 /**
-    @fn int adtn_recv(int fd, char *buffer, int max_len)
+    @fn int adtn_recv(int fd, void *buffer, size_t len)
     @brief Recive a message.
 
     Recive a message from adtn_socket. If at the moment of perform the call there are no messages adtn_recv(3) will block
     until can retrieve a message. After get a message it will be deleted from the socket queue.
 
     @param fd A file descriptor identifying the socket.
-    @param buffer Char array where the mssg value will be stored.
-    @param max_len The maximum number of bytes that will be written into buffer.
+    @param buffer array where the mssg value will be stored.
+    @param len The maximum number of bytes that will be written into buffer.
 
     @return The number of bytes received on succes or -1 on error. If the function fails errno is set.
 
@@ -299,7 +301,7 @@ ENOTSUP     invalid option.
 */
 
 /**
-    @fn int adtn_recvfrom(int fd, char *buffer, int max_len, sock_addr_t *addr)
+    @fn int adtn_recvfrom(int fd, void *buffer, size_t len, sock_addr_t *addr)
     @brief Recive a message, filling sender information.
 
     Recive a message from adtn_socket. If at the moment of perform the call there are no messages adtn_recvfrom(4) will block
@@ -307,8 +309,8 @@ ENOTSUP     invalid option.
     sender information like ip or port.
 
     @param fd A file descriptor identifying the socket.
-    @param buffer Char array where the mssg value will be stored.
-    @param max_len The maximum number of bytes that will be written into buffer.
+    @param buffer array where the mssg value will be stored.
+    @param len The maximum number of bytes that will be written into buffer.
     @param addr An empty structure that will be filled with information about the sender.
 
     @return The number of bytes received on succes or -1 on error. If the function fails errno is set.

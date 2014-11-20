@@ -267,7 +267,13 @@ void send_pings(int *s)
 	for (;;) {
 		pthread_mutex_lock(&ping_mutex);
 		if (adtn_sendto(*s, payload_content, conf.payload_size, conf.dest) != conf.payload_size) {
-			printf("Error sending ping.\n");
+			if(errno == EMSGSIZE) {
+				printf("Error sending ping, Payload too big.\n");
+				goto end;
+			}
+			else {
+				printf("Error sending ping.\n");
+			}
 		} else {
 			/* Store ping info */
 			if (adtn_getsockopt(*s, OP_LAST_TIMESTAMP, &timestamp_time, &timestamp_time_l) != 0 || timestamp_time_l == 0)
@@ -282,7 +288,7 @@ void send_pings(int *s)
 
 			stats.bundles_sent++;
 		}
-		last_ping_added = new_ping->num_seq;
+		last_ping_added = stats.ping_seq;
 		pthread_cond_broadcast(&ping_cond);
 		pthread_mutex_unlock(&ping_mutex);
 
@@ -329,12 +335,8 @@ int main(int argc,  char *const *argv)
 	if (conf.config_file == NULL)
 		conf.config_file = DEFAULT_CONF_FILE_PATH;
 
-	if (conf.payload_size == 0) {
+	if (conf.payload_size == 0)
 		conf.payload_size = DEFAULT_PAYLOAD_SIZE;
-	} else if (conf.payload_size >= MAX_BUNDLE_SIZE - 500) {
-		printf("Payload too big, setting default value\n");
-		conf.payload_size = DEFAULT_PAYLOAD_SIZE;
-	}
 
 	if (conf.ping_interval == 0)
 		conf.ping_interval = DEFAULT_INTERVAL;
