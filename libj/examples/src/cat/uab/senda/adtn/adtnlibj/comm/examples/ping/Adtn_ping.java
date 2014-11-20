@@ -12,9 +12,8 @@ public class Adtn_ping {
         int s,port;
         Scanner in = new Scanner(System.in);
         
-        //System.out.println("Introduce this platform name: ");
-        //String platform_id = in.nextLine();
-        String platform_id="sergi";
+        System.out.println("Introduce this platform name: ");
+        String platform_id = in.nextLine();
         
         ArgHandler argHandler = new ArgHandler(args);
         options = argHandler.getOptions();
@@ -26,7 +25,6 @@ public class Adtn_ping {
         //Create a random port number ToDo: Ensure that ports it's not already in use.
         port = new Random().nextInt(Integer.MAX_VALUE) % 65536;
            
-       // System.out.print("Port "+Integer.toString(port));
         
         // Create the SockkAddr objects with the source and destination information
         conf.setSource(new SockAddrT(platform_id,port));
@@ -41,7 +39,7 @@ public class Adtn_ping {
        
        sender.run();
        receiver.run();
-          
+       
     }
 
 }
