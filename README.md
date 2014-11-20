@@ -65,7 +65,11 @@ Is important to note that if an unexpected behavior occurs when running the plat
 
 <h2>aDTN examples applications</h2>
 
+<ul>
 <li><strong>adtn-ping:</strong> Ping application over adtn platform. Simply type <code>adtn-ping -h</code> to know how to use it.</li>
+<li><strong>adtn-neighbours:</strong> Neighbours list application. Simply type <code>adtn-neighbours -h</code> to know how to use it.</li>
+<li><strong>adtn-traceroute:</strong> Traceroute application over adtn platform. Simply type <code>adtn-traceroute -h</code> to know how to use it.</li>
+</ul>
 
 <h2>aDTN suit update</h2>
 
