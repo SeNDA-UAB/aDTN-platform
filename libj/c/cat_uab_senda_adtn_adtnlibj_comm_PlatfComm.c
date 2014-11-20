@@ -165,9 +165,18 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSetSo
 	case OP_SOURCE :
 	case OP_REPORT :
 	case OP_CUSTOM : {
-		const char *code = (*env)->GetStringUTFChars(env, val, 0);
+		c = (*env)->FindClass(env, "cat/uab/senda/adtn/adtnlibj/comm/SockAddrT");
+		if (c == NULL) {
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Class cat/uab/senda/adtn/adtnlibj/comm/SockAddrT cannot be found.");
+		}
+		meth = (*env)->GetMethodID(env, c, "toString", "()Ljava/lang/String;");
+		if (meth == NULL) {
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Method toString ()Ljava/lang/String; cannot be found.");
+		}
+		jstring sockAddr = (jstring)(*env)->CallObjectMethod(env, val, meth);
+		const char *code = (*env)->GetStringUTFChars(env, sockAddr, 0);
 		r = adtn_setsockopt(s, opt, code);
-		(*env)->ReleaseStringUTFChars(env, val, code);
+		(*env)->ReleaseStringUTFChars(env, sockAddr, code);
 		break;
 	}
 	}
@@ -229,7 +238,20 @@ JNIEXPORT jobject JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnGe
 		r = adtn_getsockopt(s, opt, buff, &len);
 		if (r != 0)
 			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
-		a = (*env)->NewStringUTF(env, buff);
+		c = (*env)->FindClass(env, "cat/uab/senda/adtn/adtnlibj/comm/SockAddrT");
+		if (c == NULL) {
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Class cat/uab/senda/adtn/adtnlibj/comm/SockAddrT cannot be found.");
+		}
+		meth = (*env)->GetMethodID(env, c, "<init>", "(Ljava/lang/String;I)V");
+		if (meth == NULL) {
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Method <init> (Ljava/lang/String;I)V cannot be found.");
+		}
+		int port;
+		char* platform;
+		platform = strtok(buff, ":");
+		port = atoi(strtok(NULL, ":"));
+		jstring splatform = (*env)->NewStringUTF(env, platform);
+		a = (*env)->NewObject(env, c, meth, splatform, port);
 		break;
 	}
 	}

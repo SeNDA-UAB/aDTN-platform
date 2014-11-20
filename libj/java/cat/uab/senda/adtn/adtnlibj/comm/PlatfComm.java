@@ -140,7 +140,7 @@ public class PlatfComm {
 	/**
 	 * Request reporting of Bundle reception.
 	 */
-	public static final int H_SR_BREC = 0x400;                 
+	public static final int H_SR_BREC = 0x4000;                 
 	/**
 	 * Request reporting of custody acceptance.
 	 */
@@ -297,16 +297,16 @@ public class PlatfComm {
 	 * </ul>
 	 * </li>
 	 * <li>
-	 * {@link #OP_DEST}: a <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html">String</a> with the destination for the bundle, the format is {@code name:applicationPort, ex. test:25}.
+	 * {@link #OP_DEST}: a {@link cat.uab.senda.adtn.adtnlibj.comm.SockAddrT} with the destination for the bundle.
 	 * </li>
 	 * <li>
-	 * {@link #OP_SOURCE}: a <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html">String</a> with the source for the bundle, the format is {@code name:applicationPort, ex. test:25}.
+	 * {@link #OP_SOURCE}: a {@link cat.uab.senda.adtn.adtnlibj.comm.SockAddrT} with the source for the bundle.
 	 * </li>
 	 * <li>
-	 * {@link #OP_REPORT}: a <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html">String</a> with the report for the bundle, the format is {@code name:applicationPort, ex. test:25}.
+	 * {@link #OP_REPORT}: a {@link cat.uab.senda.adtn.adtnlibj.comm.SockAddrT} with the report for the bundle.
 	 * </li>
 	 * <li>
-	 * {@link #OP_CUSTOM}: a <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html">String</a> with the custom for the bundle, the format is {@code name:applicationPort, ex. test:25}.
+	 * {@link #OP_CUSTOM}: a {@link cat.uab.senda.adtn.adtnlibj.comm.SockAddrT} with the custom for the bundle.
 	 * </li>
 	 * </ul>
 	 * <p>
@@ -332,16 +332,16 @@ public class PlatfComm {
 	 * {@link #OP_BLOCK_FLAGS}: gets the extension block flags, the function returns an <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html">Integer</a>.
 	 * </li>
 	 * <li>
-	 * {@link #OP_DEST}: gets the destination, the function returns a <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html">String</a> with the format {@code name:applicationPort, ex. test:25}.
+	 * {@link #OP_DEST}: gets the destination, the function returns a {@link cat.uab.senda.adtn.adtnlibj.comm.SockAddrT}.
 	 * </li>
 	 * <li>
-	 * {@link #OP_SOURCE}: gets the source, the function returns a <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html">String</a> with the format {@code name:applicationPort, ex. test:25}.
+	 * {@link #OP_SOURCE}: gets the source, the function returns a {@link cat.uab.senda.adtn.adtnlibj.comm.SockAddrT}.
 	 * </li>
 	 * <li>
-	 * {@link #OP_REPORT}: gets the report, the function returns a <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html">String</a> with the format {@code name:applicationPort, ex. test:25}.
+	 * {@link #OP_REPORT}: gets the report, the function returns a {@link cat.uab.senda.adtn.adtnlibj.comm.SockAddrT}.
 	 * </li>
 	 * <li>
-	 * {@link #OP_CUSTOM}: gets the custom, the function returns a <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html">String</a> with the format {@code name:applicationPort, ex. test:25}.
+	 * {@link #OP_CUSTOM}: gets the custom, the function returns a {@link cat.uab.senda.adtn.adtnlibj.comm.SockAddrT}.
 	 * </li>
 	 * <li>
 	 * {@link #OP_LAST_TIMESTAMP}: gets the timestamp of the last sended bundle, the function returns a <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html">Long</a>
