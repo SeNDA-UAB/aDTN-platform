@@ -165,61 +165,80 @@ end:
 	return ret;
 }
 
-int load_global_config(struct common *shm, const char *config_file)
+int load_global_config(adtn_ini_t **adtn_ini, const char *config_file)
 {
 	int ret = 0;
+	char *tmp_value;
 	struct conf_list global_configuration = {0};
 
-	if (shm == NULL || config_file == NULL) {
+	if (config_file == NULL) {
 		ret = 1;
 		goto end;
 	}
 
+	(*adtn_ini) = (adtn_ini_t*) calloc(1, sizeof(adtn_ini_t));
+	strncpy((*adtn_ini)->ini_path, config_file, PATH_MAX);
+
+	//Global options
 	if (load_config("global", &global_configuration, config_file) != 1) {
 		LOG_MSG(LOG__ERROR, false, "Error loading global config. Configuration file not found.");
 		ret = 1;
 		goto end;
 	}
 
-	//Required options
-	if (get_option_value("ip", &global_configuration) == NULL) {
+	if ((tmp_value = get_option_value("id", &global_configuration)) == NULL) {
+		LOG_MSG(LOG__ERROR, false, "No ID (id) defined in the configuration file.");
+		ret = 1;
+		goto free1;
+	}
+	strncpy((*adtn_ini)->platform_id, tmp_value, MAX_PLATFORM_ID_LEN);
+
+	if ((tmp_value = get_option_value("ip", &global_configuration)) == NULL) {
 		LOG_MSG(LOG__ERROR, false, "No IP (ip) defined in the configuration file.");
 		ret = 1;
 		goto free1;
 	}
+	strncpy((*adtn_ini)->platform_ip, tmp_value, STRING_IP_LEN);
 
-	if (get_option_value("id", &global_configuration) == NULL) {
-		LOG_MSG(LOG__ERROR, false, "No IP (ip) defined in the configuration file.");
-		ret = 1;
-		goto free1;
-	}
-
-	if (get_option_value("port", &global_configuration) == NULL) {
+	if ((tmp_value = get_option_value("port", &global_configuration)) == NULL) {
 		LOG_MSG(LOG__ERROR, false, "No platform port (port) defined in the configuration file.");
 		ret = 1;
 		goto free1;
 	}
+	(*adtn_ini)->platform_port = atoi(tmp_value);
 
-	if (get_option_value("data", &global_configuration) == NULL) {
+	if ((tmp_value = get_option_value("data", &global_configuration)) == NULL) {
 		LOG_MSG(LOG__ERROR, false, "No data dir (data) defined in the configuration file.");
 		ret = 1;
 		goto free1;
 	}
+	strncpy((*adtn_ini)->data_path, tmp_value, PATH_MAX);
+	/**/
 
-	if (pthread_rwlock_wrlock(&shm->rwlock) != 0) {
-		LOG_MSG(LOG__ERROR, true, "pthread_rwlock_wrlock()");
+	//Log options
+	if (load_config("log", &global_configuration, config_file) != 1) {
+		LOG_MSG(LOG__ERROR, false, "Error loading global config. Configuration file not found.");
+		ret = 1;
+		goto end;
+	}
+
+	if ((tmp_value = get_option_value("log_file", &global_configuration)) == NULL) {
+		LOG_MSG(LOG__ERROR, false, "No log file (log_file) defined in the configuration file.");
+		ret = 1;
 		goto free1;
 	}
+	if (atoi(tmp_value))
+		(*adtn_ini)->log_file = true;
+	else
+		(*adtn_ini)->log_file = false;
 
-	strncpy(shm->iface_ip, get_option_value("ip", &global_configuration), STRING_IP_LEN);
-	strncpy(shm->platform_id, get_option_value("id", &global_configuration), MAX_PLATFORM_ID_LEN);
-	shm->platform_port = strtol(get_option_value("port", &global_configuration), NULL, 10);
-	strncpy(shm->data_path, get_option_value("data", &global_configuration), 255);
-
-	/**/
-	if (pthread_rwlock_unlock(&shm->rwlock) != 0) {
-		LOG_MSG(LOG__ERROR, true, "pthread_rwlock_unlock");
+	if ((tmp_value = get_option_value("log_level", &global_configuration)) == NULL) {
+		LOG_MSG(LOG__ERROR, false, "No log level (log_level) defined in the configuration file.");
+		ret = 1;
+		goto free1;
 	}
+	(*adtn_ini)->log_level = atoi(tmp_value);
+	/**/
 
 free1:
 	free_options_list(&global_configuration);
@@ -252,14 +271,69 @@ int test_locks(struct common *shm)
 	if (!shm)
 		goto end;
 
-	if (try_rwlock(&shm->rwlock) != 0) {
+	if (try_rwlock(&shm->rwlock) != 0)
 		goto end;
-	}
 
-	/**/
 	ret = 0;
 end:
 
+	return ret;
+}
+
+int initilize_shm(adtn_ini_t *adtn_ini, struct common **shm_common, short int force_init)
+{
+	int ret = 0;
+	unsigned int shm_suffix = 0;
+
+	shm_suffix = Crc32_ComputeBuf(shm_suffix, adtn_ini->data_path, strlen(adtn_ini->data_path));
+
+	if ((shm_fd = init_shared_memory(shm_suffix, true)) < 0) {
+		LOG_MSG(LOG__ERROR, true, "Can't init shared memory: ");
+		ret = 1;
+		goto end;
+	}
+
+	*shm_common = NULL;
+	if ((*shm_common = map_shared_memory(shm_fd, true)) == NULL) {
+		LOG_MSG(LOG__ERROR, true, "Can't map shared memory: ");
+		ret = 1;
+		goto end;
+	}
+
+	// Lock shm file descriptor
+	if (flock(shm_fd, LOCK_EX) != 0) {
+		LOG_MSG(LOG__ERROR, true, "flock");
+		ret = 1;
+		goto end;
+	}
+
+	if (!(*shm_common)->initialized || force_init) {
+		if ((ret = init_locks(*shm_common)) != 0)
+			LOG_MSG(LOG__ERROR, false, "Error initializing shm locks");
+
+		//TODO: Look for snprintf. It allocates memory first?
+		snprintf((*shm_common)->config_file, 255, "%s", adtn_ini->ini_path);
+		snprintf((*shm_common)->platform_id, 255, "%s", adtn_ini->platform_id);
+		snprintf((*shm_common)->iface_ip, 255, "%s", adtn_ini->platform_ip);
+		(*shm_common)->platform_port = adtn_ini->platform_port;
+		(*shm_common)->prefix_id = shm_suffix;
+		snprintf((*shm_common)->data_path, 255, "%s", adtn_ini->data_path);
+		snprintf((*shm_common)->config_file, 255, "%s", adtn_ini->ini_path);
+		if (ret == 0)
+			(*shm_common)->initialized = 1;
+	} else if ((*shm_common)->initialized) {
+		if (test_locks(*shm_common) != 0)
+			LOG_MSG(LOG__ERROR, false, "Error resetting locks");
+	}
+
+	// Unlock shm file descriptor
+	if (flock(shm_fd, LOCK_UN) != 0) {
+		LOG_MSG(LOG__ERROR, true, "flock");
+		ret = 1;
+		goto end;
+	}
+
+end:
 	return ret;
 }
 
@@ -271,8 +345,7 @@ int init_adtn_process(int argc, char *const argv[], struct common **shm_common)
 	char *config_file = NULL, absolute_config_file_path[PATH_MAX];
 	short int force_init = 0;
 	char ritPath[255] = {0};
-	char data_path[255] = {0};
-	unsigned int shm_suffix = 0;
+	adtn_ini_t *adtn_ini = NULL;
 
 	if (parse_adtn_options(argc, argv, &config_file, &force_init) != 0) {
 		LOG_MSG(LOG__ERROR, false, "Error parsing command line options");
@@ -289,73 +362,42 @@ int init_adtn_process(int argc, char *const argv[], struct common **shm_common)
 		goto free1;
 	}
 
-	//Get data path
-	if (ini_gets("global", "data", "", data_path, 255, config_file) == 0) {
-		LOG_MSG(LOG__ERROR, false, "Data path not found in the configuration file");
+	if (realpath(config_file, absolute_config_file_path) == NULL) {
+		LOG_MSG(LOG__ERROR, true, "realpath()");
 		ret = 1;
 		goto free1;
 	}
 
+	if (load_global_config(&adtn_ini, absolute_config_file_path) != 0) {
+		LOG_MSG(LOG__ERROR, false, "Error loading config ");
+		ret = 1;
+		goto free1;
+	}
+
+	//Initialize log system according to user preferences
+	set_debug_lvl(adtn_ini->log_level);
+	set_log_file(adtn_ini->log_file);
+	init_log(adtn_ini->data_path);
+
 	//Set rit path
-	snprintf(ritPath, 254, "%s/RIT", data_path);
+	snprintf(ritPath, 254, "%s/RIT", adtn_ini->data_path);
 	rit_changePath(ritPath);
 
-	/*SHM*/
-	shm_suffix = Crc32_ComputeBuf(shm_suffix, data_path, strlen(data_path));
-
-	if ((shm_fd = init_shared_memory(shm_suffix, true)) < 0) {
-		LOG_MSG(LOG__ERROR, true, "Can't init shared memory: ");
+	//Initialize shared memory
+	if (initilize_shm(adtn_ini, shm_common, force_init) != 0) {
 		ret = -1;
 		goto free1;
 	}
-	*shm_common = NULL;
-	if ((*shm_common = map_shared_memory(shm_fd, true)) == NULL) {
-		LOG_MSG(LOG__ERROR, true, "Can't map shared memory: ");
-		ret = -1;
-		goto free1;
-	}
-
-	// Lock shm fd
-	if (flock(shm_fd, LOCK_EX) != 0) {
-		LOG_MSG(LOG__ERROR, true, "flock");
-		ret = -1;
-		goto free1;
-	}
-
-	if (!(*shm_common)->initialized || force_init) {
-		if ((ret = init_locks(*shm_common)) != 0)
-			LOG_MSG(LOG__ERROR, false, "Error initializing shm locks");
-
-		if (realpath(config_file, absolute_config_file_path) == NULL)
-			LOG_MSG(LOG__ERROR, true, "realpath()");
-
-		snprintf((*shm_common)->config_file, 255, "%s", absolute_config_file_path);
-		if ((ret = load_global_config(*shm_common, absolute_config_file_path)) != 0)
-			LOG_MSG(LOG__ERROR, false, "Error loading config into shm: ");
-
-		(*shm_common)->prefix_id = shm_suffix;
-
-		if (ret == 0)
-			(*shm_common)->initialized = 1;
-	} else if ((*shm_common)->initialized) {
-		if (test_locks(*shm_common) != 0)
-			LOG_MSG(LOG__ERROR, false, "Error resetting locks");
-	}
-
-	// Unlock shm fd
-	if (flock(shm_fd, LOCK_UN) != 0) {
-		LOG_MSG(LOG__ERROR, true, "flock");
-		ret = -1;
-		goto free1;
-	}
-
-	/**/
-	pthread_rwlock_rdlock(&(*shm_common)->rwlock);
-	init_log((*shm_common)->data_path);
-	pthread_rwlock_unlock(&(*shm_common)->rwlock);
 
 free1:
 	free(config_file);
+	if (adtn_ini) {
+		free(adtn_ini->ini_path);
+		// free(adtn_ini->data_path);
+		// free(adtn_ini->platform_id);
+		// free(adtn_ini->platform_ip);
+		// free(adtn_ini);
+	}
 end:
 
 	return ret;
