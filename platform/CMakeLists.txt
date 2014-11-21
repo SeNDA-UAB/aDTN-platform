@@ -17,12 +17,18 @@ string(REGEX REPLACE "INSTALL_PREFIX=[^ \n]*" "INSTALL_PREFIX=${CMAKE_INSTALL_PR
 string(REGEX REPLACE "config_file=\\$INSTALL_PREFIX[^ \n]*" "config_file=$INSTALL_PREFIX/adtn.ini" MODIFIED_FILE_CONTENT "${MODIFIED_FILE_CONTENT}")
 file(WRITE "${PLATFORM_BINARY_DIR}/adtnd/adtnd" "${MODIFIED_FILE_CONTENT}")
 
-# Configure adtn.ini: change platofrm id to computer's hostname and set where are the default codes located.
+# Configure adtn.ini: change platform id to computer's hostname, log granularity, and set where are the default codes located.
+string(TOLOWER ${CMAKE_BUILD_TYPE} BTYPE)
 execute_process(COMMAND hostname OUTPUT_VARIABLE HOSTNAME)
 string(REGEX REPLACE "(\r?\n)+$" "" hostname "${HOSTNAME}")
 file(READ "${PLATFORM_SOURCE_DIR}/config/adtn.ini" FILE_CONTENT)
 string(REGEX REPLACE "id = [^\n]*" "id = ${HOSTNAME}" MODIFIED_FILE_CONTENT "${FILE_CONTENT}")
-string(REGEX REPLACE "default_codes" "${SYSCONFDIR}/${ADTN_CONF_SUBDIR}/default_codes" MODIFIED_FILE_CONTENT "${FILE_CONTENT}")
+if (${BTYPE} STREQUAL "release")
+	string(REGEX REPLACE "log_level = [^\n]*" "log_level = 1" MODIFIED_FILE_CONTENT "${FILE_CONTENT}")
+else()
+	string(REGEX REPLACE "log_level = [^\n]*" "log_level = 4" MODIFIED_FILE_CONTENT "${FILE_CONTENT}")
+endif()
+string(REGEX REPLACE "default_codes" "${SYSCONFDIR}/${ADTN_CONF_SUBDIR}/default_codes" MODIFIED_FILE_CONTENT "${MODIFIED_FILE_CONTENT}")
 file(WRITE "${PLATFORM_BINARY_DIR}/config/adtn.ini" "${MODIFIED_FILE_CONTENT}")
 
 # Installation
