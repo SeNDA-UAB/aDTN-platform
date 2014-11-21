@@ -220,7 +220,7 @@ int delegate_bundle_to_app(const uint8_t *raw_bundle, const int raw_bundle_l, co
 
 	if (write_to(bundle_dest_path, bundle_name, raw_bundle, raw_bundle_l) != 0)
 		goto end;
-	LOG_MSG(LOG__INFO, false, "Bundle stored into %s%s", bundle_dest_path, bundle_name);
+	LOG_MSG(LOG__INFO, false, "Bundle stored into %s/%s", bundle_dest_path, bundle_name);
 
 	ret = 0;
 end:
@@ -242,7 +242,7 @@ int delegate_bundle_to_receiver(const uint8_t *raw_bundle, const int raw_bundle_
 
 	if (write_to(g_vars.input_path, bundle_name, raw_bundle, raw_bundle_l) != 0)
 		goto end;
-	LOG_MSG(LOG__INFO, false, "Bundle stored into %s%s", g_vars.input_path, bundle_name);
+	LOG_MSG(LOG__INFO, false, "Bundle stored into %s/%s", g_vars.input_path, bundle_name);
 
 	ret = 0;
 end:
@@ -262,7 +262,7 @@ int put_bundle_into_queue(const uint8_t *raw_bundle, const int raw_bundle_l)
 
 	if (write_to(g_vars.queue_path, bundle_name, raw_bundle, raw_bundle_l) != 0)
 		goto end;
-	LOG_MSG(LOG__INFO, false, "Bundle stored into %s%s", g_vars.queue_path, bundle_name);
+	LOG_MSG(LOG__INFO, false, "Bundle stored into %s/%s", g_vars.queue_path, bundle_name);
 
 	if (queue(bundle_name, g_vars.queue_conn) != 0)
 		goto end;

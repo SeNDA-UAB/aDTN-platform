@@ -391,13 +391,8 @@ int init_adtn_process(int argc, char *const argv[], struct common **shm_common)
 
 free1:
 	free(config_file);
-	if (adtn_ini) {
-		free(adtn_ini->ini_path);
-		// free(adtn_ini->data_path);
-		// free(adtn_ini->platform_id);
-		// free(adtn_ini->platform_ip);
-		// free(adtn_ini);
-	}
+	if (adtn_ini) 
+		free(adtn_ini);
 end:
 
 	return ret;
