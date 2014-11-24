@@ -9,15 +9,17 @@
 static int initiated = 0;
 static FILE *error_log_f;
 static FILE *info_log_f;
-static int debug_lvl = 4;
+static int debug_lvl = LOG__ERROR;
+static bool log_file = false;
 
 /*
 Debug levels for log.
 
-LOG__ERROR 0        Error conditions
-LOG__WARNING 1      Warning conditions
-LOG__INFO 2         Informational
-LOG__DEBUG 3        Debug-level messages
+LOG__ERROR			Error conditions
+LOG__WARNING  		Warning conditions
+LOG__INFO 	 		Informational
+LOG__DEBUG  		Debug-level messages
+LOG__ALL  			Show all levels above
 
 */
 
@@ -26,27 +28,25 @@ void init_log(const char *data_path)
 	char *error_log_path = NULL;
 	char *info_log_path = NULL; //Debug info is also written here
 
-	if (NOLOG)
-		return;
+	if (log_file) {
+		errno = 0;
+		int error_log_l = strlen(data_path) + strlen(ERROR_LOG_FILE) + 2;
+		error_log_path = (char *)malloc(error_log_l);
+		snprintf(error_log_path, error_log_l, "%s/%s", data_path, ERROR_LOG_FILE);
+		error_log_f = fopen(error_log_path, "a");
+		if (error_log_f == NULL)
+			LOG_MSG(LOG__ERROR, true, "Error opening error logfile %s", error_log_path);
 
-	errno = 0;
-	int error_log_l = strlen(data_path) + strlen(ERROR_LOG_FILE) + 2;
-	error_log_path = (char *)malloc(error_log_l);
-	snprintf(error_log_path, error_log_l, "%s/%s", data_path, ERROR_LOG_FILE);
-	error_log_f = fopen(error_log_path, "a");
-	if (error_log_f == NULL)
-		LOG_MSG(LOG__ERROR, true, "Error opening error logfile %s", error_log_path);
+		int info_log_l = strlen(data_path) + strlen(INFO_LOG_FILE) + 2;
+		info_log_path = (char *)malloc(info_log_l);
+		snprintf(info_log_path, info_log_l, "%s/%s", data_path, INFO_LOG_FILE);
+		info_log_f = fopen(info_log_path, "a");
+		if (info_log_f == NULL)
+			LOG_MSG(LOG__ERROR, false, "Error opening info logfile %s", info_log_path);
 
-	int info_log_l = strlen(data_path) + strlen(INFO_LOG_FILE) + 2;
-	info_log_path = (char *)malloc(info_log_l);
-	snprintf(info_log_path, info_log_l, "%s/%s", data_path, INFO_LOG_FILE);
-	info_log_f = fopen(info_log_path, "a");
-	if (info_log_f == NULL)
-		LOG_MSG(LOG__ERROR, false, "Error opening info logfile %s", info_log_path);
-
-	free(error_log_path);
-	free(info_log_path);
-
+		free(error_log_path);
+		free(info_log_path);
+	}
 }
 
 /* Based in Michael Kerrisk code from tlpi-dist package*/
@@ -199,10 +199,15 @@ void end_log()
 
 void set_debug_lvl(const int lvl)
 {
-	if (lvl < 0)
-		debug_lvl = 0;
+	if (lvl < 1)
+		debug_lvl = 1;
 	else if (lvl > 4)
 		debug_lvl = 4;
 	else
 		debug_lvl = lvl;
+}
+
+void set_log_file(const bool logf)
+{
+	log_file = logf;
 }

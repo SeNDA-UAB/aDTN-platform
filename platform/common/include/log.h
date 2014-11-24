@@ -13,6 +13,7 @@ void init_log(const char *data_path);
 void end_log();
 void log_err_message(const int debug_level, const bool useErr, const char *file, int line, const char *format, ...);
 void set_debug_lvl(const int lvl);
+void set_log_file(const bool logf);
 void log_info_message(const int debug_level, const char *file, int line, const char *format, ...);
 //end functions
 
@@ -23,12 +24,10 @@ void log_info_message(const int debug_level, const char *file, int line, const c
 #define LOG_MSG(LVL, B, M, ...)                                         \
 	do                                                                  \
 	{                                                                   \
-		if (DEBUG) {                                                    \
-			if (LVL == LOG__ERROR || LVL == LOG__WARNING)               \
-				log_err(LVL, B, M, ##__VA_ARGS__);         	            \
-			else                                                        \
-				log_info(LVL, M, ##__VA_ARGS__);		                \
-		}                                                               \
+		if (LVL == LOG__ERROR || LVL == LOG__WARNING)               \
+			log_err(LVL, B, M, ##__VA_ARGS__);         	            \
+		else                                                        \
+			log_info(LVL, M, ##__VA_ARGS__);		                \
 	} while (0)
 
 //end wrappers

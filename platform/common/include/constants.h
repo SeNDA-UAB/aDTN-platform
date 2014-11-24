@@ -32,19 +32,15 @@
     Log constants
 */
 #define MAX_LOG_MSG 512     //In bytes
-#define DEBUG 1
-#ifndef NOLOG
-#define NOLOG 0
-#endif
-
 #define ERROR_LOG_FILE "adtn.err.log"
 #define INFO_LOG_FILE "adtn.info.log"
 #define MAX_ENAME 133
 
-#define LOG__ERROR 0
-#define LOG__WARNING 1
-#define LOG__INFO 2
-#define LOG__DEBUG 3
+#define LOG__ERROR 1
+#define LOG__WARNING 2
+#define LOG__INFO 3
+#define LOG__DEBUG 4
+#define LOG__ALL 4
 
 /*
     Neighbours constants
