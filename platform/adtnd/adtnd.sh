@@ -14,7 +14,7 @@ CHECK_PERIOD=120
 
 
 if [ -z $1 ]; then
-	config_file=$INSTALL_PREFIX"/etc/adtn.ini"
+	config_file=$INSTALL_PREFIX"/etc/adtn/adtn.ini"
 else
 	config_file=$1
 fi
