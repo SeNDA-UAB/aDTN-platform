@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "adtn.h"
-#include "cat_uab_senda_adtn_adtnlibj_comm_PlatfComm.h"
+#include "cat_uab_senda_adtn_comm_Comm.h"
 
 /* int adtnSocket(); */
-JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSocket__
+JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnSocket__
 (JNIEnv *env, jobject thisObj)
 {
 	int s = adtn_socket();
@@ -17,7 +17,7 @@ JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSocke
 }
 
 /* int adtnSocket(String dataPath); */
-JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSocket__Ljava_lang_String_2
+JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnSocket__Ljava_lang_String_2
 (JNIEnv *env, jobject thisObj, jstring path)
 {
 	const char *dataPath = (*env)->GetStringUTFChars(env, path, 0);
@@ -30,7 +30,7 @@ JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSocke
 }
 
 /* void adtnBind(int s, SockAddrT addr); */
-JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnBind
+JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnBind
 (JNIEnv *env, jobject thisObj, jint s, jobject addr)
 {
 
@@ -56,7 +56,7 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnBind
 }
 
 /* void adtnClose(int s); */
-JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnClose
+JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnClose
 (JNIEnv *env, jobject thisObj, jint s)
 {
 	int r = adtn_close(s);
@@ -66,7 +66,7 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnClose
 }
 
 /* void adtnShutdown(int s); */
-JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnShutdown
+JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnShutdown
 (JNIEnv *env, jobject thisObj, jint s)
 {
 	int r = adtn_shutdown(s);
@@ -76,7 +76,7 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnShutd
 }
 
 /* void adtnSetCodeOption(int s, int codeOption, String code); */
-JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSetCodeOption__IILjava_lang_String_2
+JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnSetCodeOption__IILjava_lang_String_2
 (JNIEnv *env, jobject thisObj, jint s, jint codeType, jstring codeString)
 {
 
@@ -90,7 +90,7 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSetCo
 }
 
 /* void adtnSetCodeOption(int s, int codeOption, String code, int fromFile); */
-JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSetCodeOption__IILjava_lang_String_2I
+JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnSetCodeOption__IILjava_lang_String_2I
 (JNIEnv *env, jobject thisObj, jint s, jint codeType, jstring codeString, jint isFile)
 {
 	const char *code = (*env)->GetStringUTFChars(env, codeString, 0);
@@ -103,7 +103,7 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSetCo
 }
 
 /* void adtnSetCodeOption(int s, int codeOption, String code, int fromFile, int replace); */
-JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSetCodeOption__IILjava_lang_String_2II
+JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnSetCodeOption__IILjava_lang_String_2II
 (JNIEnv *env, jobject thisObj, jint s, jint codeType, jstring codeString, jint isFile, jint replace)
 {
 	const char *code = (*env)->GetStringUTFChars(env, codeString, 0);
@@ -116,7 +116,7 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSetCo
 }
 
 /* void adtnRemoveCodeOption(int s, int codeOption); */
-JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnRemoveCodeOption
+JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnRemoveCodeOption
 (JNIEnv *env, jobject thisObj, jint s, jint opt)
 {
 	int r = adtn_rmcodopt(s, opt);
@@ -126,7 +126,7 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnRemov
 }
 
 /* void adtnSetSocketOption(int s, int optionCode, Object value); */
-JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSetSocketOption
+JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnSetSocketOption
 (JNIEnv *env, jobject thisObj, jint s, jint opt, jobject val)
 {
 	int r;
@@ -165,9 +165,9 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSetSo
 	case OP_SOURCE :
 	case OP_REPORT :
 	case OP_CUSTOM : {
-		c = (*env)->FindClass(env, "cat/uab/senda/adtn/adtnlibj/comm/SockAddrT");
+		c = (*env)->FindClass(env, "cat/uab/senda/adtn/comm/SockAddrT");
 		if (c == NULL) {
-			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Class cat/uab/senda/adtn/adtnlibj/comm/SockAddrT cannot be found.");
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Class cat/uab/senda/adtn/comm/SockAddrT cannot be found.");
 		}
 		meth = (*env)->GetMethodID(env, c, "toString", "()Ljava/lang/String;");
 		if (meth == NULL) {
@@ -185,7 +185,7 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSetSo
 }
 
 /* Object adtnGetSocketIntOption(int s, int optionCode); */
-JNIEXPORT jobject JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnGetSocketOption
+JNIEXPORT jobject JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnGetSocketOption
 (JNIEnv *env, jobject thisObj, jint s, jint opt)
 {
 	jobject a;
@@ -238,9 +238,9 @@ JNIEXPORT jobject JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnGe
 		r = adtn_getsockopt(s, opt, buff, &len);
 		if (r != 0)
 			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
-		c = (*env)->FindClass(env, "cat/uab/senda/adtn/adtnlibj/comm/SockAddrT");
+		c = (*env)->FindClass(env, "cat/uab/senda/adtn/comm/SockAddrT");
 		if (c == NULL) {
-			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Class cat/uab/senda/adtn/adtnlibj/comm/SockAddrT cannot be found.");
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Class cat/uab/senda/adtn/comm/SockAddrT cannot be found.");
 		}
 		meth = (*env)->GetMethodID(env, c, "<init>", "(Ljava/lang/String;I)V");
 		if (meth == NULL) {
@@ -260,7 +260,7 @@ JNIEXPORT jobject JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnGe
 }
 
 /* int adtnSendTo(int s, SockAddrT addr, byte[] data); */
-JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSendTo
+JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnSendTo
 (JNIEnv *env, jobject thisObj, jint s, jobject addr, jbyteArray data)
 {
 
@@ -302,7 +302,7 @@ JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnSendT
 }
 
 /* int adtnRecv(int s, byte[] data, int data_len); */
-JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnRecv
+JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnRecv
 (JNIEnv *env, jobject thisObj, jint s, jbyteArray data, jint data_len)
 {
 	char *buffer = malloc(data_len);
@@ -322,7 +322,7 @@ JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnRecv
 }
 
 /* int adtnRecvFrom(int s, byte[] data, int data_len, SockAddrT addr); */
-JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_adtnlibj_comm_PlatfComm_adtnRecvFrom
+JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnRecvFrom
 (JNIEnv *env, jobject thisObj, jint s, jbyteArray data, jint data_len, jobject addr)
 {
 	char *buffer = malloc(data_len);
