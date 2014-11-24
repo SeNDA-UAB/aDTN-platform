@@ -42,3 +42,8 @@ build/
 examples/bin/
 make_debs/debs/
 make_debs/adtn-aux/
+
+libj/doc/
+libj/bin
+libj/.classpath
+libj/.project

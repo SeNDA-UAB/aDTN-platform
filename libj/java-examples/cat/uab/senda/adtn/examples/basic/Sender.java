@@ -1,10 +1,10 @@
-package cat.uab.senda.adtn.adtnlibj.comm.examples;
+package cat.uab.senda.adtn.examples.basic;
 
 import java.io.IOException;
 import java.util.Scanner;
 
-import cat.uab.senda.adtn.adtnlibj.comm.PlatfComm;
-import cat.uab.senda.adtn.adtnlibj.comm.SockAddrT;
+import cat.uab.senda.adtn.comm.Comm;
+import cat.uab.senda.adtn.comm.SockAddrT;
 
 public class Sender {
 	public static void main(String[] args) throws IOException{
@@ -27,9 +27,9 @@ public class Sender {
 		
 		System.out.println("Sending '"+text+"' to app "+appId+" at "+recvPlat+" platform.");
 		
-		int socket = PlatfComm.adtnSocket();
-		PlatfComm.adtnBind(socket, new SockAddrT(platform, appId));
-		PlatfComm.adtnSendTo(socket, receiverAddr, text.getBytes());
+		int socket = Comm.adtnSocket();
+		Comm.adtnBind(socket, new SockAddrT(platform, appId));
+		Comm.adtnSendTo(socket, receiverAddr, text.getBytes());
 		
 		System.out.println("Text '"+text+"' has been sent. Press a key to exit...");
 		System.out.println();

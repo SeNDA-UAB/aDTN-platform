@@ -1,4 +1,4 @@
-package cat.uab.senda.adtn.adtnlibj.comm;
+package cat.uab.senda.adtn.comm;
 
 /**
 * This class is a java interface for the <a href="https://github.com/SeNDA-UAB/aDTN-platform">active DTN platform</a>
@@ -9,9 +9,9 @@ package cat.uab.senda.adtn.adtnlibj.comm;
 * @version 0.2
 *
 */
-public class PlatfComm {
+public class Comm {
 	// Suppresses default constructor, ensuring non-instantiability.
-	private PlatfComm() {
+	private Comm() {
 	};
 
 	static {
@@ -182,7 +182,7 @@ public class PlatfComm {
 	public static native int adtnSocket(String dataPath);
 	/**
 	 * Binds a socket to an address.
-	 * This method binds a socket identifier with an address defined by {@link cat.uab.senda.adtn.adtnlibj.comm.SockAddrT}.
+	 * This method binds a socket identifier with an address defined by {@link cat.uab.senda.adtn.comm.SockAddrT}.
 	 * <p>
 	 * If the platform is not active or an error ocurred in the creation an exception is generated.
 	 * @param s 	the socket identifier.
@@ -297,16 +297,16 @@ public class PlatfComm {
 	 * </ul>
 	 * </li>
 	 * <li>
-	 * {@link #OP_DEST}: a {@link cat.uab.senda.adtn.adtnlibj.comm.SockAddrT} with the destination for the bundle.
+	 * {@link #OP_DEST}: a {@link cat.uab.senda.adtn.comm.SockAddrT} with the destination for the bundle.
 	 * </li>
 	 * <li>
-	 * {@link #OP_SOURCE}: a {@link cat.uab.senda.adtn.adtnlibj.comm.SockAddrT} with the source for the bundle.
+	 * {@link #OP_SOURCE}: a {@link cat.uab.senda.adtn.comm.SockAddrT} with the source for the bundle.
 	 * </li>
 	 * <li>
-	 * {@link #OP_REPORT}: a {@link cat.uab.senda.adtn.adtnlibj.comm.SockAddrT} with the report for the bundle.
+	 * {@link #OP_REPORT}: a {@link cat.uab.senda.adtn.comm.SockAddrT} with the report for the bundle.
 	 * </li>
 	 * <li>
-	 * {@link #OP_CUSTOM}: a {@link cat.uab.senda.adtn.adtnlibj.comm.SockAddrT} with the custom for the bundle.
+	 * {@link #OP_CUSTOM}: a {@link cat.uab.senda.adtn.comm.SockAddrT} with the custom for the bundle.
 	 * </li>
 	 * </ul>
 	 * <p>
@@ -332,16 +332,16 @@ public class PlatfComm {
 	 * {@link #OP_BLOCK_FLAGS}: gets the extension block flags, the function returns an <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html">Integer</a>.
 	 * </li>
 	 * <li>
-	 * {@link #OP_DEST}: gets the destination, the function returns a {@link cat.uab.senda.adtn.adtnlibj.comm.SockAddrT}.
+	 * {@link #OP_DEST}: gets the destination, the function returns a {@link cat.uab.senda.adtn.comm.SockAddrT}.
 	 * </li>
 	 * <li>
-	 * {@link #OP_SOURCE}: gets the source, the function returns a {@link cat.uab.senda.adtn.adtnlibj.comm.SockAddrT}.
+	 * {@link #OP_SOURCE}: gets the source, the function returns a {@link cat.uab.senda.adtn.comm.SockAddrT}.
 	 * </li>
 	 * <li>
-	 * {@link #OP_REPORT}: gets the report, the function returns a {@link cat.uab.senda.adtn.adtnlibj.comm.SockAddrT}.
+	 * {@link #OP_REPORT}: gets the report, the function returns a {@link cat.uab.senda.adtn.comm.SockAddrT}.
 	 * </li>
 	 * <li>
-	 * {@link #OP_CUSTOM}: gets the custom, the function returns a {@link cat.uab.senda.adtn.adtnlibj.comm.SockAddrT}.
+	 * {@link #OP_CUSTOM}: gets the custom, the function returns a {@link cat.uab.senda.adtn.comm.SockAddrT}.
 	 * </li>
 	 * <li>
 	 * {@link #OP_LAST_TIMESTAMP}: gets the timestamp of the last sended bundle, the function returns a <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html">Long</a>
@@ -360,7 +360,7 @@ public class PlatfComm {
 	 * <p>
 	 * If the platform is not active or an error ocurred in the creation an exception is generated.
 	 * @param  s 		the socket identifier.
-	 * @param  addr 	the source {@link cat.uab.senda.adtn.adtnlibj.comm.SockAddrT}.
+	 * @param  addr 	the source {@link cat.uab.senda.adtn.comm.SockAddrT}.
 	 * @param  data 	the information to send.
 	 * @return a number bigger than {@code 0} if the bundle have been send.
 	 */
@@ -384,7 +384,7 @@ public class PlatfComm {
 	 * @param  s 			the socket identifier.
 	 * @param  data 		the array of data to fill.
 	 * @param  data_len 	the number of bytes that will be written in {@code data}.
-	 * @param  addr 		the {@link cat.uab.senda.adtn.adtnlibj.comm.SockAddrT} to fill with the source information.
+	 * @param  addr 		the {@link cat.uab.senda.adtn.comm.SockAddrT} to fill with the source information.
 	 * @return the number of bytes received or {@code -1} if fails.
 	 */
 	public static native int adtnRecvFrom(int s, byte[] data, int data_len, SockAddrT addr);

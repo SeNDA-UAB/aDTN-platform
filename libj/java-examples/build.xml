@@ -1,10 +1,10 @@
-<project name="adtnlibj-0.1-examples" default="compile" basedir=".">
+<project name="adtnlibj-0.2-examples" default="compile" basedir=".">
 	<description>
         Compiles and runs the example
 	</description>
 	
 	<!-- set global properties for this build -->
-	<property name="src" location="src"/>
+	<property name="src" location="cat"/>
 	<property name="lib.dir" value="lib"/>
 	
 	<path id="classpath">
@@ -26,24 +26,34 @@
 	
 	<target name="compile" depends="init">
 		<javac srcdir="${src}" destdir="${bin}" classpathref="classpath"/>
-		<jar destfile="${dist}/${project.name}.jar" basedir="bin" />
+		<jar destfile="${dist}/${ant.project.name}.jar" basedir="bin" />
 	</target>
 	
 	<target name="runReceiver">
-		<java fork="true" classname="cat.uab.senda.adtn.adtnlibj.comm.examples.Receiver">
+		<java fork="true" classname="cat.uab.senda.adtn.examples.basic.Receiver">
 			<classpath>
 				<path refid="classpath"/>
-				<path location="${dist}/${project.name}.jar"/>
+				<path location="${dist}/${ant.project.name}.jar"/>
 			</classpath>
 			<sysproperty key="java.library.path" path="/usr/lib"/>
 		</java>
 	</target>
 	
 	<target name="runSender">
-		<java fork="true"  classname="cat.uab.senda.adtn.adtnlibj.comm.examples.Sender">
+		<java fork="true"  classname="cat.uab.senda.adtn.examples.basic.Sender">
 			<classpath>
 				<path refid="classpath"/>
-				<path location="${dist}/${project.name}.jar"/>
+				<path location="${dist}/${ant.project.name}.jar"/>
+			</classpath>
+			<sysproperty key="java.library.path" path="/usr/lib"/>
+		</java>
+	</target>
+	
+	<target name="runPing">
+		<java fork="true"  classname="cat.uab.senda.adtn.examples.ping.Ping">
+			<classpath>
+				<path refid="classpath"/>
+				<path location="${dist}/${ant.project.name}.jar"/>
 			</classpath>
 			<sysproperty key="java.library.path" path="/usr/lib"/>
 		</java>
