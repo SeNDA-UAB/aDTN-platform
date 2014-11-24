@@ -1,7 +1,6 @@
-package cat.uab.senda.adtn.adtnlibj.comm.examples.ping;
+package cat.uab.senda.adtn.examples.ping;
 
-import cat.uab.senda.adtn.adtnlibj.comm.PlatfComm;
-import cat.uab.senda.adtn.adtnlibj.comm.SockAddrT;
+import cat.uab.senda.adtn.comm.Comm;
 
 public class PingSender extends Thread implements Runnable {
     
@@ -20,17 +19,17 @@ public class PingSender extends Thread implements Runnable {
                 +conf.getPing_lifetime()+" seconds of lifetime.");
         
         try {
-            ping_flags = PlatfComm.H_DESS | PlatfComm.H_NOTF | PlatfComm.H_SR_BREC;
+            ping_flags = Comm.H_DESS | Comm.H_NOTF | Comm.H_SR_BREC;
             
             byte[] data = new byte[(int) conf.getPayload_size()]; //Inicialitzar be
 
-            PlatfComm.adtnSetSocketOption(s, PlatfComm.OP_PROC_FLAGS, ping_flags);
-            PlatfComm.adtnSetSocketOption(s, PlatfComm.OP_REPORT, conf.getSource());
-            PlatfComm.adtnSetSocketOption(s, PlatfComm.OP_LIFETIME, conf.getPing_lifetime());
+            Comm.adtnSetSocketOption(s, Comm.OP_PROC_FLAGS, ping_flags);
+            Comm.adtnSetSocketOption(s, Comm.OP_REPORT, conf.getSource());
+            Comm.adtnSetSocketOption(s, Comm.OP_LIFETIME, conf.getPing_lifetime());
             
             // Falta Payload
             
-            PlatfComm.adtnSendTo(s, conf.getDestination(), data);
+            Comm.adtnSendTo(s, conf.getDestination(), data);
         
         }catch(Exception e){
             e.printStackTrace();

@@ -1,12 +1,13 @@
-package cat.uab.senda.adtn.adtnlibj.comm.examples.ping;
+package cat.uab.senda.adtn.examples.ping;
 
-import cat.uab.senda.adtn.adtnlibj.comm.SockAddrT;
-import cat.uab.senda.adtn.adtnlibj.comm.PlatfComm;
+import cat.uab.senda.adtn.comm.Comm;
+import cat.uab.senda.adtn.comm.SockAddrT;
+
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Scanner;
 
-public class Adtn_ping {
+public class Ping {
     public static void main(String[] args) {
         HashMap<String,String> options;
         int s,port;
@@ -14,6 +15,7 @@ public class Adtn_ping {
         
         System.out.println("Introduce this platform name: ");
         String platform_id = in.nextLine();
+        in.close();
         
         ArgHandler argHandler = new ArgHandler(args);
         options = argHandler.getOptions();
@@ -31,8 +33,8 @@ public class Adtn_ping {
         conf.setDestination(new SockAddrT(options.get("destination_id"),port));
         
        // Create the aDTN socket, and bind it with the SockAddr with the source information
-       s = PlatfComm.adtnSocket();
-       PlatfComm.adtnBind(s, conf.getSource());
+       s = Comm.adtnSocket();
+       Comm.adtnBind(s, conf.getSource());
        
        PingSender sender = new PingSender(s, conf);
        PingReceiver receiver = new PingReceiver(s);

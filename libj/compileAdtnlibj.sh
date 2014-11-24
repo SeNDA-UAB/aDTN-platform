@@ -36,12 +36,12 @@ ant compile
 
 cd c
 #Compilem el C
-mv ../bin/cat_uab_senda_adtn_adtnlibj_comm_PlatfComm.h .
-gcc -shared -fPIC cat_uab_senda_adtn_adtnlibj_comm_PlatfComm.c -o ../bin/libNativeAdtnApi.so -I $default_inc -I $JAVA_HOME/include -I $JAVA_HOME/include/linux -L $default_lib -ladtnAPI
+mv ../bin/cat_uab_senda_adtn_comm_Comm.h .
+gcc -shared -fPIC cat_uab_senda_adtn_comm_Comm.c -o ../bin/libNativeAdtnApi.so -I $default_inc -I $JAVA_HOME/include -I $JAVA_HOME/include/linux -L $default_lib -ladtnAPI
 
 cd ../
 #Construim el jar, generam javadoc i zip de tot.
-ant examplesdist
+ant dist
 
 echo -e "\e[92mRequesting sudo rights in order to install native library\e[39m"
 sudo cp bin/libNativeAdtnApi.so /usr/lib/

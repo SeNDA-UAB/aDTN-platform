@@ -1,4 +1,4 @@
-package cat.uab.senda.adtn.adtnlibj.comm.examples.ping;
+package cat.uab.senda.adtn.examples.ping;
 
 import java.util.HashMap;
 

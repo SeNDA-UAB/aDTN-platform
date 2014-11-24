@@ -1,4 +1,4 @@
-package cat.uab.senda.adtn.adtnlibj.comm.examples.ping;
+package cat.uab.senda.adtn.examples.ping;
 
 public class PingReceiver extends Thread implements Runnable{
     

@@ -44,6 +44,6 @@ make_debs/debs/
 make_debs/adtn-aux/
 
 libj/doc/
-libj/examples
-libj/examples/manifest.mf
-libj/examples/nbproject/
+libj/bin
+libj/.classpath
+libj/.project

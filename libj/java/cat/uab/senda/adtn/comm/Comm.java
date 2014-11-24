@@ -1,4 +1,4 @@
-package cat.uab.senda.adtn.adtnlibj.comm;
+package cat.uab.senda.adtn.comm;
 
 /**
 * This class is a java interface for the <a href="https://github.com/SeNDA-UAB/aDTN-platform">active DTN platform</a>
@@ -9,9 +9,9 @@ package cat.uab.senda.adtn.adtnlibj.comm;
 * @version 0.2
 *
 */
-public class PlatfComm {
+public class Comm {
 	// Suppresses default constructor, ensuring non-instantiability.
-	private PlatfComm() {
+	private Comm() {
 	};
 
 	static {

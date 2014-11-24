@@ -1,10 +1,10 @@
-package cat.uab.senda.adtn.adtnlibj.comm.examples;
+package cat.uab.senda.adtn.examples.basic;
 
 import java.io.IOException;
 import java.util.Scanner;
 
-import cat.uab.senda.adtn.adtnlibj.comm.PlatfComm;
-import cat.uab.senda.adtn.adtnlibj.comm.SockAddrT;
+import cat.uab.senda.adtn.comm.Comm;
+import cat.uab.senda.adtn.comm.SockAddrT;
 
 public class Receiver {
 	public static void main(String[] args) throws IOException{
@@ -18,11 +18,11 @@ public class Receiver {
 		
 		System.out.println(platform + " platform waiting for text reception.");
 		byte[] data = new byte[1024];
-		int socket = PlatfComm.adtnSocket();
+		int socket = Comm.adtnSocket();
 		System.out.println("Socket identifier: " + socket);
-		PlatfComm.adtnBind(socket, new SockAddrT(platform, appId));
+		Comm.adtnBind(socket, new SockAddrT(platform, appId));
 		System.out.println("Bind done");
-		PlatfComm.adtnRecv(socket, data, 1024);
+		Comm.adtnRecv(socket, data, 1024);
 		System.out.println(String.valueOf(data));
 		
 		System.out.println("Data has been received. Press a key to exit...");
