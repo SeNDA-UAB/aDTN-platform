@@ -1,5 +1,11 @@
 package cat.uab.senda.adtn.comm;
 
+import java.io.FileNotFoundException;
+import java.net.SocketException;
+import java.text.ParseException;
+
+
+
 /**
 * This class is a java interface for the <a href="https://github.com/SeNDA-UAB/aDTN-platform">active DTN platform</a>
 *
@@ -168,7 +174,7 @@ public class Comm {
 	 * @return the socket identifier.
 	 * 
 	 */
-	public static native int adtnSocket();
+	public static native int adtnSocket() throws SocketException, FileNotFoundException, ParseException;
 	/**
 	 * Creates a socket over the aDTN platform.
 	 * This method will return a socket identifier, this socket will be created with the parameters in the file pointed by
@@ -179,7 +185,7 @@ public class Comm {
 	 * @return the socket identifier.
 	 * 
 	 */
-	public static native int adtnSocket(String dataPath);
+	public static native int adtnSocket(String dataPath) throws SocketException, FileNotFoundException, ParseException;
 	/**
 	 * Binds a socket to an address.
 	 * This method binds a socket identifier with an address defined by {@link cat.uab.senda.adtn.comm.SockAddrT}.
@@ -189,7 +195,7 @@ public class Comm {
 	 * @param addr 	the information to bind.
 	 * 
 	 */
-	public static native void adtnBind(int s, SockAddrT addr);
+	public static native void adtnBind(int s, SockAddrT addr) throws SocketException, FileNotFoundException, IllegalAccessException, AddressInUseException;
 	/**
 	 * Close the socket.
 	 * This method closes the socket {@code s} freeing all the memory associated to the socket, the structures created at calling
@@ -199,7 +205,7 @@ public class Comm {
 	 * @param s 	the socket identifier.
 	 * 
 	 */
-	public static native void adtnClose(int s);
+	public static native void adtnClose(int s) throws SocketException, IllegalAccessException;
 	/**
 	 * Close the socket, also deletes waiting data.
 	 * This method is similar to {@link #adtnClose(int s)}, adding the deletion of waiting bundles in the queue.
@@ -208,7 +214,7 @@ public class Comm {
 	 * @param s 	the socket identifier.
 	 * 
 	 */
-	public static native void adtnShutdown(int s);
+	public static native void adtnShutdown(int s) throws SocketException, FileNotFoundException, IllegalAccessException;
 	/**
 	 * Sets the codes to execute.
 	 * This method lets to set the code for the {@code codeOption}, the code has to be write in {@code C}.
@@ -219,7 +225,7 @@ public class Comm {
 	 * @param code 			the string containing the source in {@code C} to set.
 	 * 
 	 */
-	public static native void adtnSetCodeOption(int s, int codeOption, String code);
+	public static native void adtnSetCodeOption(int s, int codeOption, String code) throws SocketException, InvalidArgumentException, CodeBindException;
 	/**
 	 * Sets the codes to execute.
 	 * This method is similar to {@link #adtnSetCodeOption(int s, int codeOption, String code)}, letting the use of a file or the code in the string.
@@ -231,7 +237,7 @@ public class Comm {
 	 * @param fromFile 		select if the code is in the file {@code 1} or in the string {@code 0}.
 	 * 
 	 */
-	public static native void adtnSetCodeOption(int s, int codeOption, String code, int fromFile);
+	public static native void adtnSetCodeOption(int s, int codeOption, String code, int fromFile) throws SocketException, InvalidArgumentException, CodeBindException;
 	/**
 	 * Sets the codes to execute.
 	 * This method is similar to {@link #adtnSetCodeOption(int s, int codeOption, String code)}, letting the use of a file or the code in the string and the option of replace old codes.
@@ -244,7 +250,7 @@ public class Comm {
 	 * @param replace 		if value is {@code 1} replace any existing code, else if value is {@code 0} and an exists a code the function fails.
 	 * 
 	 */
-	public static native void adtnSetCodeOption(int s, int codeOption, String code, int fromFile, int replace);
+	public static native void adtnSetCodeOption(int s, int codeOption, String code, int fromFile, int replace) throws SocketException, InvalidArgumentException, CodeBindException;
 	/**
 	 * Remove the codes associated.
 	 * This method removes the code {@code codeOption} setting again the default code.
@@ -254,7 +260,7 @@ public class Comm {
 	 * @param codeOption 	the code option wanted to set ({@link #ROUTING_CODE}, {@link #PRIO_CODE}, {@link #LIFE_CODE}).
 	 * 
 	 */
-	public static native void adtnRemoveCodeOption(int s, int codeOption);
+	public static native void adtnRemoveCodeOption(int s, int codeOption) throws SocketException, InvalidArgumentException;
 	/**
 	 * Sets an option to the new bundles generated.
 	 * This method allows to set options to the new bundles generated.
@@ -315,7 +321,7 @@ public class Comm {
 	 * @param optionCode    the option code, as seen over.
 	 * @param value 		the value to set.
 	 */
-	public static native void adtnSetSocketOption(int s, int optionCode, Object value);
+	public static native void adtnSetSocketOption(int s, int optionCode, Object value) throws SocketException, OpNotSuportedException;
 		/**
 	 * Gets the value of an option.
 	 * This method allows to get the value of the options to the new bundles generated.
@@ -353,7 +359,7 @@ public class Comm {
 	 * @param optionCode    the option code, as seen over.
 	 * @return the value of the option.
 	 */
-	public static native Object adtnGetSocketOption(int s, int optionCode);
+	public static native Object adtnGetSocketOption(int s, int optionCode) throws SocketException, OpNotSuportedException;
 	/**
 	 * Sends a bundle to the {@code addr} with the information in {@code data}.
 	 * This method allows to generate a bundle with the information in {@code data} and send it to the source {@code addr}.
@@ -364,7 +370,7 @@ public class Comm {
 	 * @param  data 	the information to send.
 	 * @return a number bigger than {@code 0} if the bundle have been send.
 	 */
-	public static native int adtnSendTo(int s, SockAddrT addr, byte[] data);
+	public static native int adtnSendTo(int s, SockAddrT addr, byte[] data) throws InvalidArgumentException, SocketException, FileNotFoundException, MessageSizeException;
 	/**
 	 * Recive a bundle and get it's data.
 	 * This method allows to put the application to listening. If no message has been received this method will block until some message arrives.
@@ -375,7 +381,7 @@ public class Comm {
 	 * @param  data_len 	the number of bytes that will be written in {@code data}.
 	 * @return the number of bytes received or {@code -1} if fails.
 	 */
-	public static native int adtnRecv(int s, byte[] data, int data_len);
+	public static native int adtnRecv(int s, byte[] data, int data_len) throws InvalidArgumentException, SocketException, FileNotFoundException;
 	/**
 	 * Receive a bundle and get it's data.
 	 * This method is similar to {@link #adtnRecv(int s, byte[] data, int data_len)}, adding the extraction of the sender information.
@@ -387,7 +393,7 @@ public class Comm {
 	 * @param  addr 		the {@link cat.uab.senda.adtn.comm.SockAddrT} to fill with the source information.
 	 * @return the number of bytes received or {@code -1} if fails.
 	 */
-	public static native int adtnRecvFrom(int s, byte[] data, int data_len, SockAddrT addr);
+	public static native int adtnRecvFrom(int s, byte[] data, int data_len, SockAddrT addr) throws InvalidArgumentException, SocketException, FileNotFoundException;
 
 }
 
