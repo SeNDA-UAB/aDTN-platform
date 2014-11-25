@@ -71,6 +71,10 @@ Is important to note that if an unexpected behavior occurs when running the plat
 <li><strong>adtn-traceroute:</strong> Traceroute application over adtn platform. Simply type <code>adtn-traceroute -h</code> to know how to use it.</li>
 </ul>
 
+<h2>aDTN Library documentation</h2>
+
+The documentation of the libraries can be found in <a href="http://senda-uab.github.io/aDTN-platform/">aDTN-platform page</a>
+
 <h2>aDTN suit update</h2>
 
 In order to update the aDTN suite downloading the last version from the repository, you should type the commands below as root or sudo:
