@@ -20,7 +20,7 @@ class CLA {
 	public boolean order = true;
 	@Parameter(description = "Destination", required=true)
 	public List<String> destination = new ArrayList<String>();
-	@Parameter(names = {"-h", "--help"}, help = true)
+	@Parameter(names = {"-h", "--help"}, help = true, description="Shows this help message.")
 	public boolean help = false;
 }
 

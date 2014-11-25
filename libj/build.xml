@@ -10,7 +10,8 @@
 	<property name="bin" location="bin"/>
 	<property name="dist"  location="dist"/>
 	<property name="doc"  location="doc"/>
-	
+	<property name="gcc.includes" value="-I $default_inc -I ${java.home}/../include -I ${java.home}/../include/linux -L $default_lib -ladtnAPI"/>
+
 	<target name="init">
 		<mkdir dir="${bin}"/>
 		<mkdir dir="${dist}"/>
@@ -26,13 +27,24 @@
 	<target name="compile" depends="init">
 		<javac srcdir="${src}" destdir="${bin}"/>
 		<javah destdir="${bin}" force="yes" class="cat.uab.senda.adtn.comm.Comm" classpath="${bin}"/>
+		<copy file="${bin}/cat_uab_senda_adtn_comm_Comm.h" todir="c/"/>
+		<delete file="${bin}/cat_uab_senda_adtn_comm_Comm.h"/>
+		<exec executable="gcc" dir="c">
+			<arg line=" -shared -fPIC cat_uab_senda_adtn_comm_Comm.c -o ../bin/libNativeAdtnApi.so ${gcc.includes}"/>
+		</exec>
+		<exec executable="sudo">
+			<arg line="cp ${bin}/libNativeAdtnApi.so /usr/lib/"/>
+		</exec>
+		<exec executable="sudo">
+			<arg line="-k"/>
+		</exec>
 	</target>
 	
 	<target name="javadoc" description="Generates javadoc for Communication classes">
 		<javadoc sourcepath="${src}" packagenames="cat.uab.senda.adtn.comm" destdir="${doc}"/>
 	</target>
 	
-	<target name="dist" depends="javadoc">
+	<target name="dist" depends="compile,javadoc">
 		<mkdir dir="${dist}/tmp"/>
 		<mkdir dir="${dist}/tmp/lib"/>
 		<jar jarfile="${dist}/tmp/lib/${ant.project.name}.jar" basedir="${bin}"/>
