@@ -3,10 +3,10 @@ package cat.uab.senda.adtn.examples.ping;
 import cat.uab.senda.adtn.comm.SockAddrT;
 
 public class Configuration {
+	
     //Default values
-
     public String dest_platform_id;
-    public long payload_size;
+    public int payload_size;
     public int ping_count;
     public int ping_interval;
     public long ping_lifetime;
@@ -28,11 +28,11 @@ public class Configuration {
         this.dest_platform_id = dest_platform_id;
     }
 
-    public long getPayload_size() {
+    public int getPayload_size() {
         return payload_size;
     }
 
-    public void setPayload_size(long payload_size) {
+    public void setPayload_size(int payload_size) {
         this.payload_size = payload_size;
     }
 
