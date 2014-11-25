@@ -3,7 +3,7 @@ package cat.uab.senda.adtn.comm;
 /**
 * This class is a java interface for the <a href="https://github.com/SeNDA-UAB/aDTN-platform">active DTN platform</a>
 *
-* This class describes the methods for create, bind, close, send and recive a bundle over the aDTN platform.
+* This class describes the methods for create, bind, close, send and receive a bundle over the aDTN platform.
 *
 * @author Senda DevLab {@literal <developers@senda.uab.cat>}
 * @version 0.2
@@ -161,9 +161,9 @@ public class Comm {
 	/**
 	 * Creates a socket over the aDTN platform.
 	 * This method will return a socket identifier, this socket will be created with the default configuration parameters
-	 * (this parameters ara in the path of the aDTN platform installation).
+	 * (this parameters are in the path of the aDTN platform installation).
 	 * <p>
-	 * If the platform is not active or an error ocurred in the creation an exception is generated.
+	 * If the platform is not active or an error occurred in the creation an exception is generated.
 	 * 
 	 * @return the socket identifier.
 	 * 
@@ -174,7 +174,7 @@ public class Comm {
 	 * This method will return a socket identifier, this socket will be created with the parameters in the file pointed by
 	 * {@code dataPath}.
 	 * <p>
-	 * If the platform is not active or an error ocurred in the creation an exception is generated.
+	 * If the platform is not active or an error occurred in the creation an exception is generated.
 	 * @param  dataPath path to the parameter file.
 	 * @return the socket identifier.
 	 * 
@@ -184,7 +184,7 @@ public class Comm {
 	 * Binds a socket to an address.
 	 * This method binds a socket identifier with an address defined by {@link cat.uab.senda.adtn.comm.SockAddrT}.
 	 * <p>
-	 * If the platform is not active or an error ocurred in the creation an exception is generated.
+	 * If the platform is not active or an error occurred in the creation an exception is generated.
 	 * @param s 	the socket identifier.
 	 * @param addr 	the information to bind.
 	 * 
@@ -195,7 +195,7 @@ public class Comm {
 	 * This method closes the socket {@code s} freeing all the memory associated to the socket, the structures created at calling
 	 * adtnBind are deleted to.
 	 * <p>
-	 * If the platform is not active or an error ocurred in the creation an exception is generated.
+	 * If the platform is not active or an error occurred in the creation an exception is generated.
 	 * @param s 	the socket identifier.
 	 * 
 	 */
@@ -204,16 +204,16 @@ public class Comm {
 	 * Close the socket, also deletes waiting data.
 	 * This method is similar to {@link #adtnClose(int s)}, adding the deletion of waiting bundles in the queue.
 	 * <p>
-	 * If the platform is not active or an error ocurred in the creation an exception is generated.
+	 * If the platform is not active or an error occurred in the creation an exception is generated.
 	 * @param s 	the socket identifier.
 	 * 
 	 */
 	public static native void adtnShutdown(int s);
 	/**
 	 * Sets the codes to execute.
-	 * This method lets to set the code for the {@code codeOption}, the code has to be writed in {@code C}.
+	 * This method lets to set the code for the {@code codeOption}, the code has to be write in {@code C}.
 	 * <p>
-	 * If the platform is not active or an error ocurred in the creation an exception is generated.
+	 * If the platform is not active or an error occurred in the creation an exception is generated.
 	 * @param s 			the socket identifier.
 	 * @param codeOption 	the code option wanted to set ({@link #ROUTING_CODE}, {@link #PRIO_CODE}, {@link #LIFE_CODE}).
 	 * @param code 			the string containing the source in {@code C} to set.
@@ -224,7 +224,7 @@ public class Comm {
 	 * Sets the codes to execute.
 	 * This method is similar to {@link #adtnSetCodeOption(int s, int codeOption, String code)}, letting the use of a file or the code in the string.
 	 * <p>
-	 * If the platform is not active or an error ocurred in the creation an exception is generated.
+	 * If the platform is not active or an error occurred in the creation an exception is generated.
 	 * @param s 			the socket identifier.
 	 * @param codeOption    the code option wanted to set ({@link #ROUTING_CODE}, {@link #PRIO_CODE}, {@link #LIFE_CODE}).
 	 * @param code 			the string containing the source in {@code C} to set or the path to the file with the source in {@code C}.
@@ -236,7 +236,7 @@ public class Comm {
 	 * Sets the codes to execute.
 	 * This method is similar to {@link #adtnSetCodeOption(int s, int codeOption, String code)}, letting the use of a file or the code in the string and the option of replace old codes.
 	 * <p>
-	 * If the platform is not active or an error ocurred in the creation an exception is generated.
+	 * If the platform is not active or an error occurred in the creation an exception is generated.
 	 * @param s 			the socket identifier.
 	 * @param codeOption    the code option wanted to set ({@link #ROUTING_CODE}, {@link #PRIO_CODE}, {@link #LIFE_CODE}).
 	 * @param code 			the string containing the source in {@code C} to set or the path to the file with the source in {@code C}.
@@ -249,7 +249,7 @@ public class Comm {
 	 * Remove the codes associated.
 	 * This method removes the code {@code codeOption} setting again the default code.
 	 * <p>
-	 * If the platform is not active or an error ocurred in the creation an exception is generated.
+	 * If the platform is not active or an error occurred in the creation an exception is generated.
 	 * @param s 			the socket identifier.
 	 * @param codeOption 	the code option wanted to set ({@link #ROUTING_CODE}, {@link #PRIO_CODE}, {@link #LIFE_CODE}).
 	 * 
@@ -310,7 +310,7 @@ public class Comm {
 	 * </li>
 	 * </ul>
 	 * <p>
-	 * If the platform is not active or an error ocurred in the creation an exception is generated.
+	 * If the platform is not active or an error occurred in the creation an exception is generated.
 	 * @param s 			the socket identifier.
 	 * @param optionCode    the option code, as seen over.
 	 * @param value 		the value to set.
@@ -348,7 +348,7 @@ public class Comm {
 	 * </li>
 	 * </ul>
 	 * <p>
-	 * If the platform is not active or an error ocurred in the creation an exception is generated.
+	 * If the platform is not active or an error occurred in the creation an exception is generated.
 	 * @param s 			the socket identifier.
 	 * @param optionCode    the option code, as seen over.
 	 * @return the value of the option.
@@ -358,7 +358,7 @@ public class Comm {
 	 * Sends a bundle to the {@code addr} with the information in {@code data}.
 	 * This method allows to generate a bundle with the information in {@code data} and send it to the source {@code addr}.
 	 * <p>
-	 * If the platform is not active or an error ocurred in the creation an exception is generated.
+	 * If the platform is not active or an error occurred in the creation an exception is generated.
 	 * @param  s 		the socket identifier.
 	 * @param  addr 	the source {@link cat.uab.senda.adtn.comm.SockAddrT}.
 	 * @param  data 	the information to send.
@@ -367,9 +367,9 @@ public class Comm {
 	public static native int adtnSendTo(int s, SockAddrT addr, byte[] data);
 	/**
 	 * Recive a bundle and get it's data.
-	 * This method allows to put te application to listening. If no message has been received this method will block until some message arrives.
+	 * This method allows to put the application to listening. If no message has been received this method will block until some message arrives.
 	 * <p>
-	 * If the platform is not active or an error ocurred in the creation an exception is generated.
+	 * If the platform is not active or an error occurred in the creation an exception is generated.
 	 * @param  s 			the socket identifier.
 	 * @param  data 		the array of data to fill.
 	 * @param  data_len 	the number of bytes that will be written in {@code data}.
@@ -380,7 +380,7 @@ public class Comm {
 	 * Receive a bundle and get it's data.
 	 * This method is similar to {@link #adtnRecv(int s, byte[] data, int data_len)}, adding the extraction of the sender information.
 	 * <p>
-	 * If the platform is not active or an error ocurred in the creation an exception is generated.
+	 * If the platform is not active or an error occurred in the creation an exception is generated.
 	 * @param  s 			the socket identifier.
 	 * @param  data 		the array of data to fill.
 	 * @param  data_len 	the number of bytes that will be written in {@code data}.
