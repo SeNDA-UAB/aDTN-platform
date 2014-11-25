@@ -2,6 +2,7 @@ package cat.uab.senda.adtn.examples.traceroute;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterException;
 
 import java.util.ArrayList; 
 import java.util.List;
@@ -24,15 +25,34 @@ class CLA {
 	public boolean help = false;
 }
 
-public class Traceroute {
+public class TracerouteSender {
+	
+	public CLA cla;
 	
 	public static void main(String[] args) {
-		CLA cla = new CLA();
+		new TracerouteSender().GetParameters(args);
+	}
+	
+	public void GetParameters(String[] args) {
+		cla = new CLA();
 		JCommander jcom = new JCommander(cla);
 		jcom.setProgramName("Traceroute");
-		jcom.parse(args);
-		if(cla.help)
+		try {
+			jcom.parse(args);
+			if(cla.help)
+				jcom.usage();
+		} catch (ParameterException ex) {
 			jcom.usage();
+			System.exit(0);
+		}
+		sendTraceroute();
 	}
+	
+	public void sendTraceroute() {
+		System.out.println(cla.destination);
+		System.out.println(cla.timeout);
+	}
+	
+	
 }
 
