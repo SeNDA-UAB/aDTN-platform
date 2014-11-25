@@ -51,94 +51,21 @@ On the other hand, if you want to develop or use applications using the adtnplat
 <p>Note that due to the structure of the applications, the adtnlib depends on adtnplatform and adtnexamples depends on adtnlib as well as adtnplatform.</p>
 
 <h2>
-<a id="adtn-suite-installation" class="anchor" href="#adtn-suite-installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>aDTN suite documentation</h2>
+<a id="adtn-suite-documentation" class="anchor" href="#adtn-suite-documentation" aria-hidden="true"><span class="octicon octicon-link"></span></a>aDTN suite documentation</h2>
 
-<p>In order to install any of the applications provided by aDTN suite, you should include our repository into your apt-get manager. After that you will be able to install the applications, update or remove them.</p>
-
-<h3>
-<a id="add-adtn-repository" class="anchor" href="#add-adtn-repository" aria-hidden="true"><span class="octicon octicon-link"></span></a>Add aDTN repository</h3>
-
-<p>You should perform <strong>all commands as root</strong> in order to make it easier, simpler and comfortable, so you should log in as root using the command <code>su</code> in the command prompt and introduce your password. </p>
-
-<p>First, you will need to add the public key to the apt-key manager from our repository:</p>
-
-<p><code>wget -O - <a href="http://tao.uab.es/adtn/conf/adtn.gpg.key">http://tao.uab.es/adtn/conf/adtn.gpg.key</a> | apt-key add -</code></p>
-
-<p>Next, you will need to update the sources.list files according to your version <code>version</code>. Note that so far, we have <strong>wheezy</strong> (Debian 7.*),  <strong>trusty</strong>(Ubuntu 14.04) and <strong>utopic</strong> (Ubuntu 14.10):</p>
-
-<p><code>wget -P /etc/apt/sources.list.d/ <a href="http://tao.uab.es/adtn/conf/">http://tao.uab.es/adtn/conf/</a><strong><code>version</code></strong>/adtn.list</code></p>
+<p>In order to develop applications over the platform, a <code>C</code> and a <code>Java</code> library are provided.
 
 <h3>
-<a id="installation-process" class="anchor" href="#installation-process" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation process</h3>
+<a id="add-adtn-java_doc" class="anchor" href="#add-adtn-java_doc" aria-hidden="true"><span class="octicon octicon-link"></span></a>Java library documentation</h3>
 
-<p>After adding the aDTN repository to your computer, you can perform an update in order to let notice the system that there are new applications in the system able to be installed:</p>
+<a href="/java_doc/index.html">Javadoc.</a>
 
-<p><code>apt-get update</code></p>
-
-<p>After that, you should be able to install the adtnplatform, the adtnlib and the adtnexamples:</p>
-
-<p><code>apt-get install (adtnplatform|adtnlib|adtnexamples)</code></p>
-
-<p>The required dependences should be auto-satisfied. In the adtnplatform installation process you will be asked to enter some required information in order to run the platform. This information is as follows:</p>
-
-<ul>
-<li>Set the platform identifier. The suggested identifier is your hostname, but keep in mind that this identifier must be unique over all local adtn platforms, so you should change it if required. Return carrier key sets the default value between brackets.</li>
-<li>Set the IP. This IP will be used to connect the current platform with the others. All the platforms should have an unique IP and must pertain at the same local network if you want to perform the communication between them. Return carrier key sets the default value between brackets.</li>
-<li>Set the platform port. The suggested port should be correct if you have only one installed platform in the same machine and no application is this port. Return carrier key sets the default value between brackets.</li>
-</ul>
 
 <h2>
-<a id="adtn-platform-usage" class="anchor" href="#adtn-platform-usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>aDTN platform usage</h2>
+<a id="adtn-suite-installation" class="anchor" href="#adtn-suite-installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>aDTN suite installation</h2>
 
-<p>In order to start the platform you should type the following command:</p>
+<p>All the information to install the suite is in the readme of the project, or in the github page. </p>
 
-<p><code>sudo service adtnplatform start</code></p>
-
-<p>There are two ways of checking for the status of the platform. The first one (<code>status</code>) checks the state of each process that the platform runs. The second one (<code>supervise</code>) checks for the status of each process and if any of them are off, it turn them on again.
-<code>sudo service adtnplatform status</code><br>
-<code>sudo service adtnplatform supervise</code></p>
-
-<p>Finally in order to stop the platform you should perform the command below:</p>
-
-<p><code>sudo service adtnplatform stop</code></p>
-
-<p>Is important to note that if an unexpected behavior occurs when running the platform. Stopping it and running it again may be fix the problem.</p>
-
-<h2>
-<a id="adtn-examples-applications" class="anchor" href="#adtn-examples-applications" aria-hidden="true"><span class="octicon octicon-link"></span></a>aDTN examples applications</h2>
-
-<p></p><strong>adtn-ping:</strong> Ping application over adtn platform. Simply type <code>adtn-ping -h</code> to know how to use it.
-
-<h2>
-<a id="adtn-suit-update" class="anchor" href="#adtn-suit-update" aria-hidden="true"><span class="octicon octicon-link"></span></a>aDTN suit update</h2>
-
-<p>In order to update the aDTN suite downloading the last version from the repository, you should type the commands below as root or sudo:</p>
-
-<p><code>sudo apt-get update</code></p>
-
-<p>And next, you update the installed version of the adtnplatform, adtnlib or adtnexamples:</p>
-
-<p><code>sudo apt-get install (adtnplatform|adtnlib|adtnexamples)</code></p>
-
-<h2>
-<a id="adtn-suit-deinstallation" class="anchor" href="#adtn-suit-deinstallation" aria-hidden="true"><span class="octicon octicon-link"></span></a>aDTN suit deinstallation</h2>
-
-<p>In order to deinstall any (or all) of the applications, you should perform the following command as root (or sudo), choosing the adtnplatform, adtnlib or adtnexamples according to what do you want to deinstall:</p>
-
-<p><code>sudo apt-get remove --purge (adtnplatform|adtnlib|adtnexamples)</code></p>
-
-<p>Note that <code>--purge</code> flag, which is recommended in this case to use it, will remove all the remaining configuration files.</p>
-
-<h2>
-<a id="how-to-completely-remove-the-adtn-repository" class="anchor" href="#how-to-completely-remove-the-adtn-repository" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to completely remove the adtn repository</h2>
-
-<p>In order to remove completely the adtn repository from your computer, you should type the following commands as root:</p>
-
-<p><code>apt-key del  <code>apt-key list | grep -i -1 developers@senda.uab.cat | grep pub | cut -d '/' -f2- | cut -d ' ' -f1</code></code></p>
-
-<p>The command above will remove the previously-added public key from the apt-key manager. After that you should remove the sources.list entry regarding to the adtnplatform:</p>
-
-<p><code>rm /etc/apt/sources.list.d/adtn.list</code></p>
       </section>
     </div>
 
