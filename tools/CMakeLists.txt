@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 2.8.2)
 project(EXAMPLES C)
 
-message("-- Starting examples build configuration")
+message("-- Starting tools build configuration")
 
 include(../aDTNConfig.cmake.in)
 

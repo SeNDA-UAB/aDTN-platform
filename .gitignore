@@ -39,7 +39,7 @@
 ## Custom paths
 ld/
 build/
-examples/bin/
+tools/bin/
 make_debs/debs/
 make_debs/adtn-aux/
 

@@ -5,8 +5,8 @@ INIPATH=/etc/adtn/adtn.ini
 DATAPATH=/var/lib/adtn
 USER=adtn
 PIDPATH=/var/run/adtn
-MAINSRVC=adtnplatform
-SERVICES="adtnplatform.conf"
+MAINSRVC=adtn
+SERVICES="adtn.conf"
 #END_CONSTANTS
 
 #COMMON_FUNCTIONS

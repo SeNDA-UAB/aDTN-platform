@@ -5,7 +5,7 @@ message("-- Starting lib build configuration")
 
 include(../aDTNConfig.cmake.in)
 
-include_directories(${PROJECT_SOURCE_DIR}/../platform)
+include_directories(${PROJECT_SOURCE_DIR}/../bundleAgent)
 
 file(MAKE_DIRECTORY api)
 add_subdirectory(api)

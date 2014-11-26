@@ -3,17 +3,17 @@ idplat=`grep -oP "id \= \K.+" $INIPATH`			#get default id from ini
 ipplat=`grep -oP "ip \=\s+\K\d*.\d*.\d*.\d*" $INIPATH`	#get default ip from ini
 portplat=`grep -oP "port \=\s+\K\d*" $INIPATH` 		#get default port from ini
 
-#Create system user for adtn platform
+#Create system user for adtn
 useradd -M -r -s /sbin/nologin $USER
 
 sugIdPlat=`hostname`
 sugIpPlat=`/sbin/ip r | grep default | cut -d \  -f 5 | xargs ip a l dev | grep inet\ | cut -d \  -f 6 | cut -d/ -f 1`
 sugPortPlat=$portplat
 
-echo -e "\e[92mStarting platform configuration process..."
-read -p "Set the platform identifier (default is ${sugIdPlat}): " id
+echo -e "\e[92mStarting adtn configuration process..."
+read -p "Set the adtn identifier (default is ${sugIdPlat}): " id
 read -p "Set the ip (default is ${sugIpPlat}): " ip
-read -p "Set the platform port (default is ${sugPortPlat}): " port
+read -p "Set the adtn port (default is ${sugPortPlat}): " port
 
 if [ -n "$id" ]; then
     sed -i "s/id = $idplat/id = $id/g" $INIPATH
@@ -40,7 +40,7 @@ chmod 644 $INIPATH
 mkdir -p $DATAPATH
 chown -R $USER:$USER $DATAPATH
 chmod 755 $DATAPATH 
-#Create pid directory for adtn platform and set right permissions
+#Create pid directory for adtn and set right permissions
 mkdir -p $PIDPATH 
 chown -R $USER:$USER $PIDPATH
 chmod 755 $PIDPATH
@@ -50,7 +50,7 @@ chmod +x /etc/init.d/$MAINSRVC
 update-rc.d $MAINSRVC defaults > /dev/null 2>&1
 #Add libraries to ldconfig
 ldconfig
-read -p "Do you want to start the platform now? (Y/n)" var
+read -p "Do you want to start the adtn now? (Y/n)" var
 var=${var,,}	#var to lower case
 if [[ $var =~ (yes|y)$ ]] || [ -z $var ]; then
   service $MAINSRVC start > /dev/null 2>&1

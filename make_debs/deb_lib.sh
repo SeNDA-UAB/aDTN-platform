@@ -19,7 +19,7 @@ fi
 mkdir $ADTNAUX > /dev/null 2>&1
 sudo rm -rf $ADTNAUX/lib > /dev/null 2>&1
 cp -r $ADTNPATH/lib $ADTNAUX/ > /dev/null 2>&1
-mkdir $DEB > /dev/null 2>&1
+cp $ADTNPATH/aDTNConfig.cmake.in $ADTNAUX/.
 
 #------------ LIB -------------
 cd $CURRPWD/$ADTNAUX/lib
@@ -30,11 +30,10 @@ cd build
 echo $DESCLIB > description-pak
 cp $CURRPWD/install_scripts/lib/* .
 
-cmake ../ -DCMAKE_INSTALL_PREFIX=/usr -DBTYPE=$DBTYPE
+cmake ../ -DCMAKE_INSTALL_PREFIX=/usr -DSYSCONFDIR=/etc -DCMAKE_BUILD_TYPE=debug
 sudo checkinstall -y --pkgname=$NAMELIB --pkgversion=$VERSLIB --pkgarch=$ARCH  --maintainer=$MAINTAIN --install=$INST --requires=$REQPLIB --pkgrelease=$RELELIB --backup=no --strip=no --stripso=no 
+mkdir $DEB > /dev/null 2>&1
 cp *.deb $CURRPWD/$DEB
 #------------------------------
 echo "Deb packages have been copied to $CURRPWD/$DEB"
-#Remove created auxiliar path
-#sudo rm -fr $CURRPWD/$ADTNAUX > /dev/null 2>&1
 exit 0
