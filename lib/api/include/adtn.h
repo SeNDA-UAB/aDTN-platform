@@ -1,7 +1,8 @@
 #include <errno.h>
 #include <stdint.h>
 #include <sys/types.h>
-
+#include "common/include/constants.h"
+/** @file */
 typedef struct {
 	int adtn_port; ///< port to identify the own application
 	// sem_t *semaphore; ///< semaphore to add bundles to queue
@@ -112,7 +113,7 @@ int adtn_recvfrom(int fd, void *buffer, size_t len, sock_addr_t *addr);
 
     ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
     ENOENT      cannot load the shared memory.
-    EACCES      the program hasn't enough permisions to create bind the socket.
+    EACCES      the program hasn't enough permissions to create bind the socket.
     EADDRINUSE  the address is already in use.
 */
 
@@ -294,7 +295,7 @@ ENOTSUP     invalid option.
 
     errno can take the values below:
 
-    EINVAL      invalid buffer or max_len.
+    EINVAL      invalid buffer or len.
     ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
     ENOENT      cannot load the shared memory.
 
@@ -317,7 +318,7 @@ ENOTSUP     invalid option.
 
     errno can take the values below:
 
-    EINVAL      invalid buffer or max_len.
+    EINVAL      invalid buffer or len.
     ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
     ENOENT      cannot load the shared memory.
 */

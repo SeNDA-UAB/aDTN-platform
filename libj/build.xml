@@ -41,7 +41,11 @@
 	</target>
 	
 	<target name="javadoc" description="Generates javadoc for Communication classes">
-		<javadoc sourcepath="${src}" packagenames="cat.uab.senda.adtn.comm" destdir="${doc}"/>
+		<javadoc sourcepath="${src}" packagenames="cat.uab.senda.adtn.comm" destdir="${doc}" access="public" author="
+			true" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="
+			false" source="1.7" splitindex="true" use="true" version="true">
+				<link href="http://docs.oracle.com/javase/8/docs/api/"/>
+		</javadoc>
 	</target>
 	
 	<target name="dist" depends="compile,javadoc">
