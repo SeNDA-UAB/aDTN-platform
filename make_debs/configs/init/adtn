@@ -13,8 +13,8 @@
 #Author: Senda DevLab <developers@senda.uab.cat>
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
-DESC="active DTN platform"
-NAME=adtnplatform
+DESC="active DTN service"
+NAME=adtn
 DAEMONPATH=/usr/bin
 PIDPATH=/var/run/adtn
 SCRIPTNAME=/etc/init.d/$NAME

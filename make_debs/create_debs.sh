@@ -12,19 +12,19 @@ else
 fi
 
 echo -e "\e[92m"
-read -p "Do you want to increment the old version platform (${RELEPLAT})? (y/N)" releplat
+read -p "Do you want to increment the adtn version (${RELEPLAT})? (y/N)" releplat
 releplat=${releplat,,}	#var to lower case
 if [[ $releplat =~ (yes|y)$ ]]; then
   sed -i "s/RELEPLAT=\"${RELEPLAT}\"/RELEPLAT=\"$((${RELEPLAT}+1))\"/g" $CONFIG_FILE
 fi
 
-read -p "Do you want to increment the old version library (${RELELIB})? (y/N)" relelib
+read -p "Do you want to increment the library version (${RELELIB})? (y/N)" relelib
 relelib=${relelib,,}	#var to lower case
 if [[ $relelib =~ (yes|y)$ ]]; then
   sed -i "s/RELELIB=\"${RELELIB}\"/RELELIB=\"$((${RELELIB}+1))\"/g" $CONFIG_FILE
 fi
 
-read -p "Do you want to increment the old version platform (${RELEEXM})? (y/N)" releexm
+read -p "Do you want to increment the tools version (${RELEEXM})? (y/N)" releexm
 releplat=${releexm,,}	#var to lower case
 if [[ $releexm =~ (yes|y)$ ]]; then
   sed -i "s/RELEEXM=\"${RELEEXM}\"/RELEEXM=\"$((${RELEEXM}+1))\"/g" $CONFIG_FILE
@@ -40,27 +40,28 @@ for arch in $ARCHILIST; do
   sudo dpkg --purge $NAMEEXM $NAMELIB $NAMEPLAT
   echo -e "\e[92mRemoving previous auxiliar installation folder...\e[39m"
   sudo rm -fr $ADTNAUX
-  echo -e "\e[92mGenerating deb platform...\e[39m"
-  bash deb_platform.sh
-  echo -e "\e[92mInstalling platform...\e[39m"
+  echo -e "\e[92mGenerating adtn deb...\e[39m"
+  bash deb_adtn.sh
+  echo -e "\e[92mInstalling adtn...\e[39m"
   sudo dpkg -i $DEB/${NAMEPLAT}_${VERSPLAT}-${RELEPLAT}_${ARCH}.deb
   
-  echo -e "\e[92mGenerating lib platform...\e[39m"
+  echo -e "\e[92mGenerating adtn lib...\e[39m"
   bash deb_lib.sh
   echo -e "\e[92mInstalling lib...\e[39m"
   sudo dpkg -i $DEB/${NAMELIB}_${VERSLIB}-${RELELIB}_${ARCH}.deb
-  echo -e "\e[92mGenerating examples...\e[39m"
-  bash deb_examples.sh
-  echo -e "\e[92mInstalling examples...\e[39m"
+  echo -e "\e[92mGenerating tools...\e[39m"
+  bash deb_tools.sh
+  echo -e "\e[92mInstalling tools...\e[39m"
   sudo dpkg -i $DEB/${NAMEEXM}_${VERSEXM}-${RELEEXM}_${ARCH}.deb
   echo -e "\e[92m"
-  read -p "Do you want to remove the debs installed? (Y/n)" var
+  read -p "Do you want to remove the installed debs? (Y/n)" var
   echo -e "\e[39m"
   var=${var,,}	#var to lower case
   if [[ $var =~ (yes|y)$ ]] || [ -z $var ]; then
-    echo -e "\e[92mRemoving installed debs...\e[39m"
+    echo -e "\e[92mRemoving debs installed...\e[39m"
     sudo dpkg --purge $NAMEEXM $NAMELIB $NAMEPLAT
   fi
+  rm -fr $ADTNAUX
   if [[ $ARCH == $ARCHARM ]]; then
     break;
   fi
