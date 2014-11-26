@@ -10,8 +10,19 @@ JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnSocket__
 {
 	int s = adtn_socket();
 
-	if (s < 0)
-		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
+	if (s < 0) {
+		switch (errno) {
+		case EBUSY:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/net/SocketException"), "[aDTN] Cannot allocate socket.");
+			break;
+		case ENOENT:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/io/FileNotFoundException"), "[aDTN] missing global configuration in configuration file.");
+			break;
+		case EBADRQC:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/text/ParseException"), "[aDTN] Data field missing in configuration file.");
+			break;
+		}
+	}
 
 	return s;
 }
@@ -25,6 +36,20 @@ JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnSocket__Ljava_lang_
 	int s = adtn_socket(dataPath);
 
 	(*env)->ReleaseStringUTFChars(env, path, dataPath);
+
+	if (s < 0) {
+		switch (errno) {
+		case EBUSY:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/net/SocketException"), "[aDTN] Cannot allocate socket.");
+			break;
+		case ENOENT:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/io/FileNotFoundException"), "[aDTN] missing global configuration in configuration file.");
+			break;
+		case EBADRQC:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/text/ParseException"), "[aDTN] Data field missing in configuration file.");
+			break;
+		}
+	}
 
 	return s;
 }
@@ -51,7 +76,20 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnBind
 
 	int ret = adtn_bind(s, &origin);
 	if (ret != 0) {
-		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
+		switch (errno) {
+		case EBUSY:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/net/SocketException"), "[aDTN] Bad socket descriptor.");
+			break;
+		case ENOENT:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/io/FileNotFoundException"), "[aDTN] Is the service runing in this machine?.");
+			break;
+		case EACCES:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/IllegalAccessException"), "[aDTN] The program have not enough permisions.");
+			break;
+		case EADDRINUSE:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/AddressInUseException"), "[aDTN] The address is already in use.");
+			break;
+		}
 	}
 }
 
@@ -61,8 +99,16 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnClose
 {
 	int r = adtn_close(s);
 
-	if (r != 0)
-		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
+	if (r != 0) {
+		switch (errno) {
+		case ENOTSOCK:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/net/SocketException"), "[aDTN] Bad socket descriptor.");
+			break;
+		case EACCES:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/IllegalAccessException"), "[aDTN] The program have not enough permisions.");
+			break;
+		}
+	}
 }
 
 /* void adtnShutdown(int s); */
@@ -71,8 +117,19 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnShutdown
 {
 	int r = adtn_shutdown(s);
 
-	if (r != 0)
-		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
+	if (r != 0) {
+		switch (errno) {
+		case ENOTSOCK:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/net/SocketException"), "[aDTN] Bad socket descriptor.");
+			break;
+		case EACCES:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/IllegalAccessException"), "[aDTN] The program have not enough permisions.");
+			break;
+		case ENOENT:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/io/FileNotFoundException"), "[aDTN] Is the service runing in this machine?.");
+			break;
+		}
+	}
 }
 
 /* void adtnSetCodeOption(int s, int codeOption, String code); */
@@ -85,8 +142,19 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnSetCodeOption__IILj
 
 	(*env)->ReleaseStringUTFChars(env, codeString, code);
 
-	if (r != 0)
-		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
+	if (r != 0) {
+		switch (errno) {
+		case ENOTSOCK:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/net/SocketException"), "[aDTN] Bad socket descriptor.");
+			break;
+		case EINVAL:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/InvalidArgumentException"), "[aDTN] Invalid code.");
+			break;
+		case EOPNOTSUPP:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/CodeBindException"), "[aDTN] A code is already binded.");
+			break;
+		}
+	}
 }
 
 /* void adtnSetCodeOption(int s, int codeOption, String code, int fromFile); */
@@ -98,8 +166,19 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnSetCodeOption__IILj
 	int r = adtn_setcodopt(s, codeType, code, isFile, 0);
 	(*env)->ReleaseStringUTFChars(env, codeString, code);
 
-	if (r != 0)
-		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
+	if (r != 0) {
+		switch (errno) {
+		case ENOTSOCK:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/net/SocketException"), "[aDTN] Bad socket descriptor.");
+			break;
+		case EINVAL:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/InvalidArgumentException"), "[aDTN] Invalid code or invalid file.");
+			break;
+		case EOPNOTSUPP:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/CodeBindException"), "[aDTN] A code is already binded.");
+			break;
+		}
+	}
 }
 
 /* void adtnSetCodeOption(int s, int codeOption, String code, int fromFile, int replace); */
@@ -111,8 +190,19 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnSetCodeOption__IILj
 	int r = adtn_setcodopt(s, codeType, code, isFile, replace);
 	(*env)->ReleaseStringUTFChars(env, codeString, code);
 
-	if (r != 0)
-		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
+	if (r != 0) {
+		switch (errno) {
+		case ENOTSOCK:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/net/SocketException"), "[aDTN] Bad socket descriptor.");
+			break;
+		case EINVAL:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/InvalidArgumentException"), "[aDTN] Invalid code or invalid file.");
+			break;
+		case EOPNOTSUPP:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/CodeBindException"), "[aDTN] A code is already binded.");
+			break;
+		}
+	}
 }
 
 /* void adtnRemoveCodeOption(int s, int codeOption); */
@@ -121,8 +211,16 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnRemoveCodeOption
 {
 	int r = adtn_rmcodopt(s, opt);
 
-	if (r != 0)
-		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
+	if (r != 0) {
+		switch (errno) {
+		case ENOTSOCK:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/net/SocketException"), "[aDTN] Bad socket descriptor.");
+			break;
+		case EINVAL:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/InvalidArgumentException"), "[aDTN] Invalid code option.");
+			break;
+		}
+	}
 }
 
 /* void adtnSetSocketOption(int s, int optionCode, Object value); */
@@ -137,12 +235,9 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnSetSocketOption
 	case OP_LIFETIME:
 	case OP_BLOCK_FLAGS: {
 		c = (*env)->FindClass(env, "java/lang/Integer");
-		if (c == NULL) {
-			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Class java/lang/Integer cannot be found.");
-		}
 		meth = (*env)->GetMethodID(env, c, "intValue", "()I");
 		if (meth == NULL) {
-			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Method intValue ()I cannot be found.");
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/JNIException"), "Method intValue ()I cannot be found.");
 		}
 		uint32_t toSet = (*env)->CallIntMethod(env, val, meth);
 		r = adtn_setsockopt(s, opt, &toSet);
@@ -150,12 +245,9 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnSetSocketOption
 	}
 	case OP_LAST_TIMESTAMP: {
 		c = (*env)->FindClass(env, "java/lang/Long");
-		if (c == NULL) {
-			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Class java/lang/Long cannot be found.");
-		}
 		meth = (*env)->GetMethodID(env, c, "longValue", "()J");
 		if (meth == NULL) {
-			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Method longValue ()J cannot be found.");
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/JNIException"), "Method longValue ()J cannot be found.");
 		}
 		uint64_t toSet = (*env)->CallLongMethod(env, val, meth);
 		r = adtn_setsockopt(s, opt, &toSet);
@@ -167,11 +259,11 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnSetSocketOption
 	case OP_CUSTOM : {
 		c = (*env)->FindClass(env, "cat/uab/senda/adtn/comm/SockAddrT");
 		if (c == NULL) {
-			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Class cat/uab/senda/adtn/comm/SockAddrT cannot be found.");
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/JNIException"), "Class cat/uab/senda/adtn/comm/SockAddrT cannot be found.");
 		}
 		meth = (*env)->GetMethodID(env, c, "toString", "()Ljava/lang/String;");
 		if (meth == NULL) {
-			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Method toString ()Ljava/lang/String; cannot be found.");
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/JNIException"), "Method toString ()Ljava/lang/String; cannot be found.");
 		}
 		jstring sockAddr = (jstring)(*env)->CallObjectMethod(env, val, meth);
 		const char *code = (*env)->GetStringUTFChars(env, sockAddr, 0);
@@ -180,8 +272,17 @@ JNIEXPORT void JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnSetSocketOption
 		break;
 	}
 	}
-	if (r != 0)
-		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
+	if (r != 0) {
+		switch (errno) {
+		case ENOTSOCK:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/net/SocketException"), "[aDTN] Bad socket descriptor.");
+			break;
+		case ENOTSUP:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/OpNotSuportedException"), "[aDTN] Invalid option.");
+			break;
+		}
+	}
+
 }
 
 /* Object adtnGetSocketIntOption(int s, int optionCode); */
@@ -202,12 +303,9 @@ JNIEXPORT jobject JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnGetSocketOption
 		if (r != 0)
 			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
 		c = (*env)->FindClass(env, "java/lang/Integer");
-		if (c == NULL) {
-			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Class java/lang/Integer cannot be found.");
-		}
 		meth = (*env)->GetMethodID(env, c, "<init>", "(I)V");
 		if (meth == NULL) {
-			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Method <init> (I)V cannot be found.");
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/cat/uab/senda/adtn/comm/JNIException"), "Method <init> (I)V cannot be found.");
 		}
 		a = (*env)->NewObject(env, c, meth, val);
 		break;
@@ -219,12 +317,9 @@ JNIEXPORT jobject JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnGetSocketOption
 		if (r != 0)
 			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
 		c = (*env)->FindClass(env, "java/lang/Long");
-		if (c == NULL) {
-			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Class java/lang/Long cannot be found.");
-		}
 		meth = (*env)->GetMethodID(env, c, "<init>", "(J)V");
 		if (meth == NULL) {
-			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Method <init> (J)V cannot be found.");
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/JNIException"), "Method <init> (J)V cannot be found.");
 		}
 		a = (*env)->NewObject(env, c, meth, val1);
 		break;
@@ -240,20 +335,31 @@ JNIEXPORT jobject JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnGetSocketOption
 			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
 		c = (*env)->FindClass(env, "cat/uab/senda/adtn/comm/SockAddrT");
 		if (c == NULL) {
-			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Class cat/uab/senda/adtn/comm/SockAddrT cannot be found.");
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/JNIException"), "Class cat/uab/senda/adtn/comm/SockAddrT cannot be found.");
 		}
 		meth = (*env)->GetMethodID(env, c, "<init>", "(Ljava/lang/String;I)V");
 		if (meth == NULL) {
-			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), "Method <init> (Ljava/lang/String;I)V cannot be found.");
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/JNIException"), "Method <init> (Ljava/lang/String;I)V cannot be found.");
 		}
 		int port;
-		char* platform;
+		char *platform;
 		platform = strtok(buff, ":");
 		port = atoi(strtok(NULL, ":"));
 		jstring splatform = (*env)->NewStringUTF(env, platform);
 		a = (*env)->NewObject(env, c, meth, splatform, port);
 		break;
 	}
+	}
+
+	if (r != 0) {
+		switch (errno) {
+		case ENOTSOCK:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/net/SocketException"), "[aDTN] Bad socket descriptor.");
+			break;
+		case ENOTSUP:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/OpNotSuportedException"), "[aDTN] Invalid option.");
+			break;
+		}
 	}
 
 	return a;
@@ -280,8 +386,6 @@ JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnSendTo
 	destination.id = strdup(id);
 	destination.adtn_port = port;
 
-	/**/
-
 	//Convert jbyteArray to char *
 	jint buffer_l = (*env)->GetArrayLength(env, data);
 	jbyte *buffer = (*env)->GetByteArrayElements(env, data, NULL);
@@ -295,9 +399,22 @@ JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnSendTo
 	//Inform VM that buffer is no longer needed
 	(*env)->ReleaseByteArrayElements(env, data, buffer, 0);
 
-	if (ret < 0)
-		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
-
+	if (ret < 0) {
+		switch (errno) {
+		case ENOTSOCK:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/net/SocketException"), "[aDTN] Bad socket descriptor.");
+			break;
+		case EINVAL:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/InvalidArgumentException"), "[aDTN] Invalid address or null buffer.");
+			break;
+		case ENOENT:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/io/FileNotFoundException"), "[aDTN] Is the service runing in this machine?.");
+			break;
+		case EMSGSIZE:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/MessageSizeException"), "[aDTN] The message size it too big.");
+			break;
+		}
+	}
 	return ret;
 }
 
@@ -315,8 +432,19 @@ JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnRecv
 
 	free(buffer);
 
-	if (ret < 0)
-		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
+	if (ret < 0) {
+		switch (errno) {
+		case ENOTSOCK:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/net/SocketException"), "[aDTN] Bad socket descriptor.");
+			break;
+		case EINVAL:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/InvalidArgumentException"), "[aDTN] Invalid buffer data_len.");
+			break;
+		case ENOENT:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/io/FileNotFoundException"), "[aDTN] Is the service runing in this machine?.");
+			break;
+		}
+	}
 
 	return ret;
 }
@@ -348,8 +476,19 @@ JNIEXPORT jint JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnRecvFrom
 
 	}
 
-	if (ret < 0)
-		(*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/Exception"), strerror(errno));
+	if (ret < 0) {
+		switch (errno) {
+		case ENOTSOCK:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/net/SocketException"), "[aDTN] Bad socket descriptor.");
+			break;
+		case EINVAL:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/InvalidArgumentException"), "[aDTN] Invalid buffer data_len.");
+			break;
+		case ENOENT:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "java/io/FileNotFoundException"), "[aDTN] Is the service runing in this machine?.");
+			break;
+		}
+	}
 
 	return ret;
 }

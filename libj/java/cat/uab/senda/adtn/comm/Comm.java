@@ -376,8 +376,9 @@ public class Comm {
 	 * @param value 		the value to set.
 	 * @throws SocketException The socket identifier is not valid.
 	 * @throws OpNotSuportedException The {@code optionCode} is not a valid option.
+	 * @throws JNIException An error has occurred in the jni call.
 	 */
-	public static native void adtnSetSocketOption(int s, int optionCode, Object value) throws SocketException, OpNotSuportedException;
+	public static native void adtnSetSocketOption(int s, int optionCode, Object value) throws SocketException, OpNotSuportedException, JNIException;
 	
 	/**
 	 * Gets the value of an option.
@@ -417,8 +418,9 @@ public class Comm {
 	 * @return the value of the option.
 	 * @throws SocketException The socket identifier is not valid.
 	 * @throws OpNotSuportedException The {@code optionCode} is not a valid option.
+	 * @throws JNIException An error has occurred in the jni call.
 	 */
-	public static native Object adtnGetSocketOption(int s, int optionCode) throws SocketException, OpNotSuportedException;
+	public static native Object adtnGetSocketOption(int s, int optionCode) throws SocketException, OpNotSuportedException, JNIException;
 	
 	/**
 	 * Sends a bundle to the {@code addr} with the information in {@code data}.
