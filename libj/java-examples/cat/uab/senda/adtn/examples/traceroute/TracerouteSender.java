@@ -1,11 +1,25 @@
 package cat.uab.senda.adtn.examples.traceroute;
 
+import cat.uab.senda.adtn.comm.AddressInUseException;
+import cat.uab.senda.adtn.comm.Comm;
+import cat.uab.senda.adtn.comm.JNIException;
+import cat.uab.senda.adtn.comm.OpNotSuportedException;
+import cat.uab.senda.adtn.comm.SockAddrT;
+
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.SocketException;
+import java.nio.ByteBuffer;
+import java.text.ParseException;
 import java.util.ArrayList; 
 import java.util.List;
+import java.util.Random;
+import java.util.Scanner;
 
 
 class CLA {
@@ -27,7 +41,11 @@ class CLA {
 
 public class TracerouteSender {
 	
-	public CLA cla;
+	private CLA cla;
+	
+	private int socket;
+	
+	private SockAddrT source;
 	
 	public static void main(String[] args) {
 		new TracerouteSender().GetParameters(args);
@@ -45,12 +63,67 @@ public class TracerouteSender {
 			jcom.usage();
 			System.exit(0);
 		}
+		initSocket();
+	}
+	
+	public void initSocket() {
+		Scanner in = new Scanner(System.in);
+		System.out.println("Introduce this platform name: ");
+		String platform = in.nextLine();
+		in.close();
+		
+		try {
+			socket = Comm.adtnSocket();
+		} catch (SocketException e) {
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		
+		int port;
+		boolean usedPort = true;
+		do {
+			port = new Random().nextInt(Integer.MAX_VALUE) % 65536;
+			source = new SockAddrT(platform, port);
+			try {
+				Comm.adtnBind(socket, source);
+				usedPort = false;
+			} catch (SocketException e) {
+				e.printStackTrace();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IllegalAccessException e) {
+				e.printStackTrace();
+			} catch (AddressInUseException e) {
+			}
+		} while (usedPort);
+		
+		try {
+			int flags = Comm.H_DESS | Comm.H_SR_BREC;
+			Comm.adtnSetSocketOption(socket, Comm.OP_PROC_FLAGS, flags);
+			Comm.adtnSetSocketOption(socket, Comm.OP_LIFETIME, cla.lifetime);
+		} catch (SocketException e) {
+			e.printStackTrace();
+		} catch (OpNotSuportedException e) {
+			e.printStackTrace();
+		} catch (JNIException e) {
+			e.printStackTrace();
+		}
+		
 		sendTraceroute();
+		
 	}
 	
 	public void sendTraceroute() {
-		System.out.println(cla.destination);
-		System.out.println(cla.timeout);
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		try {
+			outputStream.write(ByteBuffer.allocate(Byte.SIZE / 8).put((byte)2).array());
+			outputStream.write
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	
