@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <getopt.h>
 
-#include "platform/common/include/neighbours.h"
+#include "bundleAgent/common/include/neighbours.h"
 
 long time;
 

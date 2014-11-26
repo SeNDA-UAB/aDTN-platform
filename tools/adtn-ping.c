@@ -12,13 +12,13 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include "platform/common/include/constants.h"
-#include "platform/common/include/config.h"
-#include "platform/common/include/bundle.h"
-#include "platform/common/include/log.h"
-#include "platform/common/include/utils.h"
-#include "platform/common/include/queue.h"
-#include "platform/common/include/init.h"
+#include "bundleAgent/common/include/constants.h"
+#include "bundleAgent/common/include/config.h"
+#include "bundleAgent/common/include/bundle.h"
+#include "bundleAgent/common/include/log.h"
+#include "bundleAgent/common/include/utils.h"
+#include "bundleAgent/common/include/queue.h"
+#include "bundleAgent/common/include/init.h"
 
 #include "lib/api/include/adtn.h"
 #include "lib/api/include/uthash.h"

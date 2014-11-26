@@ -7,15 +7,13 @@ set(PREFIX "${CMAKE_INSTALL_PREFIX}")
 add_definitions(-DPREFIX="${PREFIX}")
 
 # Define configuration dir
-unset(SYSCONFDIR CACHE)
 if (NOT DEFINED SYSCONFDIR)
 	set(SYSCONFDIR "${PREFIX}/etc" CACHE PATH "System configuration files path" FORCE)
 endif()
 add_definitions(-DSYSCONFDIR="${SYSCONFDIR}")
 
 # Define configuration subfolder
-unset(ADTN_CONF_SUBDIR)
 if (NOT DEFINED ADTN_CONF_SUBDIR)
-	set(ADTN_CONF_SUBDIR adtn CACHE PATH "aDTN-platform configuration subfolder" FORCE)
+	set(ADTN_CONF_SUBDIR adtn CACHE PATH "aDTN configuration subfolder" FORCE)
 endif()
 add_definitions(-DADTN_CONF_SUBDIR="${ADTN_CONF_SUBDIR}")
