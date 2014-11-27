@@ -5,23 +5,23 @@
 	</description>
 	
 	<!-- set global properties for this build -->
-	<property name="src" location="java"/>
+	<property name="src" location="java/src"/>
 	<property name="examples" location="java-examples"/>
 	<property name="bin" location="bin"/>
 	<property name="dist"  location="dist"/>
 	<property name="doc"  location="doc"/>
 	<property name="gcc.includes" value="-I $default_inc -I ${java.home}/../include -I ${java.home}/../include/linux -L $default_lib -ladtnAPI"/>
 
-	<target name="init">
-		<mkdir dir="${bin}"/>
-		<mkdir dir="${dist}"/>
-		<mkdir dir="${doc}"/>
-	</target>
-	
 	<target name="clean">
 		<delete dir="${bin}"/>
 		<delete dir="${dist}"/>
 		<delete dir="${doc}"/>
+	</target>
+	
+	<target name="init" depends="clean">
+		<mkdir dir="${bin}"/>
+		<mkdir dir="${dist}"/>
+		<mkdir dir="${doc}"/>
 	</target>
 	
 	<target name="compile" depends="init">
@@ -32,6 +32,7 @@
 		<exec executable="gcc" dir="c">
 			<arg line=" -shared -fPIC cat_uab_senda_adtn_comm_Comm.c -o ../bin/libNativeAdtnApi.so ${gcc.includes}"/>
 		</exec>
+		<!-- Echo motiu sudo -->
 		<exec executable="sudo">
 			<arg line="cp ${bin}/libNativeAdtnApi.so /usr/lib/"/>
 		</exec>
@@ -44,7 +45,7 @@
 		<javadoc sourcepath="${src}" packagenames="cat.uab.senda.adtn.comm" destdir="${doc}" access="public" author="
 			true" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="
 			false" source="1.7" splitindex="true" use="true" version="true">
-				<link href="http://docs.oracle.com/javase/8/docs/api/"/>
+				<link href="http://docs.oracle.com/javase/7/docs/api/"/>
 		</javadoc>
 	</target>
 	

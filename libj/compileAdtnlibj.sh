@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TEST build.xml if works delete this
+
 cd `dirname $0`
 #
 # This file compiles the adtnlibj for a given architecture (the current one)
