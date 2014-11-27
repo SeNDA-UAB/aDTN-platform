@@ -23,7 +23,7 @@ public class Receiver {
 		Comm.adtnBind(socket, new SockAddrT(platform, appId));
 		System.out.println("Bind done");
 		Comm.adtnRecv(socket, data, 1024);
-		System.out.println(String.valueOf(data));
+		System.out.println(new String(data));
 		
 		System.out.println("Data has been received. Press a key to exit...");
 		System.out.println();
