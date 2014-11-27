@@ -120,7 +120,6 @@ public class TracerouteSender {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		try {
 			outputStream.write(ByteBuffer.allocate(Byte.SIZE / 8).put((byte)2).array());
-			outputStream.write
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
