@@ -1,32 +1,41 @@
+/** @cond */
 #include <errno.h>
 #include <stdint.h>
 #include <sys/types.h>
-#include "common/include/constants.h"
+/** @endcond */
+
 /** @file */
+
+/**
+ * Structure to hold a infromation.
+ */
 typedef struct {
-	int adtn_port; ///< port to identify the own application
+	int adtn_port; ///< Port to identify the own application.
 	// sem_t *semaphore; ///< semaphore to add bundles to queue
 	char *id; ///< IP addres that is associated with the socket.
 } sock_addr_t;
 
+/** @cond */
 typedef struct {
-	uint32_t lifetime; ///< lifetime of bundle
-	uint32_t proc_flags; ///< proc flags for main header
-	uint32_t block_flags; ///< proc flags for extension blocks
+	uint32_t lifetime; ///< Lifetime of bundle
+	uint32_t proc_flags; ///< Proc flags for main header
+	uint32_t block_flags; ///< Proc flags for extension blocks
 	char *report;
 	char *custom;
 	char *dest;
 	char *source;
 } sock_opt_t;
+/** @endcond */
 
 typedef struct {
-	int fd;
-	int option_name; ///< algorithm-> code_type_e defined in bundle.h
-	const char *code;
-	int from_file;
-	int replace;
+	int fd;           ///< Socket descriptor.
+	int option_name; ///< Algorithm to change, possible values are ROUTING_CODE = 0x01, PRIO_CODE = 0x02, LIFE_CODE = 0x03.
+	const char *code; ///< String with the code in C, or the path to the file with the code.
+	int from_file; ///< Boolean to know if the source is in the string or in the file.
+	int replace; ///< Boolean to replace existing codes.
 } set_opt_args;
 
+/** @cond */
 typedef struct {
 	const char *config_file;
 } socket_params;
@@ -34,6 +43,7 @@ typedef struct {
 typedef struct {
 	uint64_t last_timestamp;
 } sock_get_t;
+/** @endcond */
 
 /* Option codes */
 #define OP_PROC_FLAGS 1
@@ -45,19 +55,35 @@ typedef struct {
 #define OP_CUSTOM 7
 #define OP_LAST_TIMESTAMP 8
 
+/** @cond */
 /* MACROS */
+#ifndef DOX
 #define adtn_setcodopt(...) adtn_var_setcodopt((set_opt_args){__VA_ARGS__});
 #define adtn_socket(...) adtn_var_socket((socket_params){__VA_ARGS__});
+#endif
+/** @endcond */
 
 /* FUNCTIONS */
 
+/** @cond */
 int adtn_var_socket(socket_params in);
+/** @endcond */
+#ifdef DOX
+int adtn_socket();
+int adtn_socket(const char *config_file);
+#endif
+
 int adtn_bind(int fd, sock_addr_t *addr);
 int adtn_close(int fd);
 int adtn_shutdown(int fd);
 
 int adtn_rmcodopt(int fd, const int option);
+/** @cond */
 int adtn_var_setcodopt(set_opt_args in);
+/** @endcond */
+#ifdef DOX
+int adtn_setcodopt(set_opt_args in);
+#endif
 
 int adtn_setsockopt(int fd, const int optname, const void *optval);
 int adtn_getsockopt(int fd, const int optname,  void *optval, int *optlen);
@@ -68,8 +94,8 @@ int adtn_recvfrom(int fd, void *buffer, size_t len, sock_addr_t *addr);
 
 
 /**
-    @fn int adtn_socket(socket_params in)
-    @brief Creates a adtn sockets to send or recv information using the adtn platform.
+    @fn int adtn_socket()
+    @brief Creates a adtn sockets to send or recv information using the adtn platform with the default configuration.
 
     aDTN is divided in two parts, one is the API for developers that allow to use functions to send and receive messages. The other one
     is the core that manages and sends the messages.
@@ -86,15 +112,43 @@ int adtn_recvfrom(int fd, void *buffer, size_t len, sock_addr_t *addr);
     |  aDTN Core  | aDTN Core|
     ==========================
 
-    @param in A socket_params structure containing the configuration file path.
-
     @return a descriptor identifiyng the socket on succes, -1 on error. If the function fails errno is set.
 
     errno can take the values below:
 
-    EBUSY       Cannot allocate socket.
-    ENOENT      global configuration missing in configuration file.
-    EBADRQC     data field missing in configuration file.
+    @li EBUSY       Cannot allocate socket.
+    @li ENOENT      global configuration missing in configuration file.
+    @li EBADRQC     data field missing in configuration file.
+*/
+
+/**
+@fn int adtn_socket(const char *config_file)
+@brief Creates a adtn sockets to send or recv information using the adtn platform.
+
+aDTN is divided in two parts, one is the API for developers that allow to use functions to send and receive messages. The other one
+is the core that manages and sends the messages.
+====================
+|      Dev API     |
+====================
+|      aDTN Core   |
+====================
+The Core makes posible resilience to delay, disruptions and big taxes of errors. The implementation of the platform allow more than one core to cohexist in
+the same node(device).
+==========================
+|         Dev API        |
+==========================
+|  aDTN Core  | aDTN Core|
+==========================
+
+@param config_file The configuration file path.
+
+@return a descriptor identifiyng the socket on succes, -1 on error. If the function fails errno is set.
+
+errno can take the values below:
+
+@li EBUSY       Cannot allocate socket.
+@li ENOENT      global configuration missing in configuration file.
+@li EBADRQC     data field missing in configuration file.
 */
 
 /**
@@ -111,10 +165,10 @@ int adtn_recvfrom(int fd, void *buffer, size_t len, sock_addr_t *addr);
 
     errno can take the values below:
 
-    ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-    ENOENT      cannot load the shared memory.
-    EACCES      the program hasn't enough permissions to create bind the socket.
-    EADDRINUSE  the address is already in use.
+    @li ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
+    @li ENOENT      cannot load the shared memory.
+    @li EACCES      the program hasn't enough permissions to create bind the socket.
+    @li EADDRINUSE  the address is already in use.
 */
 
 /**
@@ -130,8 +184,8 @@ int adtn_recvfrom(int fd, void *buffer, size_t len, sock_addr_t *addr);
 
     errno can take the values below:
 
-    ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-    EACCES      the program hasn't enough permisions to eliminate the socket.
+    @li ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
+    @li EACCES      the program hasn't enough permisions to eliminate the socket.
 */
 
 /**
@@ -147,9 +201,9 @@ int adtn_recvfrom(int fd, void *buffer, size_t len, sock_addr_t *addr);
 
     errno can take the values below:
 
-    ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-    ENOENT      cannot load the shared memory.
-    EACCES      the program hasn't enough permisions to eliminate the socket
+    @li ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
+    @li ENOENT      cannot load the shared memory.
+    @li EACCES      the program hasn't enough permisions to eliminate the socket
 */
 
 /**
@@ -176,9 +230,9 @@ int adtn_recvfrom(int fd, void *buffer, size_t len, sock_addr_t *addr);
 
     errno can take the values below:
 
-    ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-    EINVAL      invalid code or from_file value.
-    EOPNOTSUPP  existing code binded.
+    @li ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
+    @li EINVAL      invalid code or from_file value.
+    @li EOPNOTSUPP  existing code binded.
 */
 
 /**
@@ -194,8 +248,8 @@ int adtn_recvfrom(int fd, void *buffer, size_t len, sock_addr_t *addr);
 
     errno can take the values below:
 
-    ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-    EINVAL      invalid code option.
+    @li ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
+    @li EINVAL      invalid code option.
 */
 
 /**
@@ -268,7 +322,7 @@ ENOTSUP     invalid option.
     @param buffer A buffer with the message to send.
     @param buffer_l the length to send of  the buffer.
     @param addr sock_addr_t structure containing the destination information. Must contain, the application port and ip of the destination.
-    
+
     @return The number of bytes written on succes or -1 on error. If the function fails errno is set.
 
     errno can take the values below:
