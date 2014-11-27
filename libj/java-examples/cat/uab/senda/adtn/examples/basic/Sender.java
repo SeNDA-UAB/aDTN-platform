@@ -1,9 +1,14 @@
 package cat.uab.senda.adtn.examples.basic;
 
 import java.io.IOException;
+import java.net.SocketException;
+import java.text.ParseException;
 import java.util.Scanner;
 
+import cat.uab.senda.adtn.comm.AddressInUseException;
 import cat.uab.senda.adtn.comm.Comm;
+import cat.uab.senda.adtn.comm.InvalidArgumentException;
+import cat.uab.senda.adtn.comm.MessageSizeException;
 import cat.uab.senda.adtn.comm.SockAddrT;
 
 public class Sender {
@@ -27,9 +32,16 @@ public class Sender {
 		
 		System.out.println("Sending '"+text+"' to app "+appId+" at "+recvPlat+" platform.");
 		
-		int socket = Comm.adtnSocket();
-		Comm.adtnBind(socket, new SockAddrT(platform, appId));
-		Comm.adtnSendTo(socket, receiverAddr, text.getBytes());
+		int socket;
+		try {
+			socket = Comm.adtnSocket();
+			Comm.adtnBind(socket, new SockAddrT(platform, appId));
+			Comm.adtnSendTo(socket, receiverAddr, text.getBytes());
+			Comm.adtnClose(socket);
+		} catch (ParseException | IllegalAccessException | AddressInUseException | InvalidArgumentException | MessageSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		System.out.println("Text '"+text+"' has been sent. Press a key to exit...");
 		System.out.println();
