@@ -1,7 +1,7 @@
 <project name="adtnlibj-0.2" default="dist" basedir=".">
 	<description>
         Compiles adtn library for java, generates a jar with the distribution for the current architecture,
-		and generates a zip with examples and the necessary content for a java developer to develope an app on this architecture.
+		and generates a zip with examples and the necessary content for a java developer to develop an app on this architecture.
 	</description>
 	
 	<!-- set global properties for this build -->
@@ -32,13 +32,15 @@
 		<exec executable="gcc" dir="c">
 			<arg line=" -shared -fPIC cat_uab_senda_adtn_comm_Comm.c -o ../bin/libNativeAdtnApi.so ${gcc.includes}"/>
 		</exec>
-		<!-- Echo motiu sudo -->
+		<echo>Copying the library into /usr/lib/</echo>
+		<echo>Asking permision to do it.</echo>
 		<exec executable="sudo">
 			<arg line="cp ${bin}/libNativeAdtnApi.so /usr/lib/"/>
 		</exec>
 		<exec executable="sudo">
 			<arg line="-k"/>
 		</exec>
+		<echo>Removing cached credentials for sudo.</echo>
 	</target>
 	
 	<target name="javadoc" description="Generates javadoc for Communication classes">
