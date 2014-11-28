@@ -1,4 +1,4 @@
-package cat.uab.senda.adtn.comm;
+package src.cat.uab.senda.adtn.comm;
 
 /**
  * Exception to control to big message errors from calls of {@link Comm}.

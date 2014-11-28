@@ -1,4 +1,4 @@
-package cat.uab.senda.adtn.comm;
+package src.cat.uab.senda.adtn.comm;
 
 import java.io.FileNotFoundException;
 import java.net.SocketException;
@@ -222,7 +222,7 @@ public class Comm {
 	
 	/**
 	 * Binds a socket to an address.
-	 * This method binds a socket identifier with an address defined by {@link cat.uab.senda.adtn.comm.SockAddrT}.
+	 * This method binds a socket identifier with an address defined by {@link src.cat.uab.senda.adtn.comm.SockAddrT}.
 	 * <p>
 	 * If the platform is not active or an error occurred in the creation an exception is generated.
 	 * @param s 	the socket identifier.
@@ -357,16 +357,16 @@ public class Comm {
 	 * </ul>
 	 * </li>
 	 * <li>
-	 * {@link #OP_DEST}: a {@link cat.uab.senda.adtn.comm.SockAddrT} with the destination for the bundle.
+	 * {@link #OP_DEST}: a {@link src.cat.uab.senda.adtn.comm.SockAddrT} with the destination for the bundle.
 	 * </li>
 	 * <li>
-	 * {@link #OP_SOURCE}: a {@link cat.uab.senda.adtn.comm.SockAddrT} with the source for the bundle.
+	 * {@link #OP_SOURCE}: a {@link src.cat.uab.senda.adtn.comm.SockAddrT} with the source for the bundle.
 	 * </li>
 	 * <li>
-	 * {@link #OP_REPORT}: a {@link cat.uab.senda.adtn.comm.SockAddrT} with the report for the bundle.
+	 * {@link #OP_REPORT}: a {@link src.cat.uab.senda.adtn.comm.SockAddrT} with the report for the bundle.
 	 * </li>
 	 * <li>
-	 * {@link #OP_CUSTOM}: a {@link cat.uab.senda.adtn.comm.SockAddrT} with the custom for the bundle.
+	 * {@link #OP_CUSTOM}: a {@link src.cat.uab.senda.adtn.comm.SockAddrT} with the custom for the bundle.
 	 * </li>
 	 * </ul>
 	 * <p>
@@ -396,16 +396,16 @@ public class Comm {
 	 * {@link #OP_BLOCK_FLAGS}: gets the extension block flags, the function returns an {@link Integer}.
 	 * </li>
 	 * <li>
-	 * {@link #OP_DEST}: gets the destination, the function returns a {@link cat.uab.senda.adtn.comm.SockAddrT}.
+	 * {@link #OP_DEST}: gets the destination, the function returns a {@link src.cat.uab.senda.adtn.comm.SockAddrT}.
 	 * </li>
 	 * <li>
-	 * {@link #OP_SOURCE}: gets the source, the function returns a {@link cat.uab.senda.adtn.comm.SockAddrT}.
+	 * {@link #OP_SOURCE}: gets the source, the function returns a {@link src.cat.uab.senda.adtn.comm.SockAddrT}.
 	 * </li>
 	 * <li>
-	 * {@link #OP_REPORT}: gets the report, the function returns a {@link cat.uab.senda.adtn.comm.SockAddrT}.
+	 * {@link #OP_REPORT}: gets the report, the function returns a {@link src.cat.uab.senda.adtn.comm.SockAddrT}.
 	 * </li>
 	 * <li>
-	 * {@link #OP_CUSTOM}: gets the custom, the function returns a {@link cat.uab.senda.adtn.comm.SockAddrT}.
+	 * {@link #OP_CUSTOM}: gets the custom, the function returns a {@link src.cat.uab.senda.adtn.comm.SockAddrT}.
 	 * </li>
 	 * <li>
 	 * {@link #OP_LAST_TIMESTAMP}: gets the timestamp of the last sended bundle, the function returns a {@link Long}
@@ -428,7 +428,7 @@ public class Comm {
 	 * <p>
 	 * If the platform is not active or an error occurred in the creation an exception is generated.
 	 * @param  s 		the socket identifier.
-	 * @param  addr 	the source {@link cat.uab.senda.adtn.comm.SockAddrT}.
+	 * @param  addr 	the source {@link src.cat.uab.senda.adtn.comm.SockAddrT}.
 	 * @param  data 	the information to send.
 	 * @return a number bigger than {@code 0} if the bundle have been send.
 	 * @throws SocketException The socket identifier is not valid.
@@ -461,7 +461,7 @@ public class Comm {
 	 * @param  s 			the socket identifier.
 	 * @param  data 		the array of data to fill.
 	 * @param  data_len 	the number of bytes that will be written in {@code data}.
-	 * @param  addr 		the {@link cat.uab.senda.adtn.comm.SockAddrT} to fill with the source information.
+	 * @param  addr 		the {@link src.cat.uab.senda.adtn.comm.SockAddrT} to fill with the source information.
 	 * @return the number of bytes received or {@code -1} if fails.
 	 * @throws SocketException The socket identifier is not valid.
 	 * @throws FileNotFoundException Cannot find the aDTN service, check if it's running.

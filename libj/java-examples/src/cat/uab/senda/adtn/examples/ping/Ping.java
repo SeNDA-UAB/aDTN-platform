@@ -1,8 +1,11 @@
-package cat.uab.senda.adtn.examples.ping;
+package src.cat.uab.senda.adtn.examples.ping;
 
-import cat.uab.senda.adtn.comm.Comm;
-import cat.uab.senda.adtn.comm.SockAddrT;
+import src.cat.uab.senda.adtn.comm.Comm;
+import src.cat.uab.senda.adtn.comm.SockAddrT;
 
+import java.io.FileNotFoundException;
+import java.net.SocketException;
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Scanner;
@@ -13,7 +16,7 @@ public class Ping {
 	public static void main(String[] args) {	
         HashMap<String,String> options;
         
-        int s,port;
+        int port, s = 0;
         Scanner in = new Scanner(System.in);
         
         // Ask for the platform name
@@ -29,8 +32,12 @@ public class Ping {
         Configuration conf = new Configuration(options.get("destination_id"),options.get("size"),options.get("count"),
                 options.get("interval"),options.get("lifetime"));   
         
-        // Create a new aDTN socket that will be used to send and receive pings
-        s = Comm.adtnSocket();
+        // Create a new aDTN socket that will be used to send and receive Pings
+        try {
+			s = Comm.adtnSocket();
+		} catch (SocketException | FileNotFoundException | ParseException e1) {
+			e1.printStackTrace();
+		}
         
         // Pick a port number at Random, this port will be used to create either the SockAddrT of the source and the destination
         // If the port is already in use (the bind could not be done), we will pick another one

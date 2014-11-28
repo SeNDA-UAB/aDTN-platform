@@ -30,7 +30,7 @@
 	</target>
 	
 	<target name="runReceiver">
-		<java fork="true" classname="cat.uab.senda.adtn.examples.basic.Receiver">
+		<java fork="true" classname="src.cat.uab.senda.adtn.examples.basic.Receiver">
 			<classpath>
 				<path refid="classpath"/>
 				<path location="${dist}/${ant.project.name}.jar"/>
@@ -40,7 +40,7 @@
 	</target>
 	
 	<target name="runSender">
-		<java fork="true"  classname="cat.uab.senda.adtn.examples.basic.Sender">
+		<java fork="true"  classname="src.cat.uab.senda.adtn.examples.basic.Sender">
 			<classpath>
 				<path refid="classpath"/>
 				<path location="${dist}/${ant.project.name}.jar"/>
@@ -50,7 +50,7 @@
 	</target>
 	
 	<target name="runPing">
-		<java fork="true"  classname="cat.uab.senda.adtn.examples.ping.Ping">
+		<java fork="true"  classname="src.cat.uab.senda.adtn.examples.ping.Ping">
 			<classpath>
 				<path refid="classpath"/>
 				<path location="${dist}/${ant.project.name}.jar"/>

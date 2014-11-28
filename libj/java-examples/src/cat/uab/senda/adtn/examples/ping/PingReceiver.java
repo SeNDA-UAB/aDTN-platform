@@ -1,8 +1,11 @@
-package cat.uab.senda.adtn.examples.ping;
+package src.cat.uab.senda.adtn.examples.ping;
 
+import java.io.FileNotFoundException;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 
-import cat.uab.senda.adtn.comm.Comm;
+import src.cat.uab.senda.adtn.comm.Comm;
+import src.cat.uab.senda.adtn.comm.InvalidArgumentException;
 
 public class PingReceiver extends Thread implements Runnable{
     
@@ -22,19 +25,24 @@ public class PingReceiver extends Thread implements Runnable{
 		while(true) {
 			byte[] data = new byte[conf.getPayload_size()];
 			
-	    	Comm.adtnRecvFrom(s, data, conf.getPayload_size(), conf.getDestination());
-	    	ByteBuffer buff = ByteBuffer.wrap(data);
-	    	
-	    	if (buff.get() == 1) { // The packet type is Ping (opcode == 1)
-	    		option = buff.get();
-		    	seq_num = buff.getInt();
-		    	time = buff.getLong();
+	    	try {
+				Comm.adtnRecvFrom(s, data, conf.getPayload_size(), conf.getDestination());
+
+		    	ByteBuffer buff = ByteBuffer.wrap(data);
 		    	
-		    	Ping.getMap().get(seq_num);
-		    	System.out.println("Ping Received with seq_number "+ Integer.toString(seq_num));
-	    	}else {
-	    		System.out.println("Received a packet from another application. Packet is discarted");	
-	    	}
+		    	if (buff.get() == 1) { // The packet type is Ping (opcode == 1)
+		    		option = buff.get();
+			    	seq_num = buff.getInt();
+			    	time = buff.getLong();
+			    	
+			    	Ping.getMap().get(seq_num);
+			    	System.out.println("Ping Received with seq_number "+ Integer.toString(seq_num));
+		    	}else {
+		    		System.out.println("Received a packet from another application. Packet is discarted");	
+		    	}
+	    	} catch (SocketException | FileNotFoundException | InvalidArgumentException e) {
+				e.printStackTrace();
+			}
 		}
     }
 }

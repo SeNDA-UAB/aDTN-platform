@@ -26,7 +26,7 @@
 	
 	<target name="compile" depends="init">
 		<javac srcdir="${src}" destdir="${bin}"/>
-		<javah destdir="${bin}" force="yes" class="cat.uab.senda.adtn.comm.Comm" classpath="${bin}"/>
+		<javah destdir="${bin}" force="yes" class="src.cat.uab.senda.adtn.comm.Comm" classpath="${bin}"/>
 		<copy file="${bin}/cat_uab_senda_adtn_comm_Comm.h" todir="c/"/>
 		<delete file="${bin}/cat_uab_senda_adtn_comm_Comm.h"/>
 		<exec executable="gcc" dir="c">
@@ -44,7 +44,7 @@
 	</target>
 	
 	<target name="javadoc" description="Generates javadoc for Communication classes">
-		<javadoc sourcepath="${src}" packagenames="cat.uab.senda.adtn.comm" destdir="${doc}" access="public" author="
+		<javadoc sourcepath="${src}" packagenames="src.cat.uab.senda.adtn.comm" destdir="${doc}" access="public" author="
 			true" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="
 			false" source="1.7" splitindex="true" use="true" version="true">
 				<link href="http://docs.oracle.com/javase/7/docs/api/"/>

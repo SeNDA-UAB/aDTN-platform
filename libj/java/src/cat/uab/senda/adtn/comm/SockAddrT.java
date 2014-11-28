@@ -1,4 +1,4 @@
-package cat.uab.senda.adtn.comm;
+package src.cat.uab.senda.adtn.comm;
 
 /**
 * This class represents a socket address over the aDTN.

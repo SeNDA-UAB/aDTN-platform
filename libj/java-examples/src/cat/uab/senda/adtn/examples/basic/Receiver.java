@@ -1,13 +1,13 @@
-package cat.uab.senda.adtn.examples.basic;
+package src.cat.uab.senda.adtn.examples.basic;
 
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Scanner;
 
-import cat.uab.senda.adtn.comm.AddressInUseException;
-import cat.uab.senda.adtn.comm.Comm;
-import cat.uab.senda.adtn.comm.InvalidArgumentException;
-import cat.uab.senda.adtn.comm.SockAddrT;
+import src.cat.uab.senda.adtn.comm.AddressInUseException;
+import src.cat.uab.senda.adtn.comm.Comm;
+import src.cat.uab.senda.adtn.comm.InvalidArgumentException;
+import src.cat.uab.senda.adtn.comm.SockAddrT;
 
 public class Receiver {
 	public static void main(String[] args) throws IOException{

@@ -1,9 +1,15 @@
-package cat.uab.senda.adtn.examples.ping;
+package src.cat.uab.senda.adtn.examples.ping;
 
+import java.io.FileNotFoundException;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.Date;
 
-import cat.uab.senda.adtn.comm.Comm;
+import src.cat.uab.senda.adtn.comm.Comm;
+import src.cat.uab.senda.adtn.comm.InvalidArgumentException;
+import src.cat.uab.senda.adtn.comm.JNIException;
+import src.cat.uab.senda.adtn.comm.MessageSizeException;
+import src.cat.uab.senda.adtn.comm.OpNotSuportedException;
 
 public class PingSender extends Thread implements Runnable {
 	
@@ -30,12 +36,12 @@ public class PingSender extends Thread implements Runnable {
     	seq_num = 1;
     	ping_flags = Comm.H_DESS | Comm.H_SR_BREC;
         
-        Comm.adtnSetSocketOption(s, Comm.OP_PROC_FLAGS, ping_flags);
-        Comm.adtnSetSocketOption(s, Comm.OP_REPORT, conf.getSource());
-        Comm.adtnSetSocketOption(s, Comm.OP_LIFETIME, conf.getPing_lifetime());
-         
-    	while(true) {
-	        try {
+        try {
+			Comm.adtnSetSocketOption(s, Comm.OP_PROC_FLAGS, ping_flags);
+			Comm.adtnSetSocketOption(s, Comm.OP_REPORT, conf.getSource());
+		    Comm.adtnSetSocketOption(s, Comm.OP_LIFETIME, conf.getPing_lifetime());
+		    
+	    	while(true) {
 	            byte[] data = new byte[conf.getPayload_size()];
 	      
 	            ByteBuffer buff = ByteBuffer.wrap(data);
@@ -56,11 +62,10 @@ public class PingSender extends Thread implements Runnable {
 		                +conf.getPing_lifetime()+" seconds of lifetime.");
 		        
 	            sleep(conf.getPing_interval());
-	        
-	        }catch(Exception e){
-	            e.printStackTrace();
-	        }
-    	}
+	    	}
+        } catch (SocketException | OpNotSuportedException | JNIException | FileNotFoundException | InvalidArgumentException | MessageSizeException | InterruptedException e1) {
+			e1.printStackTrace();
+		}
     }
     
 }

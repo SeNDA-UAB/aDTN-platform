@@ -1,6 +1,6 @@
-package cat.uab.senda.adtn.examples.ping;
+package src.cat.uab.senda.adtn.examples.ping;
 
-import cat.uab.senda.adtn.comm.SockAddrT;
+import src.cat.uab.senda.adtn.comm.SockAddrT;
 
 public class Configuration {
 	
