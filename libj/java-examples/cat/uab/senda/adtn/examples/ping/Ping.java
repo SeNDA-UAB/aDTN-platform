@@ -8,8 +8,11 @@ import java.util.Random;
 import java.util.Scanner;
 
 public class Ping {
-    public static void main(String[] args) {
+	public static HashMap<Integer,Long> map = new HashMap<Integer,Long>();
+	
+	public static void main(String[] args) {	
         HashMap<String,String> options;
+        
         int s,port;
         Scanner in = new Scanner(System.in);
         
@@ -51,10 +54,14 @@ public class Ping {
         }
         // We create a two threads, one the the ping sender, and another for the receiver
         PingSender sender = new PingSender(s, conf);
-        PingReceiver receiver = new PingReceiver(s);
+        PingReceiver receiver = new PingReceiver(s,conf);
        
         // Start the sender and the receiver
-       sender.run();
-       receiver.run(); 
+       sender.start();
+       receiver.start(); 
+	}
+    public static HashMap<Integer, Long> getMap() {
+    	return map;
     }
+
 }
