@@ -44,7 +44,9 @@ make_debs/debs/
 make_debs/adtn-aux/
 
 libj/doc/
+libj/dist/
 libj/bin
 libj/.classpath
 libj/.project
+
 /bin/

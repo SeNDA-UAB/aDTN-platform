@@ -5,20 +5,31 @@ import src.cat.uab.senda.adtn.comm.SockAddrT;
 public class Configuration {
 	
     //Default values
-    public String dest_platform_id;
+	public String src_platform_id;
+
+	public String dest_platform_id;
     public int payload_size;
     public int ping_count;
     public int ping_interval;
     public long ping_lifetime;
     SockAddrT source, destination;
  
-    Configuration(String dest_platform_id, String size, String count, String interval, String lifetime ){
-        this.dest_platform_id = dest_platform_id;
+    Configuration(String src_platform_id, String dest_platform_id, String size, String count, String interval, String lifetime ){
+    	this.src_platform_id = src_platform_id;
+    	this.dest_platform_id = dest_platform_id;
         this.payload_size = Integer.parseInt(size);
         this.ping_count = Integer.parseInt(count);
         this.ping_interval = Integer.parseInt(interval);
         this.ping_lifetime = Integer.parseInt(lifetime);
     }
+    
+    public String getSrc_platform_id() {
+		return src_platform_id;
+	}
+
+	public void setSrc_platform_id(String src_platform_id) {
+		this.src_platform_id = src_platform_id;
+	}
 
     public String getDest_platform_id() {
         return dest_platform_id;

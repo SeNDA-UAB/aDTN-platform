@@ -11,11 +11,12 @@ import java.util.Random;
 import java.util.Scanner;
 
 public class Ping {
+	
 	public static HashMap<Integer,Long> map = new HashMap<Integer,Long>();
 	
 	public static void main(String[] args) {	
         HashMap<String,String> options;
-        
+       
         int port, s = 0;
         Scanner in = new Scanner(System.in);
         
@@ -29,7 +30,7 @@ public class Ping {
         options = argHandler.getOptions();
                 
         // Set the configuration attributes
-        Configuration conf = new Configuration(options.get("destination_id"),options.get("size"),options.get("count"),
+        Configuration conf = new Configuration(platform_id,options.get("destination_id"),options.get("size"),options.get("count"),
                 options.get("interval"),options.get("lifetime"));   
         
         // Create a new aDTN socket that will be used to send and receive Pings

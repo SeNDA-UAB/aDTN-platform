@@ -34,12 +34,15 @@ public class PingSender extends Thread implements Runnable {
     @Override
     public void run() {
     	seq_num = 1;
-    	ping_flags = Comm.H_DESS | Comm.H_SR_BREC;
-        
+    	ping_flags = Comm.H_NOTF | Comm.H_DESS;
+       
         try {
 			Comm.adtnSetSocketOption(s, Comm.OP_PROC_FLAGS, ping_flags);
 			Comm.adtnSetSocketOption(s, Comm.OP_REPORT, conf.getSource());
 		    Comm.adtnSetSocketOption(s, Comm.OP_LIFETIME, conf.getPing_lifetime());
+		    
+		    System.out.println("PING "+conf.getDest_platform_id()+" "+conf.getPayload_size()+" bytes of payload. "
+	                +conf.getPing_lifetime()+" seconds of lifetime.");
 		    
 	    	while(true) {
 	            byte[] data = new byte[conf.getPayload_size()];
@@ -57,9 +60,6 @@ public class PingSender extends Thread implements Runnable {
 	            Comm.adtnSendTo(s, conf.getDestination(), data);
 	            
 	            seq_num++;
-	            
-	            System.out.println("PING "+conf.getDest_platform_id()+" "+conf.getPayload_size()+" bytes of payload. "
-		                +conf.getPing_lifetime()+" seconds of lifetime.");
 		        
 	            sleep(conf.getPing_interval());
 	    	}

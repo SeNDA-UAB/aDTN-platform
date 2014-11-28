@@ -3,17 +3,25 @@ package src.cat.uab.senda.adtn.examples.ping;
 import java.io.FileNotFoundException;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.util.Date;
 
 import src.cat.uab.senda.adtn.comm.Comm;
 import src.cat.uab.senda.adtn.comm.InvalidArgumentException;
+import src.cat.uab.senda.adtn.comm.MessageSizeException;
 
 public class PingReceiver extends Thread implements Runnable{
+	
+	// Protocol opcode, Ping is #1
+	public static byte TYPE = 1;
+	//Option, specify if the message is a Ping or a Pong
+	public static byte PING = 0; 
+	public static byte PONG = 1;
     
     int s; // Receive socket
     Configuration conf;
     byte type, option;
     int seq_num;
-    long time;
+    long time,localTime;
     
     PingReceiver(int socket, Configuration conf){
         this.s = socket;
@@ -27,6 +35,7 @@ public class PingReceiver extends Thread implements Runnable{
 			
 	    	try {
 				Comm.adtnRecvFrom(s, data, conf.getPayload_size(), conf.getDestination());
+				localTime = new Date().getTime();
 
 		    	ByteBuffer buff = ByteBuffer.wrap(data);
 		    	
@@ -35,12 +44,28 @@ public class PingReceiver extends Thread implements Runnable{
 			    	seq_num = buff.getInt();
 			    	time = buff.getLong();
 			    	
-			    	Ping.getMap().get(seq_num);
-			    	System.out.println("Ping Received with seq_number "+ Integer.toString(seq_num));
+			    	if (option == 0) { // Ping received
+			    		// Build a new packet to response as Pong
+			    		
+			    		buff.clear();
+			            buff.put(TYPE);
+			            buff.put(PONG);
+			            buff.putInt(seq_num);
+			            buff.putLong(time);
+			            
+			            // Send the Pong
+			            Comm.adtnSendTo(s, conf.getDestination(), data);
+			    	}else if (option == 1) { //Pong received
+			    		if(Ping.getMap().get(seq_num) == time) { // Verify that the Pong corresponds to a previous sent Ping
+			    			Ping.getMap().remove(seq_num);
+			    			time = localTime - time;
+			    			System.out.println(conf.getSrc_platform_id()+" received ping at "+new Date(localTime).toString()+" seq="+seq_num+" time="+Long.toString(time)+"ms");
+			    		}
+			    	}		
 		    	}else {
 		    		System.out.println("Received a packet from another application. Packet is discarted");	
 		    	}
-	    	} catch (SocketException | FileNotFoundException | InvalidArgumentException e) {
+	    	} catch (SocketException | FileNotFoundException | InvalidArgumentException | MessageSizeException e) {
 				e.printStackTrace();
 			}
 		}
