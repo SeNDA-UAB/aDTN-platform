@@ -8,7 +8,7 @@ public class ArgHandler {
     private static final String DEFAULT_CONF_FILE = "/etc/adtn/adtn.ini";
     private static final String DEFAULT_LIFETIME = "30";
     private static final String DEFAULT_PAYLOAD_SIZE = "64";
-    private static final String DEFAULT_INTERVAL = "1"; // Second
+    private static final String DEFAULT_INTERVAL = "1000"; // Milliseconds
     private static final String DEFAULT_COUNT = "-1"; // Never stops
   
     private HashMap<String,String> options;
@@ -18,7 +18,7 @@ public class ArgHandler {
        String id = "";
        int index;
        
-       // Set the default values to th configuration variables.
+       // Set the default values to the configuration variables.
        this.init();
        
        for(String arg: args){
@@ -84,7 +84,6 @@ public class ArgHandler {
            }
             
         }
-       System.out.println(options.toString());
     }
     
     public final void init(){
