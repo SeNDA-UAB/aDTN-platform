@@ -51,6 +51,7 @@
 	
 	<target name="runPing">
 		<java fork="true"  classname="src.cat.uab.senda.adtn.examples.ping.Ping">
+			<arg line="${args}"/>
 			<classpath>
 				<path refid="classpath"/>
 				<path location="${dist}/${ant.project.name}.jar"/>
