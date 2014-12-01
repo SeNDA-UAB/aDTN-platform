@@ -13,28 +13,31 @@ import src.cat.uab.senda.adtn.comm.SockAddrT;
 public class PingReceiver extends Thread implements Runnable {
 
 	int i, s; // Receive socket
-	Configuration conf;
+	ArgumentHandler ah;
+	SockAddrT source, destination;
 	byte type, option;
 	int seq_num;
 	long time, localTime;
 
-	PingReceiver(int socket, Configuration conf) {
+	PingReceiver(int socket, SockAddrT source, SockAddrT destination, ArgumentHandler ah) {
 		this.s = socket;
-		this.conf = conf;
+		this.source = source;
+		this.destination = destination;
+		this.ah = ah;
 	}
 
 	@Override
 	public void run() {
-		i = conf.getPing_count(); // Number of Pong to receive
+		i = ah.count; // Number of Pong to receive
 		SockAddrT destination = new SockAddrT("", 0); // New SockAddrT variable,
 														// will be used to get
 														// the destination from
 														// adtnRecvFrom method
-		while (i != 0) {
-			byte[] data = new byte[conf.getPayload_size()];
-
-			try {
-				Comm.adtnRecvFrom(s, data, conf.getPayload_size(), destination);
+		String destination_id = ah.destination_id.get(0);
+		try {
+			while (i != 0) {
+				byte[] data = new byte[ah.size];
+				Comm.adtnRecvFrom(s, data, ah.size, destination);
 				localTime = new Date().getTime();
 
 				ByteBuffer buff = ByteBuffer.wrap(data);
@@ -47,8 +50,8 @@ public class PingReceiver extends Thread implements Runnable {
 					if (option == 0) { // Ping received
 						// Build a new packet to response as Pong
 						buff.clear();
-						buff.put(Configuration.TYPE);
-						buff.put(Configuration.PONG);
+						buff.put(Ping.TYPE);
+						buff.put(Ping.PONG);
 						buff.putInt(seq_num);
 						buff.putLong(time);
 
@@ -59,7 +62,8 @@ public class PingReceiver extends Thread implements Runnable {
 							// The received Pong is from a previous Ping
 							Ping.getMap().remove(seq_num);
 							time = localTime - time;
-							System.out.println(conf.getSrc_platform_id()
+							
+							System.out.println(destination_id
 									+ " received ping at "
 									+ new Date(localTime).toString() + " seq="
 									+ seq_num + " time=" + Long.toString(time)
@@ -71,10 +75,10 @@ public class PingReceiver extends Thread implements Runnable {
 					System.out
 							.println("Received a packet from another application. Packet is discarted");
 				}
-			} catch (SocketException | FileNotFoundException
-					| InvalidArgumentException | MessageSizeException e) {
-				e.printStackTrace();
 			}
+		} catch (SocketException | FileNotFoundException
+				| InvalidArgumentException | MessageSizeException e) {
+			e.printStackTrace();
 		}
 	}
 }

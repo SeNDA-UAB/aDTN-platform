@@ -1,7 +1,11 @@
 package src.cat.uab.senda.adtn.examples.ping;
 
+import src.cat.uab.senda.adtn.comm.AddressInUseException;
 import src.cat.uab.senda.adtn.comm.Comm;
 import src.cat.uab.senda.adtn.comm.SockAddrT;
+
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.ParameterException;
 
 import java.io.FileNotFoundException;
 import java.net.SocketException;
@@ -10,12 +14,44 @@ import java.util.HashMap;
 import java.util.Scanner;
 
 public class Ping {
+	
+	// Definitions
+	public static byte TYPE = 1; // Ping opcode
+	// Option, specify if the message is a Ping (0) or a Pong (1)
+	public static byte PING = 0;
+	public static byte PONG = 1;
+	public static final int PORT = 1;
 
 	public static HashMap<Integer, Long> map = new HashMap<Integer, Long>();
+	public ArgumentHandler ah;
+
+	public ArgumentHandler GetParameters(String[] args) {
+		ArgumentHandler ah = new ArgumentHandler();
+		JCommander jcom = new JCommander(ah);
+		jcom.setProgramName("Ping");
+		try {
+			jcom.parse(args);
+
+			if (ah.help) {
+				jcom.usage();
+				System.exit(0);
+			}
+			if (ah.destination_id.size() == 0 && ah.mode.equals("sender")) {
+				System.out.println("You must specify a destination");
+				jcom.usage();
+				System.exit(0);
+			}
+		} catch (ParameterException ex) {
+			System.out.println(ah.destination_id.size());
+			jcom.usage();
+			System.exit(0);
+		}
+		return ah;
+	}
 
 	public static void main(String[] args) {
-		HashMap<String, String> options;
-
+		SockAddrT source, destination;
+	
 		int s;
 		Scanner in = new Scanner(System.in);
 
@@ -25,55 +61,40 @@ public class Ping {
 		in.close();
 
 		// Extract the parameters and store all the options
-		ArgHandler argHandler = new ArgHandler(args);
-		options = argHandler.getOptions();
-
-		// Set the configuration attributes
-		Configuration conf = new Configuration(platform_id,
-				options.get("destination_id"), options.get("size"),
-				options.get("count"), options.get("interval"),
-				options.get("lifetime"), options.get("mode"));
+		ArgumentHandler ah = new Ping().GetParameters(args);
+		String destination_id = ah.destination_id.get(0);
 
 		// Create a new aDTN socket that will be used to send and receive Pings
 		try {
 			s = Comm.adtnSocket();
 
-			// Pick a port number at Random, this port will be used to create either
-			// the SockAddrT of the source and the destination
-			// If the port is already in use (the bind could not be done), we will
-			// pick another one
-			while (true) {
-				// Create the SockkAddr objects with the source and destination
-				// information
-				conf.setSource(new SockAddrT(platform_id, Configuration.PORT));
-				conf.setDestination(new SockAddrT(options.get("destination_id"),
-						Configuration.PORT));
+			// Create the SockkAddr objects with the source and destination
+			// information
+			source = new SockAddrT(platform_id, Ping.PORT);
+			destination = new SockAddrT(destination_id, Ping.PORT);
 	
-				// Check if the port is in use
-				try {
-					Comm.adtnBind(s, conf.getSource());
-					// If no exception is thrown, the port will be available.
-					break;
-				} catch (Exception e) {
-					// If it's in use, we notify it to the user, and try to pick
-					// another one
-					System.out.println("Port " + Configuration.PORT
-							+ " already in use. Trying another one.");
-				}
-			}
+			Comm.adtnBind(s, source);
 			
+			Runtime.getRuntime().addShutdownHook(new ShutdownHook(s));
+
 			// Create a thread for the receiver and starts it
-			PingReceiver receiver = new PingReceiver(s, conf);
+			PingReceiver receiver = new PingReceiver(s, source,
+					destination, ah);
 			receiver.start();
-			
+	
 			// If not receiver mode, create also a sender and starts it
-			if (conf.getMode().equals("sender")) {
-				PingSender sender = new PingSender(s, conf);
-				sender.start();
+			if (ah.mode.equals("sender")) {
+				PingSender sender = new PingSender(s, source, destination,
+						ah);
+				sender.start();	
 			}
-		} catch (SocketException | FileNotFoundException | ParseException e1) {
+	
+			receiver.join();
+		} catch (SocketException | FileNotFoundException | ParseException
+				| IllegalAccessException | AddressInUseException | InterruptedException e1) {
 			e1.printStackTrace();
 		}
+		
 	}
 
 	public static HashMap<Integer, Long> getMap() {

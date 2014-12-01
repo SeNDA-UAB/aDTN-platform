@@ -10,58 +10,64 @@ import src.cat.uab.senda.adtn.comm.InvalidArgumentException;
 import src.cat.uab.senda.adtn.comm.JNIException;
 import src.cat.uab.senda.adtn.comm.MessageSizeException;
 import src.cat.uab.senda.adtn.comm.OpNotSuportedException;
+import src.cat.uab.senda.adtn.comm.SockAddrT;
 
 public class PingSender extends Thread implements Runnable {
 
 	int i, s; // Send socket
-	Configuration conf; // Configuration data
+	ArgumentHandler ah; // Configuration data
+	SockAddrT source, destination;
 	int ping_flags, seq_num;
 	long time;
 
-	PingSender(int socket, Configuration conf) {
+	PingSender(int socket, SockAddrT source, SockAddrT destination,
+			ArgumentHandler ah) {
 		this.s = socket;
-		this.conf = conf;
+		this.source = source;
+		this.destination = destination;
+		this.ah = ah;
 	}
 
 	@Override
 	public void run() {
 		seq_num = 1;
 		ping_flags = Comm.H_NOTF | Comm.H_DESS;
-		i = conf.getPing_count(); // Number of Pings to send
+		i = ah.count; // Number of Pings to send
+		String destination_id = ah.destination_id.get(0);
 
 		try {
 			Comm.adtnSetSocketOption(s, Comm.OP_PROC_FLAGS, ping_flags);
-			Comm.adtnSetSocketOption(s, Comm.OP_REPORT, conf.getSource());
-			Comm.adtnSetSocketOption(s, Comm.OP_LIFETIME,
-					conf.getPing_lifetime());
+			Comm.adtnSetSocketOption(s, Comm.OP_REPORT, source);
+			Comm.adtnSetSocketOption(s, Comm.OP_LIFETIME, ah.lifetime);
 
-			System.out.println("PING " + conf.getDest_platform_id() + " "
-					+ conf.getPayload_size() + " bytes of payload. "
-					+ conf.getPing_lifetime() + " seconds of lifetime.");
+			System.out.println("PING " + destination_id + " " + ah.size
+					+ " bytes of payload. " + ah.lifetime
+					+ " seconds of lifetime.");
 
 			while (i != 0) {
-				byte[] data = new byte[conf.getPayload_size()];
+				byte[] data = new byte[ah.size];
 
 				ByteBuffer buff = ByteBuffer.wrap(data);
 
-				buff.put(Configuration.TYPE);
-				buff.put(Configuration.PING);
+				buff.put(Ping.TYPE);
+				buff.put(Ping.PING);
 				buff.putInt(seq_num);
 
 				time = new Date().getTime();
 				buff.putLong(time);
 				Ping.getMap().put(seq_num, time);
 
-				Comm.adtnSendTo(s, conf.getDestination(), data);
+				Comm.adtnSendTo(s, destination, data);
 
 				seq_num++;
 				i--;
 
-				sleep(conf.getPing_interval());
+				sleep(ah.interval * 1000);
 			}
 		} catch (SocketException | OpNotSuportedException | JNIException
 				| FileNotFoundException | InvalidArgumentException
-				| MessageSizeException | InterruptedException e1) {
+				| MessageSizeException | InterruptedException
+				 e1) {
 			e1.printStackTrace();
 		}
 	}
