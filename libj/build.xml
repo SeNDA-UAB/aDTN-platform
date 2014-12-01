@@ -28,7 +28,7 @@
 		<javac srcdir="${src}" destdir="${bin}"/>
 		<javah destdir="${bin}" force="yes" class="src.cat.uab.senda.adtn.comm.Comm" classpath="${bin}"/>
 		<copy file="${bin}/src_cat_uab_senda_adtn_comm_Comm.h" todir="c/"/>
-		<delete file="${bin}src_cat_uab_senda_adtn_comm_Comm.h"/>
+		<delete file="${bin}/src_cat_uab_senda_adtn_comm_Comm.h"/>
 		<exec executable="gcc" dir="c">
 			<arg line=" -shared -fPIC src_cat_uab_senda_adtn_comm_Comm.c -o ../bin/libNativeAdtnApi.so ${gcc.includes}"/>
 		</exec>
