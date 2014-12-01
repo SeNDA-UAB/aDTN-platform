@@ -7,7 +7,6 @@ import java.io.FileNotFoundException;
 import java.net.SocketException;
 import java.text.ParseException;
 import java.util.HashMap;
-import java.util.Random;
 import java.util.Scanner;
 
 public class Ping {
@@ -17,7 +16,7 @@ public class Ping {
 	public static void main(String[] args) {
 		HashMap<String, String> options;
 
-		int port, s = 0;
+		int s;
 		Scanner in = new Scanner(System.in);
 
 		// Ask for the platform name
@@ -38,46 +37,42 @@ public class Ping {
 		// Create a new aDTN socket that will be used to send and receive Pings
 		try {
 			s = Comm.adtnSocket();
+
+			// Pick a port number at Random, this port will be used to create either
+			// the SockAddrT of the source and the destination
+			// If the port is already in use (the bind could not be done), we will
+			// pick another one
+			while (true) {
+				// Create the SockkAddr objects with the source and destination
+				// information
+				conf.setSource(new SockAddrT(platform_id, Configuration.PORT));
+				conf.setDestination(new SockAddrT(options.get("destination_id"),
+						Configuration.PORT));
+	
+				// Check if the port is in use
+				try {
+					Comm.adtnBind(s, conf.getSource());
+					// If no exception is thrown, the port will be available.
+					break;
+				} catch (Exception e) {
+					// If it's in use, we notify it to the user, and try to pick
+					// another one
+					System.out.println("Port " + Configuration.PORT
+							+ " already in use. Trying another one.");
+				}
+			}
+			
+			// Create a thread for the receiver and starts it
+			PingReceiver receiver = new PingReceiver(s, conf);
+			receiver.start();
+			
+			// If not receiver mode, create also a sender and starts it
+			if (conf.getMode().equals("sender")) {
+				PingSender sender = new PingSender(s, conf);
+				sender.start();
+			}
 		} catch (SocketException | FileNotFoundException | ParseException e1) {
 			e1.printStackTrace();
-		}
-
-		// Pick a port number at Random, this port will be used to create either
-		// the SockAddrT of the source and the destination
-		// If the port is already in use (the bind could not be done), we will
-		// pick another one
-		while (true) {
-			// Create a random port number ToDo: Ensure that ports it's not
-			// already in use.
-			port = new Random().nextInt(Integer.MAX_VALUE) % 65536;
-
-			// Create the SockkAddr objects with the source and destination
-			// information
-			conf.setSource(new SockAddrT(platform_id, port));
-			conf.setDestination(new SockAddrT(options.get("destination_id"),
-					port));
-
-			// Check if the port is in use
-			try {
-				Comm.adtnBind(s, conf.getSource());
-				// If no exception is thrown, the port will be available.
-				break;
-			} catch (Exception e) {
-				// If it's in use, we notify it to the user, and try to pick
-				// another one
-				System.out.println("Port " + port
-						+ " already in use. Trying another one.");
-			}
-		}
-		
-		// Create a thread for the receiver and starts it
-		PingReceiver receiver = new PingReceiver(s, conf);
-		receiver.start();
-		
-		// If not receiver mode, create also a sender and starts it
-		if (conf.getMode().equals("sender")) {
-			PingSender sender = new PingSender(s, conf);
-			sender.start();
 		}
 	}
 

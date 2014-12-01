@@ -8,6 +8,7 @@ import java.util.Date;
 import src.cat.uab.senda.adtn.comm.Comm;
 import src.cat.uab.senda.adtn.comm.InvalidArgumentException;
 import src.cat.uab.senda.adtn.comm.MessageSizeException;
+import src.cat.uab.senda.adtn.comm.SockAddrT;
 
 public class PingReceiver extends Thread implements Runnable {
 
@@ -25,12 +26,15 @@ public class PingReceiver extends Thread implements Runnable {
 	@Override
 	public void run() {
 		i = conf.getPing_count(); // Number of Pong to receive
-		while (i !=0) {
+		SockAddrT destination = new SockAddrT("", 0); // New SockAddrT variable,
+														// will be used to get
+														// the destination from
+														// adtnRecvFrom method
+		while (i != 0) {
 			byte[] data = new byte[conf.getPayload_size()];
 
 			try {
-				Comm.adtnRecvFrom(s, data, conf.getPayload_size(),
-						conf.getDestination());
+				Comm.adtnRecvFrom(s, data, conf.getPayload_size(), destination);
 				localTime = new Date().getTime();
 
 				ByteBuffer buff = ByteBuffer.wrap(data);
@@ -49,7 +53,7 @@ public class PingReceiver extends Thread implements Runnable {
 						buff.putLong(time);
 
 						// Send the Pong
-						Comm.adtnSendTo(s, conf.getDestination(), data);
+						Comm.adtnSendTo(s, destination, data);
 					} else if (option == 1) { // Pong received
 						if (Ping.getMap().get(seq_num) == time) {
 							// The received Pong is from a previous Ping

@@ -9,6 +9,7 @@ public class Configuration {
 	// Option, specify if the message is a Ping (0) or a Pong (1)
 	public static byte PING = 0;
 	public static byte PONG = 1;
+	public static final int PORT = 1;
 
 	// Default values
 	public String src_platform_id;
