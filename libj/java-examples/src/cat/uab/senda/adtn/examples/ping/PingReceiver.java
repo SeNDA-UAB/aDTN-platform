@@ -28,10 +28,8 @@ public class PingReceiver extends Thread implements Runnable {
 	@Override
 	public void run() {
 		i = ah.count; // Number of Pong to receive
-		SockAddrT destination = new SockAddrT("", 0); // New SockAddrT variable,
-														// will be used to get
-														// the destination from
-														// adtnRecvFrom method
+		SockAddrT destination = new SockAddrT("", 0); // New SockAddrT variable, will be used to get the destination
+														// from adtnRecvFrom method
 		try {
 			while (i != 0) {
 				byte[] data = new byte[ah.size];
@@ -45,8 +43,11 @@ public class PingReceiver extends Thread implements Runnable {
 					seq_num = buff.getInt();
 					time = buff.getLong();
 
-					
 					if (option == 0) { // Ping received
+
+						if (ah.verbose)
+							System.out.println("Ping received from " + destination.getId() + " at "
+									+ new Date(localTime).toString() + " seq=" + seq_num + ". Building pong.");
 						// Build a new packet to response as Pong
 						buff.clear();
 						buff.put(Ping.TYPE);
@@ -56,27 +57,29 @@ public class PingReceiver extends Thread implements Runnable {
 
 						// Send the Pong
 						Comm.adtnSendTo(s, destination, data);
+						if (ah.verbose)
+							System.out.println("Pong sent to " + destination.getId() + " at "
+									+ new Date(localTime).toString() + " seq=" + seq_num + ".");
 					} else if (option == 1) { // Pong received
 						if (Ping.getMap().get(seq_num) == time) {
 							// The received Pong is from a previous Ping
+							if (ah.verbose)
+								System.out.println("Pong received from " + destination.getId() + " at "
+										+ new Date(localTime).toString() + " seq=" + seq_num + ". Building pong.");
 							Ping.getMap().remove(seq_num);
 							time = localTime - time;
-							
-							System.out.println(destination.getId()
-									+ " received ping at "
-									+ new Date(localTime).toString() + " seq="
-									+ seq_num + " time=" + Long.toString(time)
-									+ "ms");
+
+							System.out.println(destination.getId() + " received ping at "
+									+ new Date(localTime).toString() + " seq=" + seq_num + " time="
+									+ Long.toString(time) + "ms.");
 							i--;
 						}
 					}
 				} else {
-					System.out
-							.println("Received a packet from another application. Packet is discarted");
+					System.out.println("Received a packet from another application. Packet is discarted");
 				}
 			}
-		} catch (SocketException | FileNotFoundException
-				| InvalidArgumentException | MessageSizeException e) {
+		} catch (SocketException | FileNotFoundException | InvalidArgumentException | MessageSizeException e) {
 			e.printStackTrace();
 		}
 	}

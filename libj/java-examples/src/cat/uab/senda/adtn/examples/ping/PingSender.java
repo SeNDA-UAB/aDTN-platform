@@ -20,8 +20,7 @@ public class PingSender extends Thread implements Runnable {
 	int ping_flags, seq_num;
 	long time;
 
-	PingSender(int socket, SockAddrT source, SockAddrT destination,
-			ArgumentHandler ah) {
+	PingSender(int socket, SockAddrT source, SockAddrT destination, ArgumentHandler ah) {
 		this.s = socket;
 		this.source = source;
 		this.destination = destination;
@@ -40,8 +39,7 @@ public class PingSender extends Thread implements Runnable {
 			Comm.adtnSetSocketOption(s, Comm.OP_REPORT, source);
 			Comm.adtnSetSocketOption(s, Comm.OP_LIFETIME, ah.lifetime);
 
-			System.out.println("PING " + destination_id + " " + ah.size
-					+ " bytes of payload. " + ah.lifetime
+			System.out.println("PING " + destination_id + " " + ah.size + " bytes of payload. " + ah.lifetime
 					+ " seconds of lifetime.");
 
 			while (i != 0) {
@@ -64,10 +62,8 @@ public class PingSender extends Thread implements Runnable {
 
 				sleep(ah.interval * 1000);
 			}
-		} catch (SocketException | OpNotSuportedException | JNIException
-				| FileNotFoundException | InvalidArgumentException
-				| MessageSizeException | InterruptedException
-				 e1) {
+		} catch (SocketException | OpNotSuportedException | JNIException | FileNotFoundException
+				| InvalidArgumentException | MessageSizeException | InterruptedException e1) {
 			e1.printStackTrace();
 		}
 	}

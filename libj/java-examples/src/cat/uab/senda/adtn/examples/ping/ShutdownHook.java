@@ -5,19 +5,19 @@ import java.net.SocketException;
 
 import src.cat.uab.senda.adtn.comm.Comm;
 
-public class ShutdownHook extends Thread{
+public class ShutdownHook extends Thread {
 	int s;
-	
+
 	ShutdownHook(int s) {
 		this.s = s;
 	}
-    @Override
-    public void run() {
+
+	@Override
+	public void run() {
 		try {
 			Comm.adtnShutdown(s);
-		} catch (SocketException | FileNotFoundException
-				| IllegalAccessException e) {
+		} catch (SocketException | FileNotFoundException | IllegalAccessException e) {
 			e.printStackTrace();
 		}
-    }
+	}
 }
