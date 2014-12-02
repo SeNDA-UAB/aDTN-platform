@@ -32,39 +32,38 @@
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
         <h2>
-<a id="adtn-suite-introduction" class="anchor" href="#adtn-suite-introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>aDTN suite introduction</h2>
+<a id="adtn-suite-introduction" class="anchor" href="#adtn-suite-introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>aDTN platform introduction</h2>
 
-<p>The aDTN (active Delay and Disruption Tolerant Network) suite has the following applications:</p>
+<p>The aDTN (active Delay and Disruption Tolerant Network) platform has the following applications:</p>
 
 <ul>
 <li>
-<strong>adtnplatform</strong>: The kernel of the aDTN suite. Will manage all the bundles in lower layer levels.</li>
+<strong>adtn</strong>: The service of the aDTN platform. Will manage all the bundles in lower layer levels.</li>
 <li>
-<strong>adtnlib</strong>: The API (application programming interface) of the adtnplatform.</li>
+<strong>adtn-lib</strong>: The API (Application Programming Interface) of the adtn.</li>
 <li>
-<strong>adtnexamples</strong>: The provided examples using the adtnlib and the adtnplatform.</li>
+<strong>adtn-tools</strong>: The provided tools to test the adtn using the adtn-lib.</li>
 </ul>
 
-<p>On the one hand, if you want to your computer acts simply as a "router" of the network, i.e: forward, discard and manage incoming bundles you will need to install the adtnplatform. 
-On the other hand, if you want to develop or use applications using the adtnplatform, you will need to install the adtnplatform, the adtnlib and, if you want to use the provided examples, the adtnexamples.</p>
+<p>On the one hand, if you simply want to be a part of the network acting as a router, i.e: forwarding, discarding and managing incoming bundles, etc. You only need the adtn service. On the other hand, if you want to develop your own applications or existing ones using the adtn service, you should need to install the adtn service as well as the adtn-lib. In case you want to use the provided tools, you should install the adtn-tools package too.</p>
 
-<p>Note that due to the structure of the applications, the adtnlib depends on adtnplatform and adtnexamples depends on adtnlib as well as adtnplatform.</p>
+<p>Is important to note that due to the structure of the packages the adtn-lib depends on adtn while the adtn-tools depends on adtn-lib as well as the adtn service.</p>
 
 <h2>
-<a id="adtn-suite-documentation" class="anchor" href="#adtn-suite-documentation" aria-hidden="true"><span class="octicon octicon-link"></span></a>aDTN suite documentation</h2>
+<a id="adtn-suite-documentation" class="anchor" href="#adtn-suite-documentation" aria-hidden="true"><span class="octicon octicon-link"></span></a>aDTN API documentation</h2>
 
-<p>In order to develop applications over the platform, a <code>C</code> and a <code>Java</code> library are provided.
+<p>In order to develop applications over the platform, a <code>C</code> and a <code>Java</code> API are provided.
 
 <h3>
-<a id="add-adtn-java_doc" class="anchor" href="#add-adtn-java_doc" aria-hidden="true"><span class="octicon octicon-link"></span></a>Java library documentation</h3>
+<a id="add-adtn-java_doc" class="anchor" href="#add-adtn-java_doc" aria-hidden="true"><span class="octicon octicon-link"></span></a>Java API documentation</h3>
 
 <a href="/aDTN-platform/java_doc/index.html">Javadoc.</a>
 
 
 <h2>
-<a id="adtn-suite-installation" class="anchor" href="#adtn-suite-installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>aDTN suite installation</h2>
+<a id="adtn-suite-installation" class="anchor" href="#adtn-suite-installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>aDTN platform installation</h2>
 
-<p>All the information to install the suite is in the readme of the project, or in the github page. </p>
+<p>All the information to install the platform is in the readme of the project, or in the github page. </p>
 
       </section>
     </div>
