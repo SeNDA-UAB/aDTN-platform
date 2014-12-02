@@ -15,7 +15,7 @@
 * 
 */
 
-package cat.uab.senda.adtn.comm;
+package src.cat.uab.senda.adtn.comm;
 
 /**
 * This class represents a socket address over the aDTN.
@@ -53,4 +53,17 @@ public class SockAddrT {
 	public String toString(){
 		return id + ":" + port;
 	}
+	/**
+	 * @return the port
+	 */
+	public int getPort() {
+		return port;
+	}
+	/**
+	 * @return the id
+	 */
+	public String getId() {
+		return id;
+	}
+	
 }

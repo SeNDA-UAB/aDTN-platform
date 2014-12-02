@@ -5,7 +5,7 @@
 	</description>
 	
 	<!-- set global properties for this build -->
-	<property name="src" location="java/src"/>
+	<property name="src" location="java"/>
 	<property name="examples" location="java-examples"/>
 	<property name="bin" location="bin"/>
 	<property name="dist"  location="dist"/>
@@ -26,11 +26,11 @@
 	
 	<target name="compile" depends="init">
 		<javac srcdir="${src}" destdir="${bin}"/>
-		<javah destdir="${bin}" force="yes" class="cat.uab.senda.adtn.comm.Comm" classpath="${bin}"/>
-		<copy file="${bin}/cat_uab_senda_adtn_comm_Comm.h" todir="c/"/>
-		<delete file="${bin}/cat_uab_senda_adtn_comm_Comm.h"/>
+		<javah destdir="${bin}" force="yes" class="src.cat.uab.senda.adtn.comm.Comm" classpath="${bin}"/>
+		<copy file="${bin}/src_cat_uab_senda_adtn_comm_Comm.h" todir="c/"/>
+		<delete file="${bin}/src_cat_uab_senda_adtn_comm_Comm.h"/>
 		<exec executable="gcc" dir="c">
-			<arg line=" -shared -fPIC cat_uab_senda_adtn_comm_Comm.c -o ../bin/libNativeAdtnApi.so ${gcc.includes}"/>
+			<arg line=" -shared -fPIC src_cat_uab_senda_adtn_comm_Comm.c -o ../bin/libNativeAdtnApi.so ${gcc.includes}"/>
 		</exec>
 		<echo>Copying the library into /usr/lib/</echo>
 		<echo>Asking permision to do it.</echo>
@@ -44,7 +44,7 @@
 	</target>
 	
 	<target name="javadoc" description="Generates javadoc for Communication classes">
-		<javadoc sourcepath="${src}" packagenames="cat.uab.senda.adtn.comm" destdir="${doc}" access="public" author="
+		<javadoc sourcepath="${src}" packagenames="src.cat.uab.senda.adtn.comm" destdir="${doc}" access="public" author="
 			true" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="
 			false" source="1.7" splitindex="true" use="true" version="true">
 				<link href="http://docs.oracle.com/javase/7/docs/api/"/>
