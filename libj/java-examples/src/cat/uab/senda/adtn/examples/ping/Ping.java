@@ -22,11 +22,11 @@ public class Ping {
 	public static byte PONG = 1;
 	public static final int PORT = 1;
 
-	public static HashMap<Integer, Long> map = new HashMap<Integer, Long>();
-	public ArgumentHandler ah;
+	private  static HashMap<Integer, Long> map = new HashMap<Integer, Long>();
+	private  ArgumentHandler ah;
 
 	public ArgumentHandler GetParameters(String[] args) {
-		ArgumentHandler ah = new ArgumentHandler();
+		ah = new ArgumentHandler();
 		JCommander jcom = new JCommander(ah);
 		jcom.setProgramName("Ping");
 		try {
@@ -62,28 +62,25 @@ public class Ping {
 
 		// Extract the parameters and store all the options
 		ArgumentHandler ah = new Ping().GetParameters(args);
-		String destination_id = ah.destination_id.get(0);
 
 		// Create a new aDTN socket that will be used to send and receive Pings
 		try {
 			s = Comm.adtnSocket();
 
-			// Create the SockkAddr objects with the source and destination
-			// information
+			// Create the SockkAddr related to the source
 			source = new SockAddrT(platform_id, Ping.PORT);
-			destination = new SockAddrT(destination_id, Ping.PORT);
 	
 			Comm.adtnBind(s, source);
 			
 			Runtime.getRuntime().addShutdownHook(new ShutdownHook(s));
 
 			// Create a thread for the receiver and starts it
-			PingReceiver receiver = new PingReceiver(s, source,
-					destination, ah);
+			PingReceiver receiver = new PingReceiver(s, source, ah);
 			receiver.start();
 	
-			// If not receiver mode, create also a sender and starts it
+			// If mode is set as sender, create also a sender and starts it
 			if (ah.mode.equals("sender")) {
+				destination = new SockAddrT(ah.destination_id.get(0), Ping.PORT);
 				PingSender sender = new PingSender(s, source, destination,
 						ah);
 				sender.start();	

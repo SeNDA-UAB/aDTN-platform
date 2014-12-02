@@ -12,11 +12,11 @@ public class SockAddrT {
 	/**
 	 * Port of the application.
 	 */
-	int port;
+	private int port;
 	/**
 	 * Identifier of the platform.
 	 */
-	String id;
+	private String id;
 	/**
 	 * Create a new socket address.
 	 *
@@ -36,4 +36,17 @@ public class SockAddrT {
 	public String toString(){
 		return id + ":" + port;
 	}
+	/**
+	 * @return the port
+	 */
+	public int getPort() {
+		return port;
+	}
+	/**
+	 * @return the id
+	 */
+	public String getId() {
+		return id;
+	}
+	
 }

@@ -1,7 +1,6 @@
 package src.cat.uab.senda.adtn.examples.basic;
 
 import java.io.IOException;
-import java.net.SocketException;
 import java.text.ParseException;
 import java.util.Scanner;
 

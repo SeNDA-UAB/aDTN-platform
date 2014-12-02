@@ -19,10 +19,9 @@ public class PingReceiver extends Thread implements Runnable {
 	int seq_num;
 	long time, localTime;
 
-	PingReceiver(int socket, SockAddrT source, SockAddrT destination, ArgumentHandler ah) {
+	PingReceiver(int socket, SockAddrT source, ArgumentHandler ah) {
 		this.s = socket;
 		this.source = source;
-		this.destination = destination;
 		this.ah = ah;
 	}
 
@@ -33,7 +32,6 @@ public class PingReceiver extends Thread implements Runnable {
 														// will be used to get
 														// the destination from
 														// adtnRecvFrom method
-		String destination_id = ah.destination_id.get(0);
 		try {
 			while (i != 0) {
 				byte[] data = new byte[ah.size];
@@ -47,6 +45,7 @@ public class PingReceiver extends Thread implements Runnable {
 					seq_num = buff.getInt();
 					time = buff.getLong();
 
+					
 					if (option == 0) { // Ping received
 						// Build a new packet to response as Pong
 						buff.clear();
@@ -63,7 +62,7 @@ public class PingReceiver extends Thread implements Runnable {
 							Ping.getMap().remove(seq_num);
 							time = localTime - time;
 							
-							System.out.println(destination_id
+							System.out.println(destination.getId()
 									+ " received ping at "
 									+ new Date(localTime).toString() + " seq="
 									+ seq_num + " time=" + Long.toString(time)
