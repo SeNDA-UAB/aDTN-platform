@@ -15,11 +15,11 @@
 * 
 */
 
-package src.cat.uab.senda.adtn.examples.ping;
+package cat.uab.senda.adtn.examples.ping;
 
-import src.cat.uab.senda.adtn.comm.AddressInUseException;
-import src.cat.uab.senda.adtn.comm.Comm;
-import src.cat.uab.senda.adtn.comm.SockAddrT;
+import cat.uab.senda.adtn.comm.AddressInUseException;
+import cat.uab.senda.adtn.comm.Comm;
+import cat.uab.senda.adtn.comm.SockAddrT;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;

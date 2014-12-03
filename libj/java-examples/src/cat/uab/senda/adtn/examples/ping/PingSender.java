@@ -15,19 +15,19 @@
 * 
 */
 
-package src.cat.uab.senda.adtn.examples.ping;
+package cat.uab.senda.adtn.examples.ping;
 
 import java.io.FileNotFoundException;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.Date;
 
-import src.cat.uab.senda.adtn.comm.Comm;
-import src.cat.uab.senda.adtn.comm.InvalidArgumentException;
-import src.cat.uab.senda.adtn.comm.JNIException;
-import src.cat.uab.senda.adtn.comm.MessageSizeException;
-import src.cat.uab.senda.adtn.comm.OpNotSuportedException;
-import src.cat.uab.senda.adtn.comm.SockAddrT;
+import cat.uab.senda.adtn.comm.Comm;
+import cat.uab.senda.adtn.comm.InvalidArgumentException;
+import cat.uab.senda.adtn.comm.JNIException;
+import cat.uab.senda.adtn.comm.MessageSizeException;
+import cat.uab.senda.adtn.comm.OpNotSuportedException;
+import cat.uab.senda.adtn.comm.SockAddrT;
 
 public class PingSender extends Thread implements Runnable {
 

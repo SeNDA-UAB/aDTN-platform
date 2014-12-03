@@ -1,4 +1,4 @@
-package src.cat.uab.senda.adtn.examples.ping;
+package cat.uab.senda.adtn.examples.ping;
 
 import java.util.ArrayList;
 import java.util.List;

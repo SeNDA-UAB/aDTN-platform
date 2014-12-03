@@ -1,9 +1,9 @@
-package src.cat.uab.senda.adtn.examples.ping;
+package cat.uab.senda.adtn.examples.ping;
 
 import java.io.FileNotFoundException;
 import java.net.SocketException;
 
-import src.cat.uab.senda.adtn.comm.Comm;
+import cat.uab.senda.adtn.comm.Comm;
 
 public class ShutdownHook extends Thread {
 	int s;
