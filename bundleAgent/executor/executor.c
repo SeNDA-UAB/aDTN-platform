@@ -1,98 +1,41 @@
 /*
 * Copyright (c) 2014 SeNDA
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
-* 
+*
 *     http://www.apache.org/licenses/LICENSE-2.0
-* 
+*
 * Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-* 
+*
 */
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
 #include <signal.h>
-#include <limits.h> // NAME_MAX (max filename lenght)
-#include <stdint.h> //
-#include <stddef.h>
-#include <netinet/in.h>
-#include <sched.h>
-#include <dlfcn.h>
-
-#include "common/include/init.h"
-#include "common/include/common.h"
-
-#include "modules/include/hash.h"
-#include "modules/include/exec.h"
+#include <pthread.h>
+#include <stdint.h> 
+#include <unistd.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/un.h>
 
 #include "include/world.h"
-#include "include/executor.h"
-#include "worker.c"
+#include "include/worker.h"
 
-/* Cleaning */
-int clean_bundle_dl(bundle_code_dl_s *b_dl)
+#include "common/include/log.h"
+#include "common/include/init.h"
+
+#define DEF_SOCKNAME "executor"
+
+int initialize_socket(char *sockname)
 {
-	if (b_dl->info.dest != NULL)
-		free(b_dl->info.dest);
-	if (b_dl->dls.routing != NULL) {
-		b_dl->dls.routing->refs--;
-		if (b_dl->dls.routing->refs == 0) { // Also unload and remove loaded code
-			routing_code_dl_remove(b_dl->dls.routing);
-			free((char *)b_dl->dls.routing->code);
-			dlclose(b_dl->dls.routing->dl->handler);
-			free(b_dl->dls.routing->dl);
-			free(b_dl->dls.routing);
-		}
-	}
-	if (b_dl->dls.life != NULL) {
-		b_dl->dls.life->refs--;
-		if (b_dl->dls.life->refs == 0) {
-			life_code_dl_remove(b_dl->dls.life);
-			free((char *)b_dl->dls.life->code);
-			dlclose(b_dl->dls.life->dl->handler);
-			free(b_dl->dls.life->dl);
-			free(b_dl->dls.life);
-		}
-	}
-	if (b_dl->dls.prio != NULL) {
-		b_dl->dls.prio->refs--;
-		if (b_dl->dls.prio->refs == 0) {
-			prio_code_dl_remove(b_dl->dls.prio);
-			free((char *)b_dl->dls.prio->code);
-			dlclose(b_dl->dls.prio->dl->handler);
-			free(b_dl->dls.prio->dl);
-			free(b_dl->dls.prio);
-		}
-	}
-	free((char *)b_dl->bundle_id);
-
-	return 0;
-}
-
-int clean_all_bundle_dl(void)
-{
-	return del_map_bundle_dl_table(clean_bundle_dl);
-}
-
-/**/
-ssize_t initialize_socket(char *sockname)
-{
-	ssize_t ret = 0;
+	int ret = 0;
 	int s = 0;
 	struct sockaddr_un addr = {0};
 	struct stat stat_file = {0};
@@ -143,7 +86,7 @@ int main(int argc, char *const argv[])
 	pthread_t threads_pool[POOL_SIZE] = {0};
 
 	/*
-	 Block singals so initialization is not interrumpted
+	 Block signals so initialization is not interrumpted
 	 and to handle all signals from main process
 	 (new threads are created with the signals in blocked_sigs masked)
 	*/
@@ -190,7 +133,7 @@ int main(int argc, char *const argv[])
 	}
 	//sockname format <DEF_SOCKNAME>-<platform_hash>.sock platform_hash max. lenght 8 chars.
 	sockname_l = strlen(world.shm->data_path) + strlen(DEF_SOCKNAME) + 7;
-	sockname = malloc(sockname_l);
+	sockname = (char *) malloc(sockname_l);
 	snprintf(sockname, sockname_l, "%s/%s.sock", world.shm->data_path, DEF_SOCKNAME);
 
 	main_socket = initialize_socket(sockname);

@@ -8,7 +8,7 @@ find_package(Threads)
 add_subdirectory(modules/exec_c_helpers)
 
 include_directories(${PLATFORM_SOURCE_DIR} ${EXECUTOR_SOURCE_DIR} ${CMAKE_SOURCE_DIR})
-add_executable(executor modules/hash.c modules/exec.c modules/codes.c executor.c)
+add_executable(executor modules/hash.c modules/exec.c modules/codes.c executor.c worker.c)
 
 target_link_libraries(executor ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(executor dl)

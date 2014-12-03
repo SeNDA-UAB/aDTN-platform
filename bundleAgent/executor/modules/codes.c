@@ -21,7 +21,6 @@
 #include <limits.h>
 
 #include "include/world.h"
-#include "include/executor.h"
 #include "modules/include/hash.h"
 
 #include "common/include/log.h"

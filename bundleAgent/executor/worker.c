@@ -15,6 +15,29 @@
 * 
 */
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <pthread.h>
+#include <stdint.h>
+#include <signal.h>
+#include <unistd.h>
+#include <dlfcn.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
+#include <sys/un.h>
+
+#include "include/world.h"
+
+#include "modules/exec_c_helpers/include/adtnrhelper.h"
+#include "modules/include/exec.h"
+
+#include "common/include/executor.h"
+#include "common/include/init.h"
+#include "common/include/log.h"
+
+#include "include/worker.h"
+
 #define SET_RESPAWN_NOTIFICATION(child_id)                                      \
 	do {                                                                        \
 		pthread_mutex_lock(params->respawn_child_mutex[child_id]);              \
@@ -28,7 +51,7 @@
 		params->respawn_child[child_id] = 0;                                    \
 		pthread_mutex_unlock(params->respawn_child_mutex[child_id]);            \
 	} while(0);                                                                 \
-	 
+	
 /* Cleanup handlers */
 void kill_child(int *pid)
 {
@@ -49,6 +72,50 @@ void clean()
 	exit_adtn_process();
 
 	_exit(0);
+}
+
+int clean_bundle_dl(bundle_code_dl_s *b_dl)
+{
+	if (b_dl->info.dest != NULL)
+		free(b_dl->info.dest);
+	if (b_dl->dls.routing != NULL) {
+		b_dl->dls.routing->refs--;
+		if (b_dl->dls.routing->refs == 0) { // Also unload and remove loaded code
+			routing_code_dl_remove(b_dl->dls.routing);
+			free((char *)b_dl->dls.routing->code);
+			dlclose(b_dl->dls.routing->dl->handler);
+			free(b_dl->dls.routing->dl);
+			free(b_dl->dls.routing);
+		}
+	}
+	if (b_dl->dls.life != NULL) {
+		b_dl->dls.life->refs--;
+		if (b_dl->dls.life->refs == 0) {
+			life_code_dl_remove(b_dl->dls.life);
+			free((char *)b_dl->dls.life->code);
+			dlclose(b_dl->dls.life->dl->handler);
+			free(b_dl->dls.life->dl);
+			free(b_dl->dls.life);
+		}
+	}
+	if (b_dl->dls.prio != NULL) {
+		b_dl->dls.prio->refs--;
+		if (b_dl->dls.prio->refs == 0) {
+			prio_code_dl_remove(b_dl->dls.prio);
+			free((char *)b_dl->dls.prio->code);
+			dlclose(b_dl->dls.prio->dl->handler);
+			free(b_dl->dls.prio->dl);
+			free(b_dl->dls.prio);
+		}
+	}
+	free((char *)b_dl->bundle_id);
+
+	return 0;
+}
+
+int clean_all_bundle_dl(void)
+{
+	return del_map_bundle_dl_table(clean_bundle_dl);
 }
 /**/
 
