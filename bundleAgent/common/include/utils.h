@@ -22,7 +22,16 @@
 #include <sys/types.h>
 #include <stdio.h>
 
+#include "constants.h"
+
+typedef struct {
+	char origin[MAX_PLATFORM_ID_LEN];
+	long sec;
+	long usec;
+} b_name_s;
+
 char *generate_bundle_name(const char *origin);
+int parse_bundle_name(const char *bundle_path, /*out*/b_name_s *b_name);
 int write_to(const char *path, const char *name, const uint8_t *content, const ssize_t content_l);
 int get_file_size(FILE *fd);
 double diff_time(struct timespec *start, struct timespec *end);

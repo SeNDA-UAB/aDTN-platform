@@ -55,48 +55,10 @@ typedef struct {
 	int platform_port;
 } global_vars;
 
-typedef struct {
-	char origin[MAX_PLATFORM_ID_LEN];
-	long sec;
-	long usec;
-} b_name_s;
-
 global_vars g_vars;
 
 
 /******* UTILS ********/
-static int parse_bundle_name(const char *bundle_path, /*out*/b_name_s *b_name)
-{
-	int ret = 1, len = 0;
-	const char *p = NULL, *e = NULL, *bundle_name = NULL;
-
-	p = strrchr(bundle_path, '/');
-	if (p) // It is a path
-		bundle_name = p + 1;
-	else
-		bundle_name = bundle_path;
-
-	// Parse origin
-	e = strchr(bundle_name, '-');
-	len = e - p - 1 ;
-	if (len >= sizeof(b_name->origin)){
-		LOG_MSG(LOG__ERROR, false, "Error parsing platform name of %s, it istoo long.", bundle_path);
-		goto end;
-	}
-	memcpy(b_name->origin, bundle_name, len);
-
-	// Parse sec and usec
-	p = bundle_name + len + 1;
-	if (sscanf(p, "%ld-%ld",&b_name->sec, &b_name->usec) != 2) {
-		LOG_MSG(LOG__ERROR, false, "Error parsing timestamp of bundle %s", bundle_path);
-		goto end;
-	}
-
-	ret = 0;
-end:
-	return ret;
-}
-
 static int mkdir_in(const char *in_path, const char *path, mode_t mode, /*out*/ char **full_path_out)
 {
 	int ret = 0, full_path_l = 0, do_free = 1;
