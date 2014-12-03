@@ -52,6 +52,7 @@ struct _child_exec_petition {
 	code_type_e code_type;
 
 	/* code_type == ROUTING */
+	char prev_hop[MAX_ID_LEN];
 	char dest[MAX_ID_LEN];
 	routing_dl_s *routing_dl;
 	/**/

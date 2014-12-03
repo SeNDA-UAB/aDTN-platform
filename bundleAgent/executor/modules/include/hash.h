@@ -29,6 +29,7 @@ typedef struct _routing_dl_s {
 	int (*r)(void);
 	nbs_iter_info *nbs_info;
 	routing_exec_result **r_result;
+	char **prev_hop;
 	char **dest;
 } routing_dl_s;
 
@@ -75,6 +76,7 @@ typedef struct _dl_s {
 } dl_s;
 
 typedef struct _bundle_info_s {
+	char *prev_hop;
 	char *dest;
 } bundle_info_s;
 

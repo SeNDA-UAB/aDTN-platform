@@ -25,6 +25,7 @@
 
 #include "common/include/log.h"
 #include "common/include/bundle.h"
+#include "common/include/utils.h"
 #include "common/include/minIni.h"
 
 static int open_raw_bundle(const char *path, const char *bundle_id, /*out*/uint8_t **bundle_raw)
@@ -119,19 +120,6 @@ static int find_code(mmeb_body_s *mmeb, code_type_e type, /*out*/char **code, /*
 }
 
 /* From receiver */
-static int get_file_size(FILE *fd)
-{
-	int total_bytes;
-
-	if (fd == NULL)
-		return 0;
-	fseek(fd, 0L, SEEK_END);
-	total_bytes = (int)ftell(fd);
-	rewind(fd);
-
-	return total_bytes;
-}
-
 static int load_code_from_file(const char *path, char **code)
 {
 	FILE *fd = NULL;
@@ -219,9 +207,15 @@ int get_code_and_info(code_type_e code_type, const char *bundle_id, /*out*/char 
 	int ret = 1, use_default = 1;
 	uint8_t *bundle_raw = NULL;
 	mmeb_body_s *mmeb = NULL;
+	b_name_s b_name;
 
 	if (open_raw_bundle(world.bundles_path, bundle_id, &bundle_raw) != 0) {
 		LOG_MSG(LOG__ERROR, false, "Can't load bundle %s", bundle_id);
+		goto end;
+	}
+
+	if (parse_bundle_name(bundle_id, &b_name) != 0){
+		LOG_MSG(LOG__ERROR, false, "Error getting bundle origin from its name.");
 		goto end;
 	}
 

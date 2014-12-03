@@ -165,7 +165,7 @@ void executor_process(int sv)
 		case ROUTING_CODE:
 			LOG_MSG(LOG__INFO, false, "Child %u: Executing bundle %s with code_dl loaded in address %p", pid, p.bundle_id, p.routing_dl);
 
-			if (execute_routing_code(p.routing_dl, p.dest, &r_result) != 0) {
+			if (execute_routing_code(p.routing_dl, p.prev_hop, p.dest, &r_result) != 0) {
 				LOG_MSG(LOG__ERROR, false, "Error executing code (type %d) from bundle %s.", p.code_type, p.bundle_id);
 				goto end;
 			}
@@ -486,6 +486,7 @@ void worker_thread(worker_params *params)
 
 					switch (p.header.code_type) {
 					case ROUTING_CODE:
+						strncpy(exec_p.prev_hop, bundle_code_dl->info.prev_hop, sizeof(exec_p.prev_hop));
 						strncpy(exec_p.dest, bundle_code_dl->info.dest, sizeof(exec_p.dest));
 						exec_p.routing_dl = bundle_code_dl->dls.routing->dl;
 						code_dl = bundle_code_dl->dls.routing->dl;

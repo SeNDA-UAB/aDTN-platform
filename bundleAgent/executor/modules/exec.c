@@ -31,8 +31,6 @@
 #include "modules/include/hash.h"
 #include "modules/include/codes.h"
 
-//#define CODES_PREFIX "/tmp/"
-
 #define HELPERS_PATH "/adtn/exec_helpers"
 #define HELPERS_PREFIX LIB_PREFIX""HELPERS_PATH
 #define HELPERS_INCLUDE_PATH HELPERS_PREFIX"/include"
@@ -201,6 +199,13 @@ static routing_dl_s *load_routing_dl(const char *so_name)
 		goto end;
 	}
 
+	*(void **)&routing_dl->prev_hop = dlsym(routing_dl->handler, "prev_hop");
+	if (routing_dl->prev_hop == NULL) {
+		LOG_MSG(LOG__ERROR, false, "%s: Error loading prev_hop symbol", dlerror());
+		ret = 1;
+		goto end;
+	}
+
 	*(void **)&routing_dl->dest = dlsym(routing_dl->handler, "dest");
 	if (routing_dl->dest == NULL) {
 		LOG_MSG(LOG__ERROR, false, "%s: Error loading dest symbol", dlerror());
@@ -294,7 +299,7 @@ end:
 	return ret;
 }
 
-int execute_routing_code(routing_dl_s *routing_dl, char *dest, routing_exec_result *result)
+int execute_routing_code(routing_dl_s *routing_dl, char *prev_hop, char *dest, routing_exec_result *result)
 {
 	int ret = 0;
 
@@ -302,6 +307,7 @@ int execute_routing_code(routing_dl_s *routing_dl, char *dest, routing_exec_resu
 	routing_dl->nbs_info->position = 0;
 	routing_dl->nbs_info->nbs_list_l = get_nbs(&routing_dl->nbs_info->nbs_list);
 
+	*routing_dl->prev_hop = prev_hop;
 	*routing_dl->dest = dest;
 	*routing_dl->r_result = result;
 	// Execute code
