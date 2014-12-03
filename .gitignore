@@ -50,4 +50,8 @@ libj/.classpath
 libj/.project
 libj/c/*.h
 
-/bin/
+libj/java-examples/.classpath
+libj/java-examples/.gitignore
+libj/java-examples/.project
+libj/java-examples/lib/adtnlibj.jar
+libj/java-examples/bin/
