@@ -19,6 +19,7 @@
 #include "common/include/bundle.h"
 #include "common/include/shm.h"
 #include "common/include/config.h"
+#include "common/include/utils.h"
 #include "common/include/constants.h"
 #include "include/adtn.h"
 
@@ -658,19 +659,14 @@ end:
 	return ret;
 }
 
-static int delegate_bundle(const bundle_s *bundle, const char *file_prefix, bunsock_s *identifier)
+static int delegate_bundle(const char *bundle_name, const bundle_s *bundle, const char *file_prefix, bunsock_s *identifier)
 {
 	int ret = 1;
 	int len;
 	int bundle_raw_l;
 	uint8_t *bundle_raw = NULL;
 	char *full_path = NULL;
-	char bundle_name[BUNDLE_NAME_LENGTH] = {0};
-	struct timeval curr_t;
 	FILE *f = NULL;
-
-	gettimeofday(&curr_t, NULL);
-	snprintf(bundle_name, BUNDLE_NAME_LENGTH, "%ld-%ld-A.bundle", curr_t.tv_sec, curr_t.tv_usec);
 
 	len = strlen(file_prefix) + 1 + strlen(RECEIVER_DIR) + 1 + strlen(bundle_name) + 1;
 	full_path = calloc(len, sizeof(char));
@@ -705,7 +701,7 @@ int adtn_sendto(int fd, const void *buffer, size_t buffer_l, const sock_addr_t a
 {
 	int ret = -1;
 	int shm_fd = -1;
-	char *first_oc;
+	char *first_oc, *bundle_name;
 	char full_dest[ENDPOINT_LENGTH] = {0};
 	char full_src[ENDPOINT_LENGTH] = {0};
 	struct common *shm;
@@ -762,9 +758,13 @@ int adtn_sendto(int fd, const void *buffer, size_t buffer_l, const sock_addr_t a
 	if (bundle_add_codes(bundle, identifier) != 0) {
 		goto end;
 	}
-	if (delegate_bundle(bundle, shm->data_path, identifier) != 0) {
+
+	bundle_name = generate_bundle_name(shm->platform_id);
+	if (delegate_bundle(bundle_name, bundle, shm->data_path, identifier) != 0) {
 		goto end;
 	}
+	free(bundle_name);
+
 	ret = buffer_l;
 end:
 	if (shm_fd != -1)

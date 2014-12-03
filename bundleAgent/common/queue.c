@@ -109,7 +109,7 @@ inline void queue_manager_disconnect(int queue_conn, char *data_path, char *q_so
 	free(sockname);
 }
 
-int queue(char *bundle_id, int queue_conn)
+int queue(const char *bundle_id, int queue_conn)
 {
 	int len;
 	int ret = 1;

@@ -34,7 +34,7 @@
 #define DEBUG 0
 #endif
 
-char *generate_bundle_name()
+char *generate_bundle_name(const char *origin)
 {
 	struct timeval t_now = {0};
 	char *name = NULL;
@@ -42,7 +42,7 @@ char *generate_bundle_name()
 	if (gettimeofday(&t_now, NULL) < 0)
 		goto end;
 
-	asprintf(&name, "%ld-%ld.bundle", t_now.tv_sec, t_now.tv_usec);
+	asprintf(&name, "%s-%ld-%ld.bundle", origin, t_now.tv_sec, t_now.tv_usec);
 end:
 
 	return name;
