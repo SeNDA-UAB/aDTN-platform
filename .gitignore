@@ -48,5 +48,6 @@ libj/dist/
 libj/bin
 libj/.classpath
 libj/.project
+libj/c/*.h
 
 /bin/

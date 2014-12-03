@@ -15,7 +15,7 @@
 * 
 */
 
-package src.cat.uab.senda.adtn.comm;
+package cat.uab.senda.adtn.comm;
 
 /**
  * Exception to control invalid argument errors from calls of {@link Comm}.

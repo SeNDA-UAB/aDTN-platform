@@ -1,4 +1,4 @@
-<project name="adtnlibj-0.2-examples" default="compile" basedir=".">
+<project name="adtnlibj-examples" default="compile" basedir=".">
 	<description>
         Compiles and runs the example
 	</description>

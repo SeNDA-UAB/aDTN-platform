@@ -1,11 +1,11 @@
-<project name="adtnlibj-0.2" default="dist" basedir=".">
+<project name="adtnlibj" default="dist" basedir=".">
 	<description>
         Compiles adtn library for java, generates a jar with the distribution for the current architecture,
 		and generates a zip with examples and the necessary content for a java developer to develop an app on this architecture.
 	</description>
 	
 	<!-- set global properties for this build -->
-	<property name="src" location="java"/>
+	<property name="src" location="java/src"/>
 	<property name="examples" location="java-examples"/>
 	<property name="bin" location="bin"/>
 	<property name="dist"  location="dist"/>
@@ -24,28 +24,30 @@
 		<mkdir dir="${doc}"/>
 	</target>
 	
-
 	<target name="compile" depends="init">
 		<javac srcdir="${src}" destdir="${bin}"/>
-		<javah destdir="${bin}" force="yes" class="src.cat.uab.senda.adtn.comm.Comm" classpath="${bin}"/>
-		<copy file="${bin}/src_cat_uab_senda_adtn_comm_Comm.h" todir="c/"/>
-		<delete file="${bin}/src_cat_uab_senda_adtn_comm_Comm.h"/>
+		<javah destdir="${bin}" force="yes" class="cat.uab.senda.adtn.comm.Comm" classpath="${bin}"/>
+		<copy file="${bin}/cat_uab_senda_adtn_comm_Comm.h" todir="c/"/>
+		<delete file="${bin}/cat_uab_senda_adtn_comm_Comm.h"/>
 		<exec executable="gcc" dir="c">
-			<arg line=" -shared -fPIC src_cat_uab_senda_adtn_comm_Comm.c -o ${dist}/libNativeAdtnApi.so ${gcc.includes}"/>
+			<arg line=" -shared -fPIC cat_uab_senda_adtn_comm_Comm.c -o ${dist}/libNativeAdtnApi.so ${gcc.includes}"/>
 		</exec>
-		<echo>Copying the library into /usr/lib/</echo>
-		<echo>Asking permision to do it.</echo>
-		<exec executable="sudo">
-			<arg line="cp ${dist}/libNativeAdtnApi.so /usr/lib/"/>
-		</exec>
-		<exec executable="sudo">
-			<arg line="-k"/>
-		</exec>
-		<echo>Removing cached credentials for sudo.</echo>
 	</target>
 	
+	<target name="install" depends="compile">
+			<echo>Copying the library into /usr/lib/</echo>
+			<echo>Asking permision to do it.</echo>
+			<exec executable="sudo">
+				<arg line="cp ${dist}/libNativeAdtnApi.so /usr/lib/"/>
+			</exec>
+			<exec executable="sudo">
+				<arg line="-k"/>
+			</exec>
+			<echo>Removing cached credentials for sudo.</echo>
+		</target>
+	
 	<target name="javadoc" description="Generates javadoc for Communication classes">
-		<javadoc sourcepath="${src}" packagenames="src.cat.uab.senda.adtn.comm" destdir="${doc}" access="public" author="
+		<javadoc sourcepath="${src}" packagenames="cat.uab.senda.adtn.comm" destdir="${doc}" access="public" author="
 			true" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="
 			false" source="1.7" splitindex="true" use="true" version="true">
 				<link href="http://docs.oracle.com/javase/7/docs/api/"/>
@@ -59,7 +61,8 @@
 	<target name="fulldist" depends="javadoc,dist">
 		<mkdir dir="${dist}/tmp"/>
 		<mkdir dir="${dist}/tmp/lib"/>
-		<copydir src="${examples}" dest="${dist}/tmp"/>
+		<mkdir dir="${dist}/tmp/src"/>
+		<copydir src="${examples}/src" dest="${dist}/tmp/src"/>
 		<copy file="${examples}/build.xml" todir="${dist}/tmp/"/>
 		<copy file="${dist}/${ant.project.name}.jar" todir="${dist}/tmp/lib"/>
 		<copy file="${examples}/README" todir="${dist}/tmp/"/>

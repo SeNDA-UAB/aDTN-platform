@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.text.ParseException;
 import java.util.HashMap;
-import java.util.Random;
 import java.util.Scanner;
 
 public class Ping {
