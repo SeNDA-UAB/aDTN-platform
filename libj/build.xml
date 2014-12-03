@@ -24,18 +24,19 @@
 		<mkdir dir="${doc}"/>
 	</target>
 	
+
 	<target name="compile" depends="init">
 		<javac srcdir="${src}" destdir="${bin}"/>
 		<javah destdir="${bin}" force="yes" class="src.cat.uab.senda.adtn.comm.Comm" classpath="${bin}"/>
 		<copy file="${bin}/src_cat_uab_senda_adtn_comm_Comm.h" todir="c/"/>
 		<delete file="${bin}/src_cat_uab_senda_adtn_comm_Comm.h"/>
 		<exec executable="gcc" dir="c">
-			<arg line=" -shared -fPIC src_cat_uab_senda_adtn_comm_Comm.c -o ../bin/libNativeAdtnApi.so ${gcc.includes}"/>
+			<arg line=" -shared -fPIC src_cat_uab_senda_adtn_comm_Comm.c -o ${dist}/libNativeAdtnApi.so ${gcc.includes}"/>
 		</exec>
 		<echo>Copying the library into /usr/lib/</echo>
 		<echo>Asking permision to do it.</echo>
 		<exec executable="sudo">
-			<arg line="cp ${bin}/libNativeAdtnApi.so /usr/lib/"/>
+			<arg line="cp ${dist}/libNativeAdtnApi.so /usr/lib/"/>
 		</exec>
 		<exec executable="sudo">
 			<arg line="-k"/>
@@ -50,13 +51,17 @@
 				<link href="http://docs.oracle.com/javase/7/docs/api/"/>
 		</javadoc>
 	</target>
+
+	<target name="dist" depends="compile">
+		<jar jarfile="${dist}/${ant.project.name}.jar" basedir="${bin}"/>
+	</target>
 	
-	<target name="dist" depends="compile,javadoc">
+	<target name="fulldist" depends="javadoc,dist">
 		<mkdir dir="${dist}/tmp"/>
 		<mkdir dir="${dist}/tmp/lib"/>
-		<jar jarfile="${dist}/tmp/lib/${ant.project.name}.jar" basedir="${bin}"/>
 		<copydir src="${examples}" dest="${dist}/tmp"/>
 		<copy file="${examples}/build.xml" todir="${dist}/tmp/"/>
+		<copy file="${dist}/${ant.project.name}.jar" todir="${dist}/tmp/lib"/>
 		<copy file="${examples}/README" todir="${dist}/tmp/"/>
 		<zip destfile="${dist}/tmp/lib/${ant.project.name}-doc.zip">
 			<fileset dir="${doc}" />
