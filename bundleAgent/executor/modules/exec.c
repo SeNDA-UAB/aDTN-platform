@@ -39,10 +39,20 @@
 #define COMPILE_ROUTING_CMD "gcc -w -fPIC -I %s -shared %s %s  -Wl,--whole-archive %s -Wl,--no-whole-archive -o %s.so"
 #define R_HELPER_PATH HELPERS_PREFIX"/libadtnrhelper.a"
 #define RIT_HELPER_PATH LIB_PREFIX"/libadtnrithelper.so"
-#define R_HEADER "#include \"adtnrhelper.h\"\n#include \"adtnrithelper.h\"\n"
+#define R_HEADER "#include \"adtnrhelper.h\"\n#include \"adtnrithelper.h\"\nint r(void){\n"
+#define R_FOOTER "}\n"
 
 // No helpers so
 #define COMPILE_NO_HELPERS_CMD "gcc -w -fPIC -shared  -Wl,--whole-archive %s -Wl,--no-whole-archive -o %s.so"
+
+// Lifetime
+#define L_HEADER "int l(void){\n"
+#define L_FOOTER "}\n"
+
+// Prio
+#define P_HEADER "int p(void){\n"
+#define P_FOOTER "}\n"
+
 
 static char *get_code_path(const char *name, const code_type_e type)
 {
@@ -130,10 +140,10 @@ static int compile_routing_code(const char *code_name, const char *code)
 	char *cmd = NULL, *code_ready  = NULL, *code_path = NULL, *so_path = NULL;
 
 	// Prepare code
-	code_ready_l = strlen(R_HEADER) + strlen(code) + 2;
+	code_ready_l = strlen(R_HEADER) + strlen(code) + strlen(R_FOOTER) + 1;
 	code_ready = (char *)malloc(code_ready_l * sizeof(char));
 
-	snprintf(code_ready, code_ready_l, "%s%s", R_HEADER, code);
+	snprintf(code_ready, code_ready_l, "%s%s%s", R_HEADER, code, R_FOOTER);
 
 	code_path = get_code_path(code_name, ROUTING_CODE);
 	if (write_code_to_disk(code_ready, code_path) != 0) {
@@ -342,31 +352,46 @@ static char *get_no_helpers_routing_cmd(code_type_e code_type, const char *code_
 
 static int compile_no_helpers_code(code_type_e code_type, const char *code_name, const char *code)
 {
-	int ret = 0;
-	char *cmd = NULL, *code_path = NULL, *so_path = NULL;
+	int ret = 1, code_ready_l = 0;
+	char *cmd = NULL, *code_ready  = NULL, *code_path = NULL, *so_path = NULL;
 
-	code_path = get_code_path(code_name, code_type);
-	if (write_code_to_disk(code, code_path) != 0) {
-		ret = 1;
+	// Prepare code
+	switch(code_type){
+	case LIFE_CODE:
+		code_ready_l = strlen(L_HEADER) + strlen(code) + strlen(L_FOOTER) + 1;
+		code_ready = (char *)malloc(code_ready_l * sizeof(char));
+		snprintf(code_ready, code_ready_l, "%s%s%s", L_HEADER, code, L_FOOTER);
+		break;
+	case PRIO_CODE:
+		code_ready_l = strlen(P_HEADER) + strlen(code) + strlen(P_FOOTER) + 1;
+		code_ready = (char *)malloc(code_ready_l * sizeof(char));	
+		snprintf(code_ready, code_ready_l, "%s%s%s", P_HEADER, code, P_FOOTER);		
+		break;
+	case ROUTING_CODE:
+	default:
 		goto end;
 	}
 
+	code_path = get_code_path(code_name, code_type);
+	if (write_code_to_disk(code_ready, code_path) != 0)
+		goto end;
+	
 	so_path = get_so_path(code_name, code_type);
 	so_path[strlen(so_path) - 3] = '\0';                    // Remove .so extension
 
 	cmd = get_no_helpers_routing_cmd(code_type, code_path, so_path);
 
-	if (execute_compile_cmd(cmd) != 0) {
-		ret = 1;
+	if (execute_compile_cmd(cmd) != 0)
 		goto end;
-	}
 
 	remove_code_from_disk(code_path);
 
+	ret = 0;
 end:
 	if (ret == 1)
 		LOG_MSG(LOG__ERROR, false, "Error compiling %s", code_type_e_name[code_type]);
-
+	if (code_ready)
+		free(code_ready);
 	if (code_path)
 		free(code_path);
 	if (so_path)

@@ -78,6 +78,8 @@ int clean_bundle_dl(bundle_code_dl_s *b_dl)
 {
 	if (b_dl->info.dest != NULL)
 		free(b_dl->info.dest);
+	if (b_dl->info.prev_hop != NULL)
+		free(b_dl->info.prev_hop);
 	if (b_dl->dls.routing != NULL) {
 		b_dl->dls.routing->refs--;
 		if (b_dl->dls.routing->refs == 0) { // Also unload and remove loaded code
@@ -514,7 +516,7 @@ void worker_thread(worker_params *params)
 						bzero(&r, sizeof(r));
 						recv_l = recv(sv[1], &r, sizeof(r), 0);
 						if (recv_l <= 0 || recv_l != sizeof(r)) {
-							LOG_MSG(LOG__ERROR, true, "Thread %d: Error reading response from executor process.", params->thread_num);
+							LOG_MSG(LOG__ERROR, false, "Thread %d: Error reading response from executor process.", params->thread_num);
 							state = EXEC_ERROR;
 						} else {
 							LOG_MSG(LOG__INFO, false, "Thread %d: Result received from child", params->thread_num);
