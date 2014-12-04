@@ -56,12 +56,13 @@ int parse_bundle_name(const char *bundle_path, /*out*/b_name_s *b_name)
 
 	// Parse origin
 	e = strchr(bundle_name, '-');
-	len = e - p - 1 ;
-	if (len >= sizeof(b_name->origin)){
-		LOG_MSG(LOG__ERROR, false, "Error parsing platform name of %s, it istoo long.", bundle_path);
+	len = e - bundle_name;
+	if (len + 1 >= sizeof(b_name->origin)){
+		LOG_MSG(LOG__ERROR, false, "Error parsing platform name of %s, it is too long.", bundle_path);
 		goto end;
 	}
 	memcpy(b_name->origin, bundle_name, len);
+	b_name->origin[len] = '\0';
 
 	// Parse sec and usec
 	p = bundle_name + len + 1;
