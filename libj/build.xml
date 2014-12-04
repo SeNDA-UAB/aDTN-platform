@@ -10,6 +10,7 @@
 	<property name="bin" location="bin"/>
 	<property name="dist"  location="dist"/>
 	<property name="doc"  location="doc"/>
+	<property name="ver" value="X.x"/>
 	<property name="gcc.includes" value="-I $default_inc -I ${java.home}/../include -I ${java.home}/../include/linux -L $default_lib -ladtnAPI"/>
 
 	<target name="clean">
@@ -55,7 +56,7 @@
 	</target>
 
 	<target name="dist" depends="compile">
-		<jar jarfile="${dist}/${ant.project.name}.jar" basedir="${bin}"/>
+		<jar jarfile="${dist}/${ant.project.name}-${ver}.jar" basedir="${bin}"/>
 	</target>
 	
 	<target name="fulldist" depends="javadoc,dist">
@@ -69,7 +70,7 @@
 		<zip destfile="${dist}/tmp/lib/${ant.project.name}-doc.zip">
 			<fileset dir="${doc}" />
 		</zip>
-		<zip destfile="${dist}/${ant.project.name}-dev-environment.zip">
+		<zip destfile="${dist}/${ant.project.name}-dev-environment-${ver}.zip">
 			<fileset dir="${dist}/tmp" />
 		</zip>
 		<delete dir="${dist}/tmp"/>
