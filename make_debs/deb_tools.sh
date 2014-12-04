@@ -32,7 +32,7 @@ echo $DESCEXM > description-pak
 cp $CURRPWD/install_scripts/tools/* .
 
 cmake ../ -DCMAKE_INSTALL_PREFIX=/usr -DSYSCONFDIR=/etc -DCMAKE_BUILD_TYPE=debug
-sudo checkinstall -y --pkgname=$NAMEEXM --pkgversion=$VERSEXM --pkgarch=$ARCH --maintainer=$MAINTAIN --install=$INST --requires=$REQPEXM --pkgrelease=$RELEEXM --backup=no --strip=no --stripso=no 
+sudo checkinstall -y --pkgname=$NAMEEXM --pkgversion=$VERSEXM --pkgarch=$ARCH --maintainer=$MAINTAIN --install=$INST --requires=$REQPEXM --pkgrelease=$RELEEXM --backup=no --fstrans=yes --strip=no --stripso=no 
 mkdir $DEB > /dev/null 2>&1
 cp *.deb $CURRPWD/$DEB
 #------------------------------
