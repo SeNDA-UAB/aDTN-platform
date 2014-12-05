@@ -41,6 +41,7 @@ typedef struct _nbs_iterator {
 
 extern nbs_iterator nbs;
 extern char *dest;
+extern char *prev_hop;
 
 void add_hop(const char *hop);
 // void rm_hop();
