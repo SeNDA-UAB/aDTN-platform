@@ -37,7 +37,7 @@ char *generate_bundle_name(const char *origin)
 	if (gettimeofday(&t_now, NULL) < 0)
 		goto end;
 
-	asprintf(&name, "%s-%ld-%ld.bundle", origin, t_now.tv_sec, t_now.tv_usec);
+	asprintf(&name, "%ld-%ld-%s", t_now.tv_sec, t_now.tv_usec, origin);
 end:
 
 	return name;
@@ -45,8 +45,8 @@ end:
 
 int parse_bundle_name(const char *bundle_path, /*out*/b_name_s *b_name)
 {
-	int ret = 1, len = 0;
-	const char *p = NULL, *e = NULL, *bundle_name = NULL;
+	int ret = 1;
+	const char *p = NULL, *bundle_name = NULL;
 
 	p = strrchr(bundle_path, '/');
 	if (p) // It is a path
@@ -54,19 +54,7 @@ int parse_bundle_name(const char *bundle_path, /*out*/b_name_s *b_name)
 	else
 		bundle_name = bundle_path;
 
-	// Parse origin
-	e = strchr(bundle_name, '-');
-	len = e - bundle_name;
-	if (len + 1 >= sizeof(b_name->origin)){
-		LOG_MSG(LOG__ERROR, false, "Error parsing platform name of %s, it is too long.", bundle_path);
-		goto end;
-	}
-	memcpy(b_name->origin, bundle_name, len);
-	b_name->origin[len] = '\0';
-
-	// Parse sec and usec
-	p = bundle_name + len + 1;
-	if (sscanf(p, "%ld-%ld",&b_name->sec, &b_name->usec) != 2) {
+	if (sscanf(bundle_name, "%ld-%ld-%s",&b_name->sec, &b_name->usec, b_name->origin) != 3) {
 		LOG_MSG(LOG__ERROR, false, "Error parsing timestamp of bundle %s", bundle_path);
 		goto end;
 	}
