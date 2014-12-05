@@ -44,8 +44,6 @@
 #define DEFAULT_PAYLOAD_SIZE 64
 #define DEFAULT_INTERVAL 1000 // Milliseconds
 
-#define PING_CONTENT "Just a ping"
-#define QUEUE_SOCKNAME "/ping-queue.sock"
 #define SNPRINTF(...)                                               \
 	do{                                                             \
 		int r = snprintf(__VA_ARGS__);                              \

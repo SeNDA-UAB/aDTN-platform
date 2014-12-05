@@ -1,3 +1,10 @@
-int r = rand() % nbs.num();
-add_hop(nbs.nb(r));
-return 0;
+for(;;){
+	int r = rand() % nbs.num();
+	if (strcmp(nbs.nb(r), prev_hop) != 0){
+		add_hop(nbs.nb(r));
+		return 0;
+	} else if (nbs.num() == 1){
+		return 1;
+	}
+}
+

@@ -96,22 +96,11 @@ static int adtn_socket_base(const char *data_path)
 	HASH_FIND_INT( sockStore, &sock_id, identifier);
 	if (identifier == NULL) {
 		sock_id = UID;
-		identifier = (bunsock_s *)malloc(sizeof(bunsock_s));
+		identifier = (bunsock_s *)calloc(1, sizeof(bunsock_s));
 		identifier->id = sock_id;
-		identifier->opt.rcode = NULL;
-		identifier->opt.r_fromfile = 0;
-		identifier->opt.lcode = NULL;
-		identifier->opt.l_fromfile = 0;
-		identifier->opt.pcode = NULL;
-		identifier->opt.p_fromfile = 0;
 		identifier->sopt.proc_flags = H_DESS | H_NOTF;
 		identifier->sopt.block_flags = B_DEL_NP;
 		identifier->sopt.lifetime = 100000; //this time is in seconds
-		identifier->sopt.report = NULL;
-		identifier->sopt.custom = NULL;
-		identifier->sopt.dest = NULL;
-		identifier->sopt.source = NULL;
-		identifier->gval.last_timestamp = 0;
 		len = strlen(data_path) + 1;
 		identifier->data_path = (char *)calloc(len, sizeof(char));
 		strncpy(identifier->data_path, data_path, len);
