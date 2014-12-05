@@ -64,8 +64,9 @@
 		<mkdir dir="${dist}/tmp/lib"/>
 		<mkdir dir="${dist}/tmp/src"/>
 		<copydir src="${examples}/src" dest="${dist}/tmp/src"/>
+		<copydir src="${examples}/lib" dest="${dist}/tmp/lib"/>
 		<copy file="${examples}/build.xml" todir="${dist}/tmp/"/>
-		<copy file="${dist}/${ant.project.name}.jar" todir="${dist}/tmp/lib"/>
+		<copy file="${dist}/${ant.project.name}-${ver}.jar" todir="${dist}/tmp/lib"/>
 		<copy file="${examples}/README" todir="${dist}/tmp/"/>
 		<zip destfile="${dist}/tmp/lib/${ant.project.name}-doc.zip">
 			<fileset dir="${doc}" />
