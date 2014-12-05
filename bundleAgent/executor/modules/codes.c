@@ -21,11 +21,11 @@
 #include <limits.h>
 
 #include "include/world.h"
-#include "include/executor.h"
 #include "modules/include/hash.h"
 
 #include "common/include/log.h"
 #include "common/include/bundle.h"
+#include "common/include/utils.h"
 #include "common/include/minIni.h"
 
 static int open_raw_bundle(const char *path, const char *bundle_id, /*out*/uint8_t **bundle_raw)
@@ -120,19 +120,6 @@ static int find_code(mmeb_body_s *mmeb, code_type_e type, /*out*/char **code, /*
 }
 
 /* From receiver */
-static int get_file_size(FILE *fd)
-{
-	int total_bytes;
-
-	if (fd == NULL)
-		return 0;
-	fseek(fd, 0L, SEEK_END);
-	total_bytes = (int)ftell(fd);
-	rewind(fd);
-
-	return total_bytes;
-}
-
 static int load_code_from_file(const char *path, char **code)
 {
 	FILE *fd = NULL;
@@ -174,24 +161,24 @@ ssize_t get_default_code(code_type_e code_type, char **code)
 {
 	ssize_t ret = -1;
 
-	static char def_routing_code[PATH_MAX] = {0};
+	static char def_forwarding_code[PATH_MAX] = {0};
 	static char def_life_code[PATH_MAX] = {0};
-	static char def_prio_code[PATH_MAX] = {0};
+	static char def_priority_code[PATH_MAX] = {0};
 
 
 	switch (code_type) {
 	case ROUTING_CODE:
-		if (*def_routing_code == '\0') {
-			if (ini_gets("executor", "def_routing_code", NULL, def_routing_code, PATH_MAX, world.shm->config_file) == 0) {
-				LOG_MSG(LOG__ERROR, false, "Default routing code (def_routing_code) is not specified in the config file %s", world.shm->config_file);
+		if (*def_forwarding_code == '\0') {
+			if (ini_gets("executor", "def_forwarding_code", "", def_forwarding_code, PATH_MAX, world.shm->config_file) == 0) {
+				LOG_MSG(LOG__ERROR, false, "Default routing code (def_forwarding_code) is not specified in the config file %s", world.shm->config_file);
 				goto end;
 			}
 		}
-		ret = load_code_from_file(def_routing_code, code);
+		ret = load_code_from_file(def_forwarding_code, code);
 		break;
 	case LIFE_CODE:
 		if (*def_life_code == '\0') {
-			if (ini_gets("executor", "def_life_code", NULL, def_life_code, PATH_MAX, world.shm->config_file) == 0) {
+			if (ini_gets("executor", "def_life_code", "", def_life_code, PATH_MAX, world.shm->config_file) == 0) {
 				LOG_MSG(LOG__ERROR, false, "Default routing code (def_life_code) is not specified in the config file %s", world.shm->config_file);
 				goto end;
 			}
@@ -200,13 +187,13 @@ ssize_t get_default_code(code_type_e code_type, char **code)
 		break;
 
 	case PRIO_CODE:
-		if (*def_prio_code ==  '\0') {
-			if (ini_gets("executor", "def_prio_code", NULL, def_prio_code, PATH_MAX, world.shm->config_file) == 0) {
-				LOG_MSG(LOG__ERROR, false, "Default routing code (def_prio_code) is not specified in the config file %s", world.shm->config_file);
+		if (*def_priority_code ==  '\0') {
+			if (ini_gets("executor", "def_priority_code", "", def_priority_code, PATH_MAX, world.shm->config_file) == 0) {
+				LOG_MSG(LOG__ERROR, false, "Default routing code (def_priority_code) is not specified in the config file %s", world.shm->config_file);
 				goto end;
 			}
 		}
-		ret = load_code_from_file(def_prio_code, code);
+		ret = load_code_from_file(def_priority_code, code);
 		break;
 
 	}
@@ -220,10 +207,19 @@ int get_code_and_info(code_type_e code_type, const char *bundle_id, /*out*/char 
 	int ret = 1, use_default = 1;
 	uint8_t *bundle_raw = NULL;
 	mmeb_body_s *mmeb = NULL;
+	b_name_s b_name;
 
 	if (open_raw_bundle(world.bundles_path, bundle_id, &bundle_raw) != 0) {
 		LOG_MSG(LOG__ERROR, false, "Can't load bundle %s", bundle_id);
 		goto end;
+	}
+
+	if (info != NULL){
+		if (parse_bundle_name(bundle_id, &b_name) != 0){
+			LOG_MSG(LOG__ERROR, false, "Error getting bundle origin from its name.");
+			goto end;
+		}
+		info->prev_hop = strdup(b_name.origin);
 	}
 
 	mmeb = calloc(1, sizeof(mmeb_body_s));

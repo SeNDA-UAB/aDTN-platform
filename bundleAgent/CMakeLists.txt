@@ -37,12 +37,12 @@ file(WRITE "${PLATFORM_BINARY_DIR}/config/adtn.ini" "${MODIFIED_FILE_CONTENT}")
 
 # Needed to create the .deb (all files should be in the binay dir)
 file(COPY ${PLATFORM_SOURCE_DIR}/config/default_codes/life.c DESTINATION ${PLATFORM_BINARY_DIR}/config/default_codes)
-file(COPY ${PLATFORM_SOURCE_DIR}/config/default_codes/prio.c DESTINATION ${PLATFORM_BINARY_DIR}/config/default_codes)
-file(COPY ${PLATFORM_SOURCE_DIR}/config/default_codes/routing.c DESTINATION ${PLATFORM_BINARY_DIR}/config/default_codes)
+file(COPY ${PLATFORM_SOURCE_DIR}/config/default_codes/priority.c DESTINATION ${PLATFORM_BINARY_DIR}/config/default_codes)
+file(COPY ${PLATFORM_SOURCE_DIR}/config/default_codes/forwarding.c DESTINATION ${PLATFORM_BINARY_DIR}/config/default_codes)
 
 # Configuration files
 install(FILES ${PLATFORM_BINARY_DIR}/config/adtn.ini DESTINATION ${SYSCONFDIR}/${ADTN_CONF_SUBDIR}/)
 install(FILES ${PLATFORM_BINARY_DIR}/adtnd/adtnd PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ DESTINATION bin)
 install(FILES ${PLATFORM_BINARY_DIR}/config/default_codes/life.c DESTINATION ${SYSCONFDIR}/${ADTN_CONF_SUBDIR}/default_codes)
-install(FILES ${PLATFORM_BINARY_DIR}/config/default_codes/prio.c DESTINATION ${SYSCONFDIR}/${ADTN_CONF_SUBDIR}/default_codes)
-install(FILES ${PLATFORM_BINARY_DIR}/config/default_codes/routing.c DESTINATION ${SYSCONFDIR}/${ADTN_CONF_SUBDIR}/default_codes)
+install(FILES ${PLATFORM_BINARY_DIR}/config/default_codes/priority.c DESTINATION ${SYSCONFDIR}/${ADTN_CONF_SUBDIR}/default_codes)
+install(FILES ${PLATFORM_BINARY_DIR}/config/default_codes/forwarding.c DESTINATION ${SYSCONFDIR}/${ADTN_CONF_SUBDIR}/default_codes)

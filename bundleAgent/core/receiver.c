@@ -1,18 +1,18 @@
 /*
 * Copyright (c) 2014 SeNDA
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
-* 
+*
 *     http://www.apache.org/licenses/LICENSE-2.0
-* 
+*
 * Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-* 
+*
 */
 
 #define _GNU_SOURCE
@@ -43,7 +43,7 @@
 typedef struct {
 	char *id;
 	int app_port;
-} endpoint_t;
+} endpoint_s;
 
 typedef struct {
 	int queue_conn;
@@ -58,7 +58,7 @@ typedef struct {
 global_vars g_vars;
 
 
-/***************/
+/******* UTILS ********/
 static int mkdir_in(const char *in_path, const char *path, mode_t mode, /*out*/ char **full_path_out)
 {
 	int ret = 0, full_path_l = 0, do_free = 1;
@@ -139,7 +139,7 @@ end:
 	return ret;
 }
 
-static int parse_destination(const char *destination, endpoint_t *ep)
+static int parse_destination(const char *destination, endpoint_s *ep)
 {
 	int ret = 1;
 	const char *p = NULL;
@@ -153,11 +153,6 @@ static int parse_destination(const char *destination, endpoint_t *ep)
 
 	// Get app port
 	ep->app_port = strtol(++p, NULL, 10);
-
-	// Search for app port
-	// if ((p = strchr(p, ':')) == NULL)
-	//  goto end;
-	// ep->app_port = strtol(++p, NULL, 10);
 
 	ret = 0;
 end:
@@ -219,21 +214,20 @@ end:
 
 	return ret;
 }
-
 /***************/
-int delegate_bundle_to_app(const uint8_t *raw_bundle, const int raw_bundle_l, const endpoint_t ep)
+
+/******* DELEGATE BUNDLE ********/
+int delegate_bundle_to_app(const char *bundle_name, const uint8_t *raw_bundle, const int raw_bundle_l, const endpoint_s ep)
 {
 	int ret = 1;
 	char app_path[7];
-	char *bundle_name = NULL, *bundle_dest_path = NULL;
+	char *bundle_dest_path = NULL;
 	mode_t mode = S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;      //chmod 755
 
 	snprintf(app_path, sizeof(app_path), "%d/", ep.app_port);
 	if (mkdir_in(g_vars.destination_path, app_path, mode, &bundle_dest_path) != 0)
 		goto end;
 
-	if ((bundle_name = generate_bundle_name()) == NULL)
-		goto end;
 
 	if (write_to(bundle_dest_path, bundle_name, raw_bundle, raw_bundle_l) != 0)
 		goto end;
@@ -241,21 +235,15 @@ int delegate_bundle_to_app(const uint8_t *raw_bundle, const int raw_bundle_l, co
 
 	ret = 0;
 end:
-	if (bundle_name)
-		free(bundle_name);
 	if (bundle_dest_path)
 		free(bundle_dest_path);
 
 	return ret;
 }
 
-int delegate_bundle_to_receiver(const uint8_t *raw_bundle, const int raw_bundle_l)
+int delegate_bundle_to_receiver(const char *bundle_name, const uint8_t *raw_bundle, const int raw_bundle_l)
 {
 	int ret = 1;
-	char *bundle_name = NULL;
-
-	if ((bundle_name = generate_bundle_name()) == NULL)
-		goto end;
 
 	if (write_to(g_vars.input_path, bundle_name, raw_bundle, raw_bundle_l) != 0)
 		goto end;
@@ -263,19 +251,12 @@ int delegate_bundle_to_receiver(const uint8_t *raw_bundle, const int raw_bundle_
 
 	ret = 0;
 end:
-	if (bundle_name)
-		free(bundle_name);
-
 	return ret;
 }
 
-int put_bundle_into_queue(const uint8_t *raw_bundle, const int raw_bundle_l)
+int delegate_bundle_to_queue_manager(const char *bundle_name, const uint8_t *raw_bundle, const int raw_bundle_l)
 {
 	int ret = 1;
-	char *bundle_name = NULL;
-
-	if ((bundle_name = generate_bundle_name()) == NULL)
-		goto end;
 
 	if (write_to(g_vars.queue_path, bundle_name, raw_bundle, raw_bundle_l) != 0)
 		goto end;
@@ -286,14 +267,12 @@ int put_bundle_into_queue(const uint8_t *raw_bundle, const int raw_bundle_l)
 
 	ret = 0;
 end:
-	if (bundle_name)
-		free(bundle_name);
-
 	return ret;
 }
+/***************/
 
-
-int send_status_report(const sr_status_flags_e status_flag, const uint8_t *raw_bundle, const int raw_bundle_l)
+/******* ACTIONS ********/
+int send_status_report(const sr_status_flags_e status_flag, const char *bundle_name, const uint8_t *raw_bundle, const int raw_bundle_l)
 {
 	char origin[MAX_PLATFORM_ID_LEN];
 	char *report_to = NULL;
@@ -323,8 +302,9 @@ int send_status_report(const sr_status_flags_e status_flag, const uint8_t *raw_b
 	}
 
 	//Reprocess bundle
-	if (delegate_bundle_to_receiver(bundle_sr_raw, bundle_sr_raw_l) != 0) {
+	if (delegate_bundle_to_receiver(bundle_name, bundle_sr_raw, bundle_sr_raw_l) != 0) {
 		LOG_MSG(LOG__ERROR, false, "Error putting response bundle to the bundle reception reporting request into the queue");
+		goto end;
 	}
 
 	ret = 0;
@@ -341,7 +321,7 @@ end:
 	return ret;
 }
 
-int process_custody_report_request_flag(const uint8_t *raw_bundle, const int raw_bundle_l)
+int process_custody_report_request_flag(const char *bundle_name, const uint8_t *raw_bundle, const int raw_bundle_l)
 {
 	int ret = 1;
 	uint64_t flags;
@@ -352,10 +332,10 @@ int process_custody_report_request_flag(const uint8_t *raw_bundle, const int raw
 
 	// If SR_RECV bit is set we have to send a reception notification
 	if ((flags & H_SR_CACC) == H_SR_CACC) {
-		LOG_MSG(LOG__INFO, false, "Received bundle with bit H_SR_CACC set");		
-		if (send_status_report(SR_CACC, raw_bundle, raw_bundle_l) != 0)
+		LOG_MSG(LOG__INFO, false, "Received bundle with bit H_SR_CACC set");
+		if (send_status_report(SR_CACC, bundle_name, raw_bundle, raw_bundle_l) != 0)
 			goto end;
-	} 
+	}
 
 	ret = 0;
 end:
@@ -363,7 +343,7 @@ end:
 }
 
 
-int process_reception_report_request_flag(const uint8_t *raw_bundle, const int raw_bundle_l)
+int process_reception_report_request_flag(const char *bundle_name, const uint8_t *raw_bundle, const int raw_bundle_l)
 {
 	int ret = 1;
 	uint64_t flags;
@@ -375,20 +355,22 @@ int process_reception_report_request_flag(const uint8_t *raw_bundle, const int r
 	// If SR_RECV bit is set we have to send a reception notification
 	if ((flags & H_SR_BREC) == H_SR_BREC) {
 		LOG_MSG(LOG__INFO, false, "Received bundle with bit H_SR_RECV set");
-		if (send_status_report(SR_RECV, raw_bundle, raw_bundle_l) != 0)
+		if (send_status_report(SR_RECV, bundle_name, raw_bundle, raw_bundle_l) != 0)
 			goto end;
-	} 
+	}
 
 	ret = 0;
 end:
 	return ret;
 }
+/***************/
 
-int process_bundle(const uint8_t *raw_bundle, const int raw_bundle_l)
+/******* BUNDLE PROCESSING ********/
+int process_bundle(const char *origin, const uint8_t *raw_bundle, const int raw_bundle_l)
 {
 	int ret = 1;
-	char *full_dest = NULL;
-	endpoint_t ep = {0};
+	char *full_dest = NULL, *bundle_name = NULL;
+	endpoint_s ep = {0};
 
 	if (bundle_raw_check(raw_bundle, raw_bundle_l) != 0) {
 		LOG_MSG(LOG__ERROR, false, "Bundle has errors");
@@ -402,18 +384,20 @@ int process_bundle(const uint8_t *raw_bundle, const int raw_bundle_l)
 		goto end;
 	}
 
+	// Generate name of the bundle
+	bundle_name = generate_bundle_name(origin);
 
 	if (strcmp(ep.id, g_vars.platform_id) == 0) {
 		// If we are the destination delegate bundle to application
 
 		LOG_MSG(LOG__INFO, false, "The bundle is for us. Storing bundle into %s", g_vars.destination_path);
 
-		if (process_reception_report_request_flag(raw_bundle, raw_bundle_l) != 0) {
+		if (process_reception_report_request_flag(bundle_name, raw_bundle, raw_bundle_l) != 0) {
 			LOG_MSG(LOG__ERROR, false, "Error processing status report request flags");
 			goto end;
 		}
 
-		if (delegate_bundle_to_app(raw_bundle, raw_bundle_l, ep) != 0) {
+		if (delegate_bundle_to_app(bundle_name, raw_bundle, raw_bundle_l, ep) != 0) {
 			LOG_MSG(LOG__ERROR, false, "Error delegating bundle to the app");
 			goto end;
 		}
@@ -423,12 +407,12 @@ int process_bundle(const uint8_t *raw_bundle, const int raw_bundle_l)
 
 		LOG_MSG(LOG__INFO, false, "The bundle is destined to a multicast id which we are subscribed");
 
-		if (put_bundle_into_queue(raw_bundle, raw_bundle_l) != 0) {
+		if (delegate_bundle_to_queue_manager(bundle_name, raw_bundle, raw_bundle_l) != 0) {
 			LOG_MSG(LOG__ERROR, false, "Error putting bundle into the queue");
 			goto end;
 		}
 
-		if (delegate_bundle_to_app(raw_bundle, raw_bundle_l, ep) != 0) {
+		if (delegate_bundle_to_app(bundle_name, raw_bundle, raw_bundle_l, ep) != 0) {
 			LOG_MSG(LOG__ERROR, false, "Error delegatin bundle to the app");
 			goto end;
 		}
@@ -438,12 +422,12 @@ int process_bundle(const uint8_t *raw_bundle, const int raw_bundle_l)
 
 		LOG_MSG(LOG__INFO, false, "The bundle is not for us. Putting bundle into queue");
 
-		if (process_custody_report_request_flag(raw_bundle, raw_bundle_l) != 0) {
+		if (process_custody_report_request_flag(bundle_name, raw_bundle, raw_bundle_l) != 0) {
 			LOG_MSG(LOG__ERROR, false, "Error processing status report request flags");
 			goto end;
 		}
 
-		if (put_bundle_into_queue(raw_bundle, raw_bundle_l) != 0) {
+		if (delegate_bundle_to_queue_manager(bundle_name, raw_bundle, raw_bundle_l) != 0) {
 			LOG_MSG(LOG__ERROR, false, "Error putting bundle into the queue");
 			goto end;
 		}
@@ -452,6 +436,8 @@ int process_bundle(const uint8_t *raw_bundle, const int raw_bundle_l)
 
 	ret = 0;
 end:
+	if (bundle_name)
+		free(bundle_name);
 	if (full_dest)
 		free(full_dest);
 	if (ep.id)
@@ -460,13 +446,53 @@ end:
 	return ret;
 }
 
-static int process_multiple_bundles(const char *bundles_path)
+int load_and_process_bundle(const char *bundle_path)
 {
 	int ret = 1, process_result = 0;
-	char full_path[PATH_MAX] = {0};
-	size_t bundles_path_l = 0;
 	ssize_t raw_bundle_l = 0;
 	uint8_t *raw_bundle = NULL;
+	b_name_s bundle_name_s = {{0}};
+
+	LOG_MSG(LOG__INFO, false, "Processing bundle %s", bundle_path);
+
+	// Load bundle form file
+	if ((raw_bundle_l = load_bundle(bundle_path, &raw_bundle)) == -1) {
+		LOG_MSG(LOG__ERROR, false, "Error loading bundle %s", bundle_path);
+		goto end;
+	} else {
+		LOG_MSG(LOG__INFO, false, "Bundle %s loaded", bundle_path);
+	}
+
+	if (parse_bundle_name(bundle_path, &bundle_name_s) != 0) {
+		LOG_MSG(LOG__INFO, false, "Error getting bundle %s", bundle_path);
+		goto end;
+	}
+
+	// Process bundle
+	process_result = process_bundle(bundle_name_s.origin, raw_bundle, raw_bundle_l);
+	if (process_result < 0) {
+		LOG_MSG(LOG__ERROR, false, "Error processing %s", bundle_path);
+	} else {
+		LOG_MSG(LOG__INFO, false, "Bundle %s processed correctly", bundle_path);
+		if (unlink(bundle_path) != 0 && errno != ENOENT)
+			LOG_MSG(LOG__ERROR, true, "Error removing bundle %s", bundle_path);
+		else
+			LOG_MSG(LOG__INFO, false, "Bundle %s removed", bundle_path);
+	}
+
+	free(raw_bundle);
+
+	ret = 0;
+end:
+	return ret;
+}
+
+
+static int process_multiple_bundles(const char *bundles_path)
+{
+	int ret = 1;
+	char full_path[PATH_MAX] = {0};
+	size_t bundles_path_l = 0;
 	DIR *bp_dfd = NULL;
 	struct dirent *ne = NULL;
 
@@ -484,46 +510,27 @@ static int process_multiple_bundles(const char *bundles_path)
 		// Create full path
 		snprintf(full_path + bundles_path_l, bundles_path_l, "/%s", ne->d_name);
 
-		LOG_MSG(LOG__INFO, false, "Processing bundle %s", full_path);
-
-		// Load bundle form file
-		if ((raw_bundle_l = load_bundle(full_path, &raw_bundle)) == -1) {
-			continue;
-		}
-
-		// Process bundle
-		process_result = process_bundle(raw_bundle, raw_bundle_l);
-		if (process_result < 0) {
-			LOG_MSG(LOG__ERROR, false, "Error processing %s", full_path);
-		} else {
-			LOG_MSG(LOG__INFO, false, "Bundle %s processed correctly", full_path);
-			if (unlink(full_path) != 0 && errno != ENOENT)
-				LOG_MSG(LOG__ERROR, true, "Error removing bundle %s", full_path);
-			else
-				LOG_MSG(LOG__INFO, false, "Bundle %s removed", full_path);
-		}
-
-		free(raw_bundle);
+		// Load and process bundle
+		load_and_process_bundle(full_path);
 	}
 
 	ret = 0;
 end:
-
 	if (bp_dfd)
 		closedir(bp_dfd);
 
 	return ret;
 }
+/***************/
 
 
-/******* INOTIFY ********/
+/******* LOCALLLY RECEIVED BUNDLES ********/
 void *inotify_thread()
 {
-	int wd = 0, fd_notify = 0, process_result = 0;
+	int wd = 0, fd_notify = 0;
 	char buffer[INOTIFY_EVENT_BUF], full_path[PATH_MAX];
 	char *p = NULL, *new_bundle_name = NULL;
-	uint8_t *raw_bundle = NULL;
-	ssize_t raw_bundle_l = 0, buffer_l = 0;
+	ssize_t buffer_l = 0;
 	size_t input_path_l = 0;
 	struct inotify_event *event = NULL;
 
@@ -561,38 +568,16 @@ void *inotify_thread()
 		for (p = buffer; p < buffer + buffer_l; ) {
 			event = (struct inotify_event *) p;
 
+			// Create full path
 			new_bundle_name = event->name;
-
 			snprintf(full_path + input_path_l, sizeof(full_path) - input_path_l, "/%s", new_bundle_name);
 
 			LOG_MSG(LOG__INFO, false, "New bundle %s received", full_path);
 
-			// Get contents of the bundle
-			if ((raw_bundle_l = load_bundle(full_path, &raw_bundle)) < 0) {
-				LOG_MSG(LOG__ERROR, false, "Error loading bundle %s", new_bundle_name);
-				goto next_event;
-			} else {
-				LOG_MSG(LOG__INFO, false, "Bundle %s loaded", full_path);
-			}
+			// Load and process bundle
+			load_and_process_bundle(full_path);
 
-			// Process new bundle
-			process_result = process_bundle(raw_bundle, raw_bundle_l);
-			if (process_result < 0) {
-				LOG_MSG(LOG__ERROR, false, "Error processing bunde %s", new_bundle_name);
-			} else {
-				LOG_MSG(LOG__INFO, false, "Bundle %s processed correctly", new_bundle_name);
-				if (unlink(full_path) != 0 && errno != ENOENT )
-					LOG_MSG(LOG__ERROR, true, "Error removing bundle %s", full_path);
-				else
-					LOG_MSG(LOG__INFO, false, "Bundle %s removed", full_path);
-			}
-
-next_event:
-			if (raw_bundle) {
-				free(raw_bundle);
-				raw_bundle = NULL;
-			}
-
+			// Next event
 			p += sizeof(struct inotify_event) + event->len;
 		}
 	}
@@ -603,14 +588,14 @@ end:
 	exit(0);
 }
 
-/*******INOTIFY END********/
+/***************/
 
 
-/******* SOCKET *******/
+/******* REMOTE RECEIVED BUNDLES *******/
 static int get_and_process_bundle(int *sock)
 {
-	int ret = 0;
-	char *bundle_src_addr = NULL;
+	int ret = 1, off = 0;
+	char *bundle_src_addr = NULL, agent_origin_id[MAX_PLATFORM_ID_LEN];
 	uint16_t bundle_l = 0;
 	ssize_t recv_ret = 0;
 	uint8_t *bundle = NULL;
@@ -627,7 +612,25 @@ static int get_and_process_bundle(int *sock)
 	}
 	LOG_MSG(LOG__INFO, false, "Receiving bundle form %s:%d", bundle_src_addr, ntohs(bundle_src.sin_port));
 
-	// First we get the size of the bundle
+	// First we get the origin's platform id. We read until we find a NULL char.
+	for (;;) {
+		recv_ret = recv(*sock, agent_origin_id + off, sizeof(char), 0);
+		if (recv_ret != sizeof(char)) {
+			LOG_MSG(LOG__ERROR, true, "Error receiving origin's platform id from %s.", bundle_src_addr);
+			goto end;
+		}
+
+		if (off + 1 == MAX_PLATFORM_ID_LEN) {
+			LOG_MSG(LOG__ERROR, false, "Error receiving origin's platform id from %s. Origin's platform id too long.", bundle_src_addr);
+			goto end;
+		} else if (*(agent_origin_id + off) == '\0') {
+			break;
+		} else {
+			off++;
+		}
+	}
+
+	// We get the size of the bundle
 	recv_ret = recv(*sock, &bundle_l, sizeof(bundle_l), 0);
 	if (recv_ret != sizeof(bundle_l)) {
 		if (recv_ret == 0) {
@@ -637,11 +640,8 @@ static int get_and_process_bundle(int *sock)
 		} else {
 			LOG_MSG(LOG__ERROR, true, "Error receiving bundle length from %s. Length not in the correct format", bundle_src_addr);
 		}
-		ret = 1;
 		goto end;
 	}
-
-
 	bundle_l = ntohs(bundle_l);
 
 	// Then we receive the content of the bundle
@@ -665,13 +665,12 @@ static int get_and_process_bundle(int *sock)
 
 	LOG_MSG(LOG__INFO, false, "Recieved bundle form %s:%d with length %d", bundle_src_addr, ntohs(bundle_src.sin_port), recv_l);
 
-
-	if (process_bundle(bundle, bundle_l) < 0) {
+	if (process_bundle(agent_origin_id, bundle, bundle_l) < 0) {
 		LOG_MSG(LOG__ERROR, false, "Error processing bundle from %s", bundle_src_addr);
-		ret = 1;
 		goto end;
 	}
 
+	ret = 0;
 end:
 	if (bundle)
 		free(bundle);
@@ -739,7 +738,7 @@ static void *socket_thread()
 			continue;
 		}
 
-		if (pthread_detach(get_and_process_bundle_t) != 0){
+		if (pthread_detach(get_and_process_bundle_t) != 0) {
 			LOG_MSG(LOG__ERROR, true, "pthread_detach()");
 			continue;
 		}
@@ -749,7 +748,7 @@ end:
 	close(sockfd);
 	exit(ret);
 }
-/***** SOCKET END *****/
+/***************/
 
 int main(int argc, char *argv[])
 {

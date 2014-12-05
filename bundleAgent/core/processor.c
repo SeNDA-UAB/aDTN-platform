@@ -272,8 +272,18 @@ static char *send_bundle_thread(thread_sb_data *data)
 		goto end;
 	}
 	bundle_l = htons(data->raw_bundle_l);
-	n = write(sock, &bundle_l, sizeof(uint16_t));
-	n = write(sock, data->raw_bundle, data->raw_bundle_l);
+
+	n = write(sock, own_id, strlen(own_id) + 1); // Local platform id (NULL terminated)
+	if (n < 0) {
+		LOG_MSG(LOG__ERROR, false, "Can't write to the socket");
+		goto end;
+	}
+	n = write(sock, &bundle_l, sizeof(uint16_t)); // Bundle length
+	if (n < 0) {
+		LOG_MSG(LOG__ERROR, false, "Can't write to the socket");
+		goto end;
+	}
+	n = write(sock, data->raw_bundle, data->raw_bundle_l); // Bundle content
 	if (n < 0) {
 		LOG_MSG(LOG__ERROR, false, "Can't write to the socket");
 		goto end;

@@ -15,6 +15,13 @@
 * 
 */
 
+#ifndef INC_COMMON_EXECUTOR
+#define INC_COMMON_EXECUTOR
+
+#include <stdint.h>
+#include <limits.h>
+
+#include "bundle.h"
 #include "constants.h"
 
 typedef enum {
@@ -68,3 +75,5 @@ union _response {
         struct _rm_response rm;
 };
 /**/
+
+#endif

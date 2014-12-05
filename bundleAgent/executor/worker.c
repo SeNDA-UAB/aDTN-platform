@@ -15,6 +15,29 @@
 * 
 */
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <pthread.h>
+#include <stdint.h>
+#include <signal.h>
+#include <unistd.h>
+#include <dlfcn.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
+#include <sys/un.h>
+
+#include "include/world.h"
+
+#include "modules/exec_c_helpers/include/adtnrhelper.h"
+#include "modules/include/exec.h"
+
+#include "common/include/executor.h"
+#include "common/include/init.h"
+#include "common/include/log.h"
+
+#include "include/worker.h"
+
 #define SET_RESPAWN_NOTIFICATION(child_id)                                      \
 	do {                                                                        \
 		pthread_mutex_lock(params->respawn_child_mutex[child_id]);              \
@@ -28,7 +51,7 @@
 		params->respawn_child[child_id] = 0;                                    \
 		pthread_mutex_unlock(params->respawn_child_mutex[child_id]);            \
 	} while(0);                                                                 \
-	 
+	
 /* Cleanup handlers */
 void kill_child(int *pid)
 {
@@ -49,6 +72,52 @@ void clean()
 	exit_adtn_process();
 
 	_exit(0);
+}
+
+int clean_bundle_dl(bundle_code_dl_s *b_dl)
+{
+	if (b_dl->info.dest != NULL)
+		free(b_dl->info.dest);
+	if (b_dl->info.prev_hop != NULL)
+		free(b_dl->info.prev_hop);
+	if (b_dl->dls.routing != NULL) {
+		b_dl->dls.routing->refs--;
+		if (b_dl->dls.routing->refs == 0) { // Also unload and remove loaded code
+			routing_code_dl_remove(b_dl->dls.routing);
+			free((char *)b_dl->dls.routing->code);
+			dlclose(b_dl->dls.routing->dl->handler);
+			free(b_dl->dls.routing->dl);
+			free(b_dl->dls.routing);
+		}
+	}
+	if (b_dl->dls.life != NULL) {
+		b_dl->dls.life->refs--;
+		if (b_dl->dls.life->refs == 0) {
+			life_code_dl_remove(b_dl->dls.life);
+			free((char *)b_dl->dls.life->code);
+			dlclose(b_dl->dls.life->dl->handler);
+			free(b_dl->dls.life->dl);
+			free(b_dl->dls.life);
+		}
+	}
+	if (b_dl->dls.prio != NULL) {
+		b_dl->dls.prio->refs--;
+		if (b_dl->dls.prio->refs == 0) {
+			prio_code_dl_remove(b_dl->dls.prio);
+			free((char *)b_dl->dls.prio->code);
+			dlclose(b_dl->dls.prio->dl->handler);
+			free(b_dl->dls.prio->dl);
+			free(b_dl->dls.prio);
+		}
+	}
+	free((char *)b_dl->bundle_id);
+
+	return 0;
+}
+
+int clean_all_bundle_dl(void)
+{
+	return del_map_bundle_dl_table(clean_bundle_dl);
 }
 /**/
 
@@ -98,7 +167,7 @@ void executor_process(int sv)
 		case ROUTING_CODE:
 			LOG_MSG(LOG__INFO, false, "Child %u: Executing bundle %s with code_dl loaded in address %p", pid, p.bundle_id, p.routing_dl);
 
-			if (execute_routing_code(p.routing_dl, p.dest, &r_result) != 0) {
+			if (execute_routing_code(p.routing_dl, p.prev_hop, p.dest, &r_result) != 0) {
 				LOG_MSG(LOG__ERROR, false, "Error executing code (type %d) from bundle %s.", p.code_type, p.bundle_id);
 				goto end;
 			}
@@ -419,6 +488,7 @@ void worker_thread(worker_params *params)
 
 					switch (p.header.code_type) {
 					case ROUTING_CODE:
+						strncpy(exec_p.prev_hop, bundle_code_dl->info.prev_hop, sizeof(exec_p.prev_hop));
 						strncpy(exec_p.dest, bundle_code_dl->info.dest, sizeof(exec_p.dest));
 						exec_p.routing_dl = bundle_code_dl->dls.routing->dl;
 						code_dl = bundle_code_dl->dls.routing->dl;
@@ -446,7 +516,7 @@ void worker_thread(worker_params *params)
 						bzero(&r, sizeof(r));
 						recv_l = recv(sv[1], &r, sizeof(r), 0);
 						if (recv_l <= 0 || recv_l != sizeof(r)) {
-							LOG_MSG(LOG__ERROR, true, "Thread %d: Error reading response from executor process.", params->thread_num);
+							LOG_MSG(LOG__ERROR, false, "Thread %d: Error reading response from executor process.", params->thread_num);
 							state = EXEC_ERROR;
 						} else {
 							LOG_MSG(LOG__INFO, false, "Thread %d: Result received from child", params->thread_num);

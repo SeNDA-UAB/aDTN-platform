@@ -14,17 +14,14 @@
 * limitations under the License.
 * 
 */
+#ifndef H_WORKER_INC
+#define H_WORKER_INC
 
-#include <limits.h> //NAME_MAX
+#include <pthread.h>
+#include <stdint.h>
 
-#include "modules/exec_c_helpers/include/adtnrhelper.h"
 #include "modules/include/hash.h"
-
 #include "common/include/bundle.h"
-#include "common/include/executor.h"
-#include "common/include/constants.h"
-
-#define DEF_SOCKNAME "executor"
 
 typedef struct _worker_params {
 	int thread_num;
@@ -55,6 +52,7 @@ struct _child_exec_petition {
 	code_type_e code_type;
 
 	/* code_type == ROUTING */
+	char prev_hop[MAX_ID_LEN];
 	char dest[MAX_ID_LEN];
 	routing_dl_s *routing_dl;
 	/**/
@@ -65,4 +63,8 @@ struct _child_exec_petition {
 	/**/
 };
 
-/**/
+
+void worker_thread(worker_params *params);
+int clean_all_bundle_dl(void);
+
+#endif

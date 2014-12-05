@@ -82,6 +82,7 @@ void init_env()
 /** **/
 
 // Initialized before execution
+char *prev_hop;
 char *dest;
 routing_exec_result *r_result;
 
