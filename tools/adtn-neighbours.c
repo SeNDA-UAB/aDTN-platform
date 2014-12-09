@@ -72,7 +72,7 @@ int main(int argc,  char *const *argv)
 
     parse_arguments(argc, argv);
     if (time <= 0)
-    	time = 1;
+        time = 1;
 
     while (1)
     {
@@ -80,8 +80,8 @@ int main(int argc,  char *const *argv)
         strcpy(nb_id, nbs);
         if (nbs_num > 0)
         {
-        	printf("Neighbour list\n");
-        	printf("-------------------------------------------------------------------\n");
+            printf("Neighbour list\n");
+            printf("-------------------------------------------------------------------\n");
             for (i = 0; i < nbs_num; i++)
             {
                 strcpy(nb_id, nbs + MAX_PLATFORM_ID_LEN * i);

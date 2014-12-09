@@ -77,7 +77,6 @@ public class Ping {
 				ah.interval = 1;
 			}
 		} catch (ParameterException ex) {
-			System.out.println(ah.destination_id.size());
 			jcom.usage();
 			System.exit(0);
 		}
