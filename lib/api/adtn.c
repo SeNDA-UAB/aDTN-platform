@@ -796,7 +796,9 @@ static char *adtn_recv_base(int fd)
 	len = strlen(shm->data_path) + 1 + strlen("incoming") + 1 + 8 + 1; //8 comes from maximum adtn port identifier
 	dir_path = (char *)calloc(len, sizeof(char));
 	snprintf(dir_path, len, "%s/incoming/%d", shm->data_path, identifier->addr.adtn_port);
-	if (mkdir (dir_path, 0777) == -1 && errno != EEXIST)
+	if (mkdir (dir_path, 0775) == -1 && errno != EEXIST)
+		goto end;
+	if (chmod (dir_path, 0775) == -1)
 		goto end;
 	ifd = inotify_init();
 	if (ifd < 0) {
