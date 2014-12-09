@@ -222,7 +222,7 @@ int delegate_bundle_to_app(const char *bundle_name, const uint8_t *raw_bundle, c
 	int ret = 1;
 	char app_path[7];
 	char *bundle_dest_path = NULL;
-	mode_t mode = S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;      //chmod 755
+	mode_t mode = S_IRWXU | S_IRWXG | S_IRWXO;      //chmod 777
 
 	snprintf(app_path, sizeof(app_path), "%d/", ep.app_port);
 	if (mkdir_in(g_vars.destination_path, app_path, mode, &bundle_dest_path) != 0)
