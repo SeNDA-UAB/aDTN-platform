@@ -101,7 +101,7 @@ Note that <code>--purge</code> flag, which is recommended in use it in this case
 
 In order to remove completely the adtn repository from your computer, you should type the following command as root:
 
-<code>apt-key del  `apt-key list | grep -i -1 developers@senda.uab.cat | grep pub | cut -d '/' -f2- | cut -d ' ' -f1`</code>
+<code>apt-key del  \`apt-key list | grep -i -1 developers@senda.uab.cat | grep pub | cut -d '/' -f2- | cut -d ' ' -f1\`</code>
 
 Or, if you prefer to do it manually, you can look for the key entry in the <code>apt-key list</code> and next, delete it using the <code>apt-key del key</code>, where key is the previously selected key from <code>apt-key list</code>
 
