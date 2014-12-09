@@ -83,9 +83,9 @@ static int mkdir_in(const char *in_path, const char *path, mode_t mode, /*out*/ 
 		}
 	}
 	if (chmod(*full_path, mode) != 0) { //avoid umask restriction
-		LOG_MSG(LOG__ERROR, true, "Error changing permisions to %s", *full_path);
-		ret = 1;
-		goto end;
+		LOG_MSG(LOG__WARNING, true, "Error changing permisions to %s", *full_path);
+		//ret = 1;
+		//goto end;
 	}
 
 end:
