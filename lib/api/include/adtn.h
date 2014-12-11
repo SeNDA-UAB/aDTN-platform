@@ -1,18 +1,18 @@
 /*
 * Copyright (c) 2014 SeNDA
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
-* 
+*
 *     http://www.apache.org/licenses/LICENSE-2.0
-* 
+*
 * Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-* 
+*
 */
 
 /** @cond */
@@ -42,7 +42,6 @@ typedef struct {
 	char *dest;
 	char *source;
 } sock_opt_t;
-/** @endcond */
 
 typedef struct {
 	int fd;           ///< Socket descriptor.
@@ -52,7 +51,6 @@ typedef struct {
 	int replace; ///< Boolean to replace existing codes.
 } set_opt_args;
 
-/** @cond */
 typedef struct {
 	const char *config_file;
 } socket_params;
@@ -88,6 +86,9 @@ int adtn_var_socket(socket_params in);
 #ifdef DOX
 int adtn_socket();
 int adtn_socket(const char *config_file);
+int adtn_setcodopt(int fd, int option_name, const char *code);
+int adtn_setcodopt(int fd, int option_name, const char *code, int from_file);
+int adtn_setcodopt(int fd, int option_name, const char *code, int from_file, int replace);
 #endif
 
 int adtn_bind(int fd, sock_addr_t *addr);
@@ -98,9 +99,6 @@ int adtn_rmcodopt(int fd, const int option);
 /** @cond */
 int adtn_var_setcodopt(set_opt_args in);
 /** @endcond */
-#ifdef DOX
-int adtn_setcodopt(set_opt_args in);
-#endif
 
 int adtn_setsockopt(int fd, const int optname, const void *optval);
 int adtn_getsockopt(int fd, const int optname,  void *optval, int *optlen);
@@ -116,18 +114,9 @@ int adtn_recvfrom(int fd, void *buffer, size_t len, sock_addr_t *addr);
 
     aDTN is divided in two parts, one is the API for developers that allow to use functions to send and receive messages. The other one
     is the core that manages and sends the messages.
-    ====================
-    |      Dev API     |
-    ====================
-    |      aDTN Core   |
-    ====================
+
     The Core makes posible resilience to delay, disruptions and big taxes of errors. The implementation of the platform allow more than one core to cohexist in
     the same node(device).
-    ==========================
-    |         Dev API        |
-    ==========================
-    |  aDTN Core  | aDTN Core|
-    ==========================
 
     @return a descriptor identifiyng the socket on succes, -1 on error. If the function fails errno is set.
 
@@ -139,33 +128,24 @@ int adtn_recvfrom(int fd, void *buffer, size_t len, sock_addr_t *addr);
 */
 
 /**
-@fn int adtn_socket(const char *config_file)
-@brief Creates a adtn sockets to send or recv information using the adtn platform.
+  @fn int adtn_socket(const char *config_file)
+  @brief Creates a adtn sockets to send or recv information using the adtn platform.
 
-aDTN is divided in two parts, one is the API for developers that allow to use functions to send and receive messages. The other one
-is the core that manages and sends the messages.
-====================
-|      Dev API     |
-====================
-|      aDTN Core   |
-====================
-The Core makes posible resilience to delay, disruptions and big taxes of errors. The implementation of the platform allow more than one core to cohexist in
-the same node(device).
-==========================
-|         Dev API        |
-==========================
-|  aDTN Core  | aDTN Core|
-==========================
+  aDTN is divided in two parts, one is the API for developers that allow to use functions to send and receive messages. The other one
+  is the core that manages and sends the messages.
 
-@param config_file The configuration file path.
+  The Core makes posible resilience to delay, disruptions and big taxes of errors. The implementation of the platform allow more than one core to cohexist in
+  the same node(device).
 
-@return a descriptor identifiyng the socket on succes, -1 on error. If the function fails errno is set.
+  @param config_file The configuration file path.
 
-errno can take the values below:
+  @return a descriptor identifiyng the socket on succes, -1 on error. If the function fails errno is set.
 
-@li EBUSY       Cannot allocate socket.
-@li ENOENT      global configuration missing in configuration file.
-@li EBADRQC     data field missing in configuration file.
+  errno can take the values below:
+
+  @li EBUSY       Cannot allocate socket.
+  @li ENOENT      global configuration missing in configuration file.
+  @li EBADRQC     data field missing in configuration file.
 */
 
 /**
@@ -224,7 +204,31 @@ errno can take the values below:
 */
 
 /**
-    @fn int adtn_setcodopt(set_opt_args in)
+    @fn int adtn_setcodopt(int fd, int option_name, const char *code);
+    @brief Associate codes to a socket.
+
+    Over ADTN platform the messages can carry codes with him to perform different tasks.
+    This function allows to add code options to the socket. Each code linked with the socket will be added to outcoming messages sent through the socket.
+    The kind of code associated to the socket is specified by the parameter option_name.
+
+    @param fd A file descriptor identifying the socket.
+    @param option_name determines what kind of code will be associated to the socket. R_CODE will add a routing code. This code will be executed in each hop of
+    the network to determine the next hop. L_CODE will add a life time code. This code will be executed in each node of the network to decide if the message is
+    lapsed or not. P_CODE will add a prioritzation code. This code will affect only to the messages in other nodes that pertain to same application. Is not possible
+    for a code to priorize messages from other applications.
+    @param code This parameter must contain the full code to associate to socket.
+
+    @return 0 on succes, -1 on error. If the function fails errno is set.
+
+    errno can take the values below:
+
+    @li ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
+    @li EINVAL      invalid code or from_file value.
+    @li EOPNOTSUPP  existing code binded.
+*/
+
+/**
+    @fn int adtn_setcodopt(int fd, int option_name, const char *code, int from_file);
     @brief Associate codes to a socket.
 
     Over ADTN platform the messages can carry codes with him to perform different tasks.
@@ -238,9 +242,36 @@ errno can take the values below:
     for a code to priorize messages from other applications.
     @param code This parameter must contain a filename where the code is stored or the full code to associate to socket. The content of this parameter is associated
     with parameter from_file.
-    @param from_file [Optional] If is set to 1 the param code will contain a filename where the routing code is stored. If is set to 0 the param code must contain all
+    @param from_file If is set to 1 the param code will contain a filename where the routing code is stored. If is set to 0 the param code must contain all
     code. Default value is 0.
-    @param replace [Optional] If is set to 1 and exists an older code associated to the socket it will be replaced. If is set to 0 and a code is already binded with
+
+    @return 0 on succes, -1 on error. If the function fails errno is set.
+
+    errno can take the values below:
+
+    @li ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
+    @li EINVAL      invalid code or from_file value.
+    @li EOPNOTSUPP  existing code binded.
+*/
+
+/**
+    @fn int adtn_setcodopt(int fd, int option_name, const char *code, int from_file, int replace);
+    @brief Associate codes to a socket.
+
+    Over ADTN platform the messages can carry codes with him to perform different tasks.
+    This function allows to add code options to the socket. Each code linked with the socket will be added to outcoming messages sent through the socket.
+    The kind of code associated to the socket is specified by the parameter option_name.
+
+    @param fd A file descriptor identifying the socket.
+    @param option_name determines what kind of code will be associated to the socket. R_CODE will add a routing code. This code will be executed in each hop of
+    the network to determine the next hop. L_CODE will add a life time code. This code will be executed in each node of the network to decide if the message is
+    lapsed or not. P_CODE will add a prioritzation code. This code will affect only to the messages in other nodes that pertain to same application. Is not possible
+    for a code to priorize messages from other applications.
+    @param code This parameter must contain a filename where the code is stored or the full code to associate to socket. The content of this parameter is associated
+    with parameter from_file.
+    @param from_file If is set to 1 the param code will contain a filename where the routing code is stored. If is set to 0 the param code must contain all
+    code. Default value is 0.
+    @param replace If is set to 1 and exists an older code associated to the socket it will be replaced. If is set to 0 and a code is already binded with
     the socket this function will return an error. Replace is 0 by default.
 
     @return 0 on succes, -1 on error. If the function fails errno is set.
@@ -285,18 +316,18 @@ errno can take the values below:
 
 Options available:
 
-   OP_PROC_FLAGS       Set the flags for the primary block.
-   OP_LIFETIME         Set the lifetime of the messages.
-   OP_BLOCK_FLAGS      Set the flags for the rest of blocks.
-   OP_DEST             Set the destination of the messages.
-   OP_SOURCE           Set the source of the message.
-   OP_REPORT           Set the report of the message.
-   OP_CUSTOM           Set the custom value of the message.
+   * OP_PROC_FLAGS       Set the flags for the primary block.
+   * OP_LIFETIME         Set the lifetime of the messages.
+   * OP_BLOCK_FLAGS      Set the flags for the rest of blocks.
+   * OP_DEST             Set the destination of the messages.
+   * OP_SOURCE           Set the source of the message.
+   * OP_REPORT           Set the report of the message.
+   * OP_CUSTOM           Set the custom value of the message.
 
 errno can take the values below:
 
-ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-ENOTSUP     invalid option.
+@li ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
+@li ENOTSUP     invalid option.
 */
 
 /**
@@ -312,19 +343,19 @@ ENOTSUP     invalid option.
 
 Options available:
 
-   OP_PROC_FLAGS       Get the flags for the primary block.
-   OP_LIFETIME         Get the lifetime of the messages.
-   OP_BLOCK_FLAGS      Get the flags for the rest of blocks.
-   OP_DEST             Get the destination of the messages.
-   OP_SOURCE           Get the source of the message.
-   OP_REPORT           Get the report of the message.
-   OP_CUSTOM           Get the custom value of the message.
-   OP_LAST_TIMESTAMP   Get the last message timestamp.
+   * OP_PROC_FLAGS       Get the flags for the primary block.
+   * OP_LIFETIME         Get the lifetime of the messages.
+   * OP_BLOCK_FLAGS      Get the flags for the rest of blocks.
+   * OP_DEST             Get the destination of the messages.
+   * OP_SOURCE           Get the source of the message.
+   * OP_REPORT           Get the report of the message.
+   * OP_CUSTOM           Get the custom value of the message.
+   * OP_LAST_TIMESTAMP   Get the last message timestamp.
 
 errno can take the values below:
 
-ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-ENOTSUP     invalid option.
+@li ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
+@li ENOTSUP     invalid option.
 */
 
 /**
@@ -344,10 +375,10 @@ ENOTSUP     invalid option.
 
     errno can take the values below:
 
-    EINVAL      invalid address or null buffer.
-    ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-    ENOENT      cannot load the shared memory.
-    EMSGSIZE    message size is too big.
+    @li EINVAL      invalid address or null buffer.
+    @li ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
+    @li ENOENT      cannot load the shared memory.
+    @li EMSGSIZE    message size is too big.
 
 */
 
@@ -366,9 +397,9 @@ ENOTSUP     invalid option.
 
     errno can take the values below:
 
-    EINVAL      invalid buffer or len.
-    ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-    ENOENT      cannot load the shared memory.
+    @li EINVAL      invalid buffer or len.
+    @li ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
+    @li ENOENT      cannot load the shared memory.
 
 */
 
@@ -389,8 +420,8 @@ ENOTSUP     invalid option.
 
     errno can take the values below:
 
-    EINVAL      invalid buffer or len.
-    ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
-    ENOENT      cannot load the shared memory.
+    @li EINVAL      invalid buffer or len.
+    @li ENOTSOCK    the file descriptor is not a valid adtn_socket descriptor.
+    @li ENOENT      cannot load the shared memory.
 */
 
