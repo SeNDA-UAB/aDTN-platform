@@ -328,14 +328,12 @@ int initilize_shm(adtn_ini_t *adtn_ini, struct common **shm_common, short int fo
 		if ((ret = init_locks(*shm_common)) != 0)
 			LOG_MSG(LOG__ERROR, false, "Error initializing shm locks");
 
-		//TODO: Look for snprintf. It allocates memory first?
-		snprintf((*shm_common)->config_file, 255, "%s", adtn_ini->ini_path);
-		snprintf((*shm_common)->platform_id, 255, "%s", adtn_ini->platform_id);
-		snprintf((*shm_common)->iface_ip, 255, "%s", adtn_ini->platform_ip);
+		snprintf((*shm_common)->config_file, sizeof((*shm_common)->config_file), "%s", adtn_ini->ini_path);
+		snprintf((*shm_common)->platform_id, sizeof((*shm_common)->platform_id), "%s", adtn_ini->platform_id);
+		snprintf((*shm_common)->iface_ip, sizeof((*shm_common)->iface_ip), "%s", adtn_ini->platform_ip);
+		snprintf((*shm_common)->data_path, sizeof((*shm_common)->data_path), "%s", adtn_ini->data_path);
 		(*shm_common)->platform_port = adtn_ini->platform_port;
 		(*shm_common)->prefix_id = shm_suffix;
-		snprintf((*shm_common)->data_path, 255, "%s", adtn_ini->data_path);
-		snprintf((*shm_common)->config_file, 255, "%s", adtn_ini->ini_path);
 		if (ret == 0)
 			(*shm_common)->initialized = 1;
 	} else if ((*shm_common)->initialized) {
