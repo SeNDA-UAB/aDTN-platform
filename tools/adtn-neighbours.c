@@ -27,6 +27,7 @@
 
 #include "bundleAgent/common/include/neighbours.h"
 #include "bundleAgent/common/include/constants.h"
+#include "bundleAgent/common/include/rit.h"
 #include "bundleAgent/common/include/config.h"
 #include "bundleAgent/common/include/log.h"
 #include "lib/api/include/adtn.h"
@@ -59,7 +60,7 @@ static void parse_arguments(int argc, char *const argv[])
         {"interval",        required_argument,          0,      'i'},
         {"help",            no_argument,                0,      'h'}
     };
-    while ((opt = getopt_long(argc, argv, "f:ht:", long_options, &option_index)))
+    while ((opt = getopt_long(argc, argv, "f:hi:", long_options, &option_index)))
     {
         switch (opt){
         case 'f':
