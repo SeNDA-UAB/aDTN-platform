@@ -201,6 +201,7 @@ int adtn_bind(int fd, sock_addr_t *addr)
 				dest = NULL;
 				remove(SOCK_SPOOL);
 				rename(SOCK_SPOOL".tmp", SOCK_SPOOL);
+				chmod(SOCK_SPOOL, 0777);
 				break;
 			}
 			++j;
@@ -271,6 +272,7 @@ int adtn_close(int fd)
 	dest = NULL;
 	remove(SOCK_SPOOL);
 	rename(SOCK_SPOOL".tmp", SOCK_SPOOL);
+	chmod(SOCK_SPOOL, 0777);
 	free(identifier->addr.id);
 	free(identifier->data_path);
 	HASH_DEL(sockStore, identifier);
