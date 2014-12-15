@@ -62,7 +62,7 @@ for arch in $ARCHILIST; do
     echo -e "\e[92mRemoving debs installed...\e[39m"
     sudo dpkg --purge $NAMEEXM $NAMELIB $NAMEPLAT
   fi
-  rm -fr $ADTNAUX
+  sudo rm -fr $CURRPWD/$ADTNAUX
   if [[ $ARCH == $ARCHARM ]]; then
     break;
   fi

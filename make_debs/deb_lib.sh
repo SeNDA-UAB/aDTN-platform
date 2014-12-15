@@ -29,7 +29,7 @@ cp $ADTNPATH/aDTNConfig.cmake.in $ADTNAUX/.
 mkdir -p $ADTNAUX/tmp-lib/build
 cp -r $ADTNAUX/lib/* $ADTNAUX/tmp-lib 
 cd $CURRPWD/$ADTNAUX/tmp-lib/build
-cmake ../ -DCMAKE_INSTALL_PREFIX=$CURRPWD/$ADTNAUX/inst-lib -DCMAKE_BUILD_TYPE=$DBTYPE
+cmake ../ -DCMAKE_INSTALL_PREFIX=$CURRPWD/$ADTNAUX/inst-lib -DCMAKE_BUILD_TYPE=$DBTYPE -DARCH=$ARCH
 make install
 export LIBRARY_PATH=$LIBRARY_PATH:$CURRPWD/$ADTNAUX/inst-lib/lib
 export C_INCLUDE_PATH=$C_INCLUDE_PATH:$CURRPWD/$ADTNAUX/inst-lib/include
@@ -53,8 +53,8 @@ cd build
 echo $DESCLIB > description-pak
 cp $CURRPWD/install_scripts/lib/* .
 
-cmake ../ -DCMAKE_INSTALL_PREFIX=/usr -DSYSCONFDIR=/etc -DCMAKE_BUILD_TYPE=$DBTYPE
-sudo checkinstall -y --pkgname=$NAMELIB --pkgversion=$VERSLIB --pkgarch=$ARCH  --maintainer=$MAINTAIN --install=$INST --requires=$REQPLIB --pkgrelease=$RELELIB --backup=no --fstrans=yes --strip=no --stripso=no 
+cmake ../ -DCMAKE_INSTALL_PREFIX=/usr -DSYSCONFDIR=/etc -DCMAKE_BUILD_TYPE=$DBTYPE -DARCH=$ARCH
+sudo checkinstall -y --pkgname=$NAMELIB --pkgversion=$VERSLIB --pkgarch=$ARCH  --maintainer=$MAINTAIN --install=$INST --requires=$REQPLIB --pkgrelease=$RELELIB --backup=no --fstrans=yes #--strip=no --stripso=no 
 mkdir -p $CURRPWD/$RELEASE/v$VERSLIB-$RELELIB/$DEB > /dev/null 2>&1
 cp *.deb $CURRPWD/$RELEASE/v$VERSLIB-$RELELIB/$DEB
 #------------------------------
