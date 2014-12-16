@@ -183,8 +183,12 @@ int adtn_bind(int fd, sock_addr_t *addr)
 					goto close_f;
 				}
 				src = fopen(SOCK_SPOOL, "r");
+				if (!src) {
+					break;
+				}
+
 				dest = fopen(SOCK_SPOOL".tmp", "w");
-				if (!src || !dest) {
+				if (!dest) {
 					errno = EACCES;
 					goto close_f;
 				}
@@ -251,8 +255,13 @@ int adtn_close(int fd)
 	}
 	_pid = getpid();
 	src = fopen(SOCK_SPOOL, "r");
+	if (!src) {
+		ret = 0;
+		goto end;
+	}
+
 	dest = fopen(SOCK_SPOOL".tmp", "w");
-	if (!src || !dest) {
+	if (!dest) {
 		errno = EACCES;
 		goto end;
 	}
