@@ -59,7 +59,7 @@ global_vars g_vars;
 
 
 /******* UTILS ********/
-static int mkdir_in(const char *in_path, const char *path, mode_t mode, const int set_gid, /*out*/ char **full_path_out)
+static int mkdir_in(const char *in_path, const char *path, mode_t mode, const int set_gid, const int force,  /*out*/ char **full_path_out)
 {
 	int ret = 0, full_path_l = 0, do_free = 1;
 	char *tmp_path = NULL, **full_path = NULL;
@@ -84,10 +84,12 @@ static int mkdir_in(const char *in_path, const char *path, mode_t mode, const in
 	}
 	if (set_gid)
 		mode |= S_ISGID;
-	if (chmod(*full_path, mode) != 0) { //avoid umask restriction
-		LOG_MSG(LOG__WARNING, true, "Error changing permisions to %s", *full_path);
-		ret = 1;
-		goto end;
+	if (force) {
+		if (chmod(*full_path, mode) != 0) { //avoid umask restriction
+			LOG_MSG(LOG__WARNING, true, "Error changing permisions to %s", *full_path);
+			ret = 1;
+			goto end;
+		}
 	}
 
 end:
@@ -101,9 +103,9 @@ static int create_paths(const char *data_path)
 {
 	int ret = 0;
 	mode_t mode = mode = S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH; //chmod 775
-	ret |= mkdir_in(data_path, INPUT_PATH, mode, 1, &g_vars.input_path);
-	ret |= mkdir_in(data_path, DEST_PATH, mode, 1, &g_vars.destination_path);
-	ret |= mkdir_in(data_path, QUEUE_PATH, mode, 0, &g_vars.queue_path);
+	ret |= mkdir_in(data_path, INPUT_PATH, mode, 1, 1, &g_vars.input_path);
+	ret |= mkdir_in(data_path, DEST_PATH, mode, 1, 1, &g_vars.destination_path);
+	ret |= mkdir_in(data_path, QUEUE_PATH, mode, 0, 0, &g_vars.queue_path);
 
 	return ret;
 }
@@ -226,7 +228,7 @@ int delegate_bundle_to_app(const char *bundle_name, const uint8_t *raw_bundle, c
 	mode_t mode = S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH; //chmod 755
 
 	snprintf(app_path, sizeof(app_path), "%d/", ep.app_port);
-	if (mkdir_in(g_vars.destination_path, app_path, mode, 0, &bundle_dest_path) != 0)
+	if (mkdir_in(g_vars.destination_path, app_path, mode, 0, 0, &bundle_dest_path) != 0)
 		goto end;
 
 
