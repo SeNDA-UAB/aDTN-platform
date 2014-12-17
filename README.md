@@ -65,6 +65,7 @@ Network usage, even to check connectivity, does not require root privileges (sud
 The `adtn-lib` provides a `C` and a `Java` library to develop over the platform.
 
 [C library documentation](http://senda-uab.github.io/aDTN-platform/c_doxygen/index.html "C library documentation")
+
 [JavaDoc](http://senda-uab.github.io/aDTN-platform/java_doc/index.html "JavaDoc")
 
 ## Example of installation and usage
