@@ -48,16 +48,16 @@
 
 <p>Root privileges are necessary during the whole installation. Internet connection and apt-get application are also required during installation.</p>
 
-<p>Download the public key of adtn deb report and add it to your apt-key manager
-<code>
+<p>Download the public key of adtn deb report and add it to your apt-key manager</p>
+<p><code>
 sudo sh -c 'wget -O - http://tao.uab.es/adtn/conf/adtn.gpg.key | apt-key add -'
-</code>
-Update the <code>sources.list</code> files.
-<code>
+</code></p>
+<p>Update the <code>sources.list</code> files.</p>
+<p><code>
 sudo wget -P /etc/apt/sources.list.d/ http://tao.uab.es/adtn/conf/wheezy/adtn.list
-</code>
-Update the apt-get repository.
-<code>
+</code></p>
+<p>Update the apt-get repository.</p>
+<p><code>
 sudo apt-get update
 </code></p>
 
@@ -71,11 +71,12 @@ sudo apt-get update
 
 <p>Execute the line that fits better the needs of your node (ONLY ONE OF THE FOLLOWING):
 <code>
-sudo apt-get install adtn
-sudo apt-get install adtn-lib
-sudo apt-get install adtn-tools
-</code>
-During installation, you will be asked to enter the following information to properly configure your node:</p>
+<p>sudo apt-get install adtn
+<p>sudo apt-get install adtn-lib
+<p>sudo apt-get install adtn-tools
+</code></p>
+
+<p>During installation, you will be asked to enter the following information to properly configure your node:</p>
 
 <ol>
 <li>Set the adtn identifier (default is <hostname>). The adtn identifier must be unique.</li>
@@ -88,11 +89,11 @@ During installation, you will be asked to enter the following information to pro
 
 <p>Network management requires root privileges. Therefore, sudo is required to start, get status, supervise (start stopped processes), and stop the platform.
 <code>
-sudo service adtn start
-sudo service adtn status
-sudo service adtn supervise
-sudo service adtn stop
-</code>
+<p>sudo service adtn start
+<p>sudo service adtn status
+<p>sudo service adtn supervise
+<p>sudo service adtn stop
+</code></p>
 Network usage, even to check connectivity, does not require root privileges (sudo). The available tools are:</p>
 
 <ul>
@@ -106,56 +107,56 @@ Network usage, even to check connectivity, does not require root privileges (sud
 <p>The <code>adtn-lib</code> provides a <code>C</code> and a <code>Java</code> library to develop over the platform.</p>
 
 <p><a href="http://senda-uab.github.io/aDTN-platform/c_doxygen/index.html" title="C library documentation">C library documentation</a></p>
-<p><a href="http://senda-uab.github.io/aDTN-platform/java_doc/index.html" title="JavaDoc">JavaDoc</a></p>/
+<p><a href="http://senda-uab.github.io/aDTN-platform/java_doc/index.html" title="JavaDoc">JavaDoc</a></p>
 
 <h2><a id="adtn-example" class="anchor" href="#adtn-example" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example of installation and usage</h2>
 
-<p>This example shows how alice installs a single adtn platform in her machine using adtn-tools.</p>
-<p><code>
-# Download the public key of adtn deb report and add it to your apt-key manager
-sudo sh -c 'wget -O - http://tao.uab.es/adtn/conf/adtn.gpg.key | apt-key add -'
-# Update the sources.list files.
-sudo wget -P /etc/apt/sources.list.d/ http://tao.uab.es/adtn/conf/wheezy/adtn.list
-# Update the apt-get repository.
-sudo apt-get update
-# Install platform + development library + ping + traceroute
-sudo apt-get install adtn-tools
-# Set platform name as alice
-# Accept default IP
-# Accept default node
-# Run the platform
-sudo service adtn start
-# Run ping to your own machine
-adtn-ping alice
-</p></code>
+<p>This example shows how alice installs a single adtn platform in her machine using adtn-tools.
+<code>
+<p># Download the public key of adtn deb report and add it to your apt-key manager
+<p>sudo sh -c 'wget -O - http://tao.uab.es/adtn/conf/adtn.gpg.key | apt-key add -'
+<p># Update the sources.list files.
+<p>sudo wget -P /etc/apt/sources.list.d/ http://tao.uab.es/adtn/conf/wheezy/adtn.list
+<p># Update the apt-get repository.
+<p>sudo apt-get update
+<p># Install platform + development library + ping + traceroute
+<p>sudo apt-get install adtn-tools
+<p># Set platform name as alice
+<p># Accept default IP
+<p># Accept default node
+<p># Run the platform
+<p>sudo service adtn start
+<p># Run ping to your own machine
+<p>adtn-ping alice
+</code></p>
 
 <h2><a id="adtn-update" class="anchor" href="#adtn-update" aria-hidden="true"><span class="octicon octicon-link"></span></a>Update</h2>
 
 <p>Update the apt-get repository in order to look for available updates:
-<code>
+<p><code>
 sudo apt-get update
-</code>
-Repeat the installation:
+</code></p>
+<p>Repeat the installation:
 <code>
-sudo apt-get install adtn
-sudo apt-get install adtn-lib
-sudo apt-get install adtn-tools
+<p>sudo apt-get install adtn
+<p>sudo apt-get install adtn-lib
+<p>sudo apt-get install adtn-tools
 </code></p>
 
 <h2><a id="adtn-uninstall" class="anchor" href="#adtn-uninstall" aria-hidden="true"><span class="octicon octicon-link"></span></a>Uninstall</h2>
 
-<p>Uninstalling the platform requires executing the following line.</p>
+<p>Uninstalling the platform requires executing the following line.
 
-<p><code>
-sudo apt-get remove --purge adtn
+<code>
+<p>sudo apt-get remove --purge adtn
 </code>
-Notice that --purge flag removes all adtn configuration files.</p>
+<p>Notice that --purge flag removes all adtn configuration files.
 
-<p>If you also want to remove the public key of the adtn deb repo from the apt-key manager, execute the following lines:</p>
+<p>If you also want to remove the public key of the adtn deb repo from the apt-key manager, execute the following lines:
 
-<p><code>
-sudo apt-key del  `apt-key list | grep -i -1 developers@senda.uab.cat | grep pub | cut -d '/' -f2- | cut -d ' ' -f1`
-sudo rm /etc/apt/sources.list.d/adtn.list
+<code>
+<p>sudo apt-key del  `apt-key list | grep -i -1 developers@senda.uab.cat | grep pub | cut -d '/' -f2- | cut -d ' ' -f1`
+<p>sudo rm /etc/apt/sources.list.d/adtn.list
 </code></p>
 
 
