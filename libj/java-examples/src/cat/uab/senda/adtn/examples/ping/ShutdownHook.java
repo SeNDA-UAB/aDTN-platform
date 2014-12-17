@@ -14,6 +14,7 @@ public class ShutdownHook extends Thread {
 
 	@Override
 	public void run() {
+		Ping.showStatistics();
 		try {
 			Comm.adtnShutdown(s);
 		} catch (SocketException | FileNotFoundException | IllegalAccessException e) {

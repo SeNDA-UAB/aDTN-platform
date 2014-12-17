@@ -42,9 +42,12 @@ public class Ping {
 	public static byte PING = 0;
 	public static byte PONG = 1;
 	public static final int PORT = 1;
+	public static int stop = 0;
 
 	private static HashMap<Integer, Long> map = new HashMap<Integer, Long>();
-	private ArgumentHandler ah;
+	private static ArgumentHandler ah;
+	public static int b_sent, b_received;
+	public static long total_rtt = 0, max_rtt = 0, min_rtt = 0;
 
 	public ArgumentHandler GetParameters(String[] args) {
 		ah = new ArgumentHandler();
@@ -128,7 +131,7 @@ public class Ping {
 			source = new SockAddrT(platform_id, Ping.PORT);
 
 			Comm.adtnBind(s, source);
-
+			
 			Runtime.getRuntime().addShutdownHook(new ShutdownHook(s));
 
 			// Create a thread for the receiver and starts it
@@ -143,11 +146,32 @@ public class Ping {
 			}
 
 			receiver.join();
+			
 		} catch (SocketException | FileNotFoundException | ParseException | IllegalAccessException
 				| AddressInUseException | InterruptedException e1) {
 			e1.printStackTrace();
 		}
 
+	}
+	
+	public static void showStatistics() {
+		int precission;
+		double rtt_avg;
+		
+		if (b_sent == 0)
+			precission = 0;
+		else
+			precission = (1 - (b_received / b_sent)) * 100;
+		
+		if (b_received == 0)
+			rtt_avg = 0;
+		else
+			rtt_avg = total_rtt / b_received;
+		
+		System.out.println("\n-- "+ah.destination_id+" ping statistics --");
+		System.out.println(b_sent + " bundles transmitted, " + b_received 
+				+ " bundles received, " + precission + "% packet loss, time "+total_rtt+"ms");
+		System.out.println("rtt min/avg/max = "+min_rtt+"/"+rtt_avg+"/"+max_rtt+ "ms");
 	}
 
 	public static HashMap<Integer, Long> getMap() {
