@@ -36,6 +36,7 @@ for arch in $ARCHILIST; do
   elif [[ $ARCH == $ARCH64 ]]; then
     sed -i "s/ARCH=\$ARCH64/ARCH=$arch/g" $CONFIG_FILE
   fi
+  . $CONFIG_FILE 
   echo -e "\e[92mRemoving old debs if any...\e[39m"
   sudo dpkg --purge $NAMEEXM $NAMELIB $NAMEPLAT
   echo -e "\e[92mRemoving previous auxiliar installation folder...\e[39m"
@@ -43,16 +44,16 @@ for arch in $ARCHILIST; do
   echo -e "\e[92mGenerating adtn deb...\e[39m"
   bash deb_adtn.sh
   echo -e "\e[92mInstalling adtn...\e[39m"
-  sudo dpkg -i $DEB/${NAMEPLAT}_${VERSPLAT}-${RELEPLAT}_${ARCH}.deb
+  sudo dpkg -i $RELEASE/v$VERSPLAT-$RELEPLAT/$DEB/${NAMEPLAT}_${VERSPLAT}-${RELEPLAT}_${ARCH}.deb
   
   echo -e "\e[92mGenerating adtn lib...\e[39m"
   bash deb_lib.sh
   echo -e "\e[92mInstalling lib...\e[39m"
-  sudo dpkg -i $DEB/${NAMELIB}_${VERSLIB}-${RELELIB}_${ARCH}.deb
+  sudo dpkg -i $RELEASE/v$VERSLIB-$RELELIB/$DEB/${NAMELIB}_${VERSLIB}-${RELELIB}_${ARCH}.deb
   echo -e "\e[92mGenerating tools...\e[39m"
   bash deb_tools.sh
   echo -e "\e[92mInstalling tools...\e[39m"
-  sudo dpkg -i $DEB/${NAMEEXM}_${VERSEXM}-${RELEEXM}_${ARCH}.deb
+  sudo dpkg -i $RELEASE/v$VERSEXM-$RELEEXM/$DEB/${NAMEEXM}_${VERSEXM}-${RELEEXM}_${ARCH}.deb
   echo -e "\e[92m"
   read -p "Do you want to remove the installed debs? (Y/n)" var
   echo -e "\e[39m"

@@ -50,8 +50,8 @@ cp $CURRPWD/configs/init/* $CURRPWD/$ADTNAUX/bundleAgent/config/init/ > /dev/nul
 sed -i "s/\/var\/local\//\/var\//g" $CURRPWD/$ADTNAUX/bundleAgent/config/adtn.ini
 cmake ../ -DCMAKE_INSTALL_PREFIX=/usr -DSYSCONFDIR=/etc -DCMAKE_BUILD_TYPE=debug
 sudo checkinstall -y --pkgname=$NAMEPLAT --pkgversion=$VERSPLAT --pkgarch=$ARCH --install=$INST --maintainer=$MAINTAIN --requires=$REQPPLAT --pkgrelease=$RELEPLAT --backup=no --fstrans=yes --stripso=no --strip=no
-mkdir $CURRPWD/$DEB > /dev/null 2>&1
-cp *.deb $CURRPWD/$DEB
+mkdir -p $CURRPWD/$RELEASE/v$VERSPLAT-$RELEPLAT/$DEB > /dev/null 2>&1
+cp *.deb $CURRPWD/$RELEASE/v$VERSPLAT-$RELEPLAT/$DEB
 #------------------------------
 
 echo "Deb packages have been copied to $CURRPWD/$DEB"

@@ -37,8 +37,8 @@ cp -r $CURRPWD/$ADTNPATH/libj $CURRPWD/$ADTNAUX/
 cd $CURRPWD/$ADTNAUX/libj
 ant dist -Dver="$VERSLIB"
 cp dist/libNativeAdtnApi.so ../lib/api
-mkdir $CURRPWD/$JAR > /dev/null 2>&1
-cp dist/*.jar $CURRPWD/$JAR
+mkdir $CURRPWD/$RELEASE/v$VERSLIB-$RELELIB/$JAR > /dev/null 2>&1
+cp dist/*.jar $CURRPWD/$RELEASE/v$VERSLIB-$RELELIB/$JAR
 cd ../lib
 echo 'install(FILES \${PROJECT_SOURCE_DIR}/api/libNativeAdtnApi.so PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_READ WORLD_EXECUTE DESTINATION lib)' >> CMakeLists.txt
 export LIBRARY_PATH=$LIBRARY_PATH_TMP
@@ -55,8 +55,8 @@ cp $CURRPWD/install_scripts/lib/* .
 
 cmake ../ -DCMAKE_INSTALL_PREFIX=/usr -DSYSCONFDIR=/etc -DCMAKE_BUILD_TYPE=$DBTYPE
 sudo checkinstall -y --pkgname=$NAMELIB --pkgversion=$VERSLIB --pkgarch=$ARCH  --maintainer=$MAINTAIN --install=$INST --requires=$REQPLIB --pkgrelease=$RELELIB --backup=no --fstrans=yes --strip=no --stripso=no 
-mkdir $DEB > /dev/null 2>&1
-cp *.deb $CURRPWD/$DEB
+mkdir -p $CURRPWD/$RELEASE/v$VERSLIB-$RELELIB/$DEB > /dev/null 2>&1
+cp *.deb $CURRPWD/$RELEASE/v$VERSLIB-$RELELIB/$DEB
 #------------------------------
 echo "Deb packages have been copied to $CURRPWD/$DEB"
 exit 0
