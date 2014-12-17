@@ -326,15 +326,15 @@ int main(int argc,  char *const *argv)
 	if (conf.config_file == NULL)
 		conf.config_file = DEFAULT_CONF_FILE_PATH;
 
-	if (conf.payload_size == 0) {
+	if (conf.payload_size <= 0) {
 		conf.payload_size = DEFAULT_PAYLOAD_SIZE;
 	} else if (conf.payload_size >= MAX_BUNDLE_SIZE - 500) {
 		printf("Payload too big, setting default value\n");
 		conf.payload_size = DEFAULT_PAYLOAD_SIZE;
 	}
-	if (conf.bundle_lifetime == 0)
+	if (conf.bundle_lifetime <= 0)
 		conf.bundle_lifetime = DEFAULT_LIFETIME;
-	if (conf.timeout == 0)
+	if (conf.timeout <= 0)
 		conf.timeout = DEFAULT_TIMEOUT;
 
 	struct conf_list global_conf = {0};
