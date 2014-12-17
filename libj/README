@@ -1,10 +1,17 @@
+This is the release fo the library for Java applications to communicate using aDTN platforms.
 
-This is the first release of the library for Java applications to communicate using aDTN platforms.
+In this folder you will find the Java API, and some examples that runs over the API.
 
-An aDTN platform installation is required for its correct execution.
+For generating the Java API, you need to install the adtn and the adtn-lib packages (to details of how to install it see https://github.com/SeNDA-UAB/aDTN-platform)
 
-Requires Java 1.7 onwards.
+Other requisites:
+	- Java version 1.6 onwards
+	- Ant version 1.9 onwards
 
-Execute "bash compileAdtnlibj.sh" on the same platform machine. Then, use the content of adtnlibj-0.1-examples.zip to run an example and start coding your own application. 
+To generate the API you need to run: ant dist
+
+To generate the examples with the API and the javadocs you need to run: ant fulldist
+
+This will generate a zip file with the name adtn-dev-environment-X.x.zip (where X.x is the version), with this zip you can start developing any application over the aDTN platform.
 
 For more information, contact developers@deic.uab.cat.
