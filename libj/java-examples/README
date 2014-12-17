@@ -1,15 +1,44 @@
-Folder with an example of java application running on top of an adtn platform.
+ System requirements
+---------------------
 
-It is important to generate this folder from the "adtnlibj" source code executing "bash compileAdtnlibj.sh" for the adtn platform to be used. Otherwise, the native part of the code won't work or the adtn platform won't be found. Using platforms with the same configuration on machines with the same architecture simplifies this job.
+ - adtn-lib. Follow the installation instructions available at https://github.com/SeNDA-UAB/aDTN-platform
+ - Java SE Development Kit 6 (jdk) onwards
+ - Apache Ant 1.9 onwards
 
-Check the platform running the Sender/Receiver example using two platforms:
 
-On platform A (default adtn.ini)
- ant compile
- ant runReceiver
 
-On platform B (default adtn.ini)
- ant compile
- ant runSender
+ Settings
+----------
 
-The same test can be performed using two platforms. In that case it is recommended to install those platforms in different machines so that default installation is possible for both platforms.  
+For a Java application to be able to use the adtn platform for sending and/or receiving  messages, it must be launched by a user belonging to the adtn user group. Notice that to add the user alice to the adtn group you just need to execute the following command 'sudo usermod -aG adtn "alice"'. Stop and relaunch all bash terminals to ensure they are aware of your user being a member of adtn user group. 
+
+
+ Running a test using the examples
+-----------------------------------
+
+Build.xml is set to provide a task for running the Receiver and another for running the Sender and another for running the Ping. Previously you need to compile all of them with: 'ant compile'.
+
+To perform a test, run the Receiver in a platform: 'ant runReceiver'.
+
+And run the Sender in another platform (or the same platform): 'ant runSender'. 
+
+
+
+ Deploying an application using the adtn communication library
+-------------------------------------------------------------------
+
+IMPORTANT!! Inform your future users that they must belong to the adtn user group in order to use your application.
+
+ Troubleshooting
+-----------------
+
+If your application have a behaviour similar at:
+
+When you send a message this is not send.
+If a call to receive is not blocking you application when no message is received.
+If you see a segmentation fault error.
+
+Your user is not in the adtn group, you need to add it to run your application as seen in Settings section.
+
+
+For more information, contact developers@deic.uab.cat.

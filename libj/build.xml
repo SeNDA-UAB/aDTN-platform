@@ -68,7 +68,7 @@
 		<copy file="${examples}/build.xml" todir="${dist}/tmp/"/>
 		<copy file="${dist}/${ant.project.name}-${ver}.jar" todir="${dist}/tmp/lib"/>
 		<copy file="${examples}/README" todir="${dist}/tmp/"/>
-		<zip destfile="${dist}/tmp/lib/${ant.project.name}-doc.zip">
+		<zip destfile="${dist}/tmp/lib/${ant.project.name}-${ver}-doc.zip">
 			<fileset dir="${doc}" />
 		</zip>
 		<zip destfile="${dist}/${ant.project.name}-dev-environment-${ver}.zip">
