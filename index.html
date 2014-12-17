@@ -34,77 +34,84 @@
         <h2>
 <a id="adtn-suite-introduction" class="anchor" href="#adtn-suite-introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>aDTN platform introduction</h2>
 
-The aDTN communication platform developed at SeNDA is a Delay and Disruption Tolerant Networking following the ActiveDTN principles that allow routing software code to be propagated by the messages all over the network.
+<p>The aDTN communication platform developed at SeNDA is a Delay and Disruption Tolerant Networking following the ActiveDTN principles that allow routing software code to be propagated by the messages all over the network.</p>
 
-This document covers the system requirements, installation, an installation example, usage, update and uninstallation of the platform.
+<p>This document covers the system requirements, installation, an installation example, usage, update and uninstallation of the platform.</p>
 
-## System requirements
+<h2><a id="adtn-system-requirements" class="anchor" href="#adtn-system-requirements" aria-hidden="true"><span class="octicon octicon-link"></span></a>System requirements</h2>
 
-The platform is available only for PC Machines 64 bits with debian-like Linux operating system and with at least a network interface available.
+<p>The platform is available only for PC Machines 64 bits with debian-like Linux operating system and with at least a network interface available.</p>
 
-Installation instructions are only provided for Ubuntu trusty (14.04), Ubuntu utopic (14.10) and Debian wheezy (7.*). For information about how to install the platform in other unix-like systems, contact <developers@senda.uab.cat>.
+<p>Installation instructions are only provided for Ubuntu trusty (14.04), Ubuntu utopic (14.10) and Debian wheezy (7.*). For information about how to install the platform in other unix-like systems, contact <a href="m&#x61;&#x69;&#x6C;&#116;&#x6F;:&#100;&#101;&#118;&#x65;&#x6C;&#111;&#x70;&#101;&#114;&#115;&#64;&#115;&#x65;&#110;d&#x61;&#46;&#x75;&#x61;&#x62;&#46;&#99;&#97;&#116;">&#100;&#101;&#118;&#x65;&#x6C;&#111;&#x70;&#101;&#114;&#115;&#64;&#115;&#x65;&#110;d&#x61;&#46;&#x75;&#x61;&#x62;&#46;&#99;&#97;&#116;</a>.</p>
 
-## Installation
+<h2><a id="adtn-installation" class="anchor" href="#adtn-installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h2>
 
-Root privileges are necessary during the whole installation. Internet connection and apt-get application are also required during installation.
+<p>Root privileges are necessary during the whole installation. Internet connection and apt-get application are also required during installation.</p>
 
-Download the public key of adtn deb report and add it to your apt-key manager
-```bash
+<p>Download the public key of adtn deb report and add it to your apt-key manager
+<code>
 sudo sh -c 'wget -O - http://tao.uab.es/adtn/conf/adtn.gpg.key | apt-key add -'
-```
-Update the `sources.list` files.
-```bash
+</code>
+Update the <code>sources.list</code> files.
+<code>
 sudo wget -P /etc/apt/sources.list.d/ http://tao.uab.es/adtn/conf/wheezy/adtn.list
-```
+</code>
 Update the apt-get repository.
-```bash
+<code>
 sudo apt-get update
-```
+</code></p>
 
-Three different installation options are provided for nodes with different needs:
+<p>Three different installation options are provided for nodes with different needs:</p>
 
-* __adtn__: For basic nodes and observer nodes only.
-* __adtn-lib__: For nodes running applications.
-* __adtn-tools__: For nodes running applications with network connection checking tools.
+<ul>
+<li><strong>adtn</strong>: For basic nodes and observer nodes only.</li>
+<li><strong>adtn-lib</strong>: For nodes running applications.</li>
+<li><strong>adtn-tools</strong>: For nodes running applications with network connection checking tools.</li>
+</ul>
 
-Execute the line that fits better the needs of your node (ONLY ONE OF THE FOLLOWING):
-```bash
+<p>Execute the line that fits better the needs of your node (ONLY ONE OF THE FOLLOWING):
+<code>
 sudo apt-get install adtn
 sudo apt-get install adtn-lib
 sudo apt-get install adtn-tools
-```
-During installation, you will be asked to enter the following information to properly configure your node:
+</code>
+During installation, you will be asked to enter the following information to properly configure your node:</p>
 
-1. Set the adtn identifier (default is <hostname>). The adtn identifier must be unique.
-2. Set the IP (default is <available_network_interface_ip>). IP address is crucial for lower layer communication. All adtn nodes must have a unique IP address and must be in the same local network.
-3. Set the adtn port (default is 4556). The default port must be ok if you are running a single adtn platform instance per machine and there is no other application using it.
+<ol>
+<li>Set the adtn identifier (default is <hostname>). The adtn identifier must be unique.</li>
+<li>Set the IP (default is <available_network_interface_ip>). IP address is crucial for lower layer communication. All adtn nodes must have a unique IP address and must be in the same local network.</li>
+<li>Set the adtn port (default is 4556). The default port must be ok if you are running a single adtn platform instance per machine and there is no other application using it.</li>
+</ol>
 
-## Usage
+<h2><a id="adtn-usage" class="anchor" href="#adtn-usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h2>
 
-Network management requires root privileges. Therefore, sudo is required to start, get status, supervise (start stopped processes), and stop the platform.
-```bash
+
+<p>Network management requires root privileges. Therefore, sudo is required to start, get status, supervise (start stopped processes), and stop the platform.
+<code>
 sudo service adtn start
 sudo service adtn status
 sudo service adtn supervise
 sudo service adtn stop
-```
-Network usage, even to check connectivity, does not require root privileges (sudo). The available tools are:
+</code>
+Network usage, even to check connectivity, does not require root privileges (sudo). The available tools are:</p>
 
-* adtn-ping: Sends a bundle to network nodes. For more info, execute adtn-ping -h.
-* adtn-neighbours: Shows the list of neighbour nodes. For more info, execute adtn-neighbours -h.
-* adtn-traceroute: Prints the route bundles take to network host. For more info, execute adtn-traceroute -h.
+<ul>
+<li>adtn-ping: Sends a bundle to network nodes. For more info, execute adtn-ping -h.</li>
+<li>adtn-neighbours: Shows the list of neighbour nodes. For more info, execute adtn-neighbours -h.</li>
+<li>adtn-traceroute: Prints the route bundles take to network host. For more info, execute adtn-traceroute -h.</li>
+</ul>
 
-## aDTN library documentation
+<h2><a id="adtn-library-documentation" class="anchor" href="#adtn-library-documentation" aria-hidden="true"><span class="octicon octicon-link"></span></a>aDTN library documentation</h2>
 
-The `adtn-lib` provides a `C` and a `Java` library to develop over the platform.
+<p>The <code>adtn-lib</code> provides a <code>C</code> and a <code>Java</code> library to develop over the platform.</p>
 
-[C library documentation](http://senda-uab.github.io/aDTN-platform/c_doxygen/index.html "C library documentation")
-[JavaDoc](http://senda-uab.github.io/aDTN-platform/java_doc/index.html "JavaDoc")
+<p><a href="http://senda-uab.github.io/aDTN-platform/c_doxygen/index.html" title="C library documentation">C library documentation</a></p>
+<p><a href="http://senda-uab.github.io/aDTN-platform/java_doc/index.html" title="JavaDoc">JavaDoc</a></p>/
 
-## Example of installation and usage
+<h2><a id="adtn-example" class="anchor" href="#adtn-example" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example of installation and usage</h2>
 
-This example shows how alice installs a single adtn platform in her machine using adtn-tools.
-```bash
+<p>This example shows how alice installs a single adtn platform in her machine using adtn-tools.</p>
+<p><code>
 # Download the public key of adtn deb report and add it to your apt-key manager
 sudo sh -c 'wget -O - http://tao.uab.es/adtn/conf/adtn.gpg.key | apt-key add -'
 # Update the sources.list files.
@@ -120,35 +127,37 @@ sudo apt-get install adtn-tools
 sudo service adtn start
 # Run ping to your own machine
 adtn-ping alice
-```
-## Update
+</p></code>
 
-Update the apt-get repository in order to look for available updates:
-```bash
+<h2><a id="adtn-update" class="anchor" href="#adtn-update" aria-hidden="true"><span class="octicon octicon-link"></span></a>Update</h2>
+
+<p>Update the apt-get repository in order to look for available updates:
+<code>
 sudo apt-get update
-```
+</code>
 Repeat the installation:
-```bash
+<code>
 sudo apt-get install adtn
 sudo apt-get install adtn-lib
 sudo apt-get install adtn-tools
-```
+</code></p>
 
-## Uninstall
+<h2><a id="adtn-uninstall" class="anchor" href="#adtn-uninstall" aria-hidden="true"><span class="octicon octicon-link"></span></a>Uninstall</h2>
 
-Uninstalling the platform requires executing the following line.
+<p>Uninstalling the platform requires executing the following line.</p>
 
-```bash
+<p><code>
 sudo apt-get remove --purge adtn
-```
-Notice that --purge flag removes all adtn configuration files.
+</code>
+Notice that --purge flag removes all adtn configuration files.</p>
 
-If you also want to remove the public key of the adtn deb repo from the apt-key manager, execute the following lines:
+<p>If you also want to remove the public key of the adtn deb repo from the apt-key manager, execute the following lines:</p>
 
-```bash
+<p><code>
 sudo apt-key del  `apt-key list | grep -i -1 developers@senda.uab.cat | grep pub | cut -d '/' -f2- | cut -d ' ' -f1`
 sudo rm /etc/apt/sources.list.d/adtn.list
-```
+</code></p>
+
 
       </section>
     </div>
