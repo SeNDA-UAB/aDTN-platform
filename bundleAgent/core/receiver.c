@@ -667,7 +667,7 @@ static int get_and_process_bundle(int *sock)
 		goto end;
 	}
 
-	LOG_MSG(LOG__INFO, false, "Recieved bundle form %s:%d with length %d", bundle_src_addr, ntohs(bundle_src.sin_port), recv_l);
+	LOG_MSG(LOG__INFO, false, "Recieved bundle form %s (%s:%d) with length %d", agent_origin_id, bundle_src_addr, ntohs(bundle_src.sin_port), recv_l);
 
 	if (process_bundle(agent_origin_id, bundle, bundle_l) < 0) {
 		LOG_MSG(LOG__ERROR, false, "Error processing bundle from %s", bundle_src_addr);
