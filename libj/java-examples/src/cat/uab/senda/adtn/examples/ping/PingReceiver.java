@@ -34,12 +34,14 @@ public class PingReceiver extends Thread implements Runnable {
 	SockAddrT source, destination;
 	byte type, option;
 	int seq_num;
-	long time, localTime;
+	long time, localTime, rtt;
+
 
 	PingReceiver(int socket, SockAddrT source, ArgumentHandler ah) {
 		this.s = socket;
 		this.source = source;
 		this.ah = ah;
+		Ping.b_received = 0;
 	}
 
 	@Override
@@ -84,11 +86,19 @@ public class PingReceiver extends Thread implements Runnable {
 								System.out.println("Pong received from " + destination.getId() + " at "
 										+ new Date(localTime).toString() + " seq=" + seq_num + ". Building pong.");
 							Ping.getMap().remove(seq_num);
-							time = localTime - time;
+							rtt = localTime - time;
+							
+							if (rtt < Ping.min_rtt || Ping.min_rtt == 0)
+								Ping.min_rtt = rtt;
+							if (rtt > Ping.max_rtt || Ping.max_rtt == 0)
+								Ping.max_rtt = rtt;
 
 							System.out.println(destination.getId() + " received ping at "
 									+ new Date(localTime).toString() + " seq=" + seq_num + " time="
-									+ Long.toString(time) + "ms.");
+									+ Long.toString(rtt) + "ms.");
+							
+							Ping.b_received++;
+							Ping.total_rtt+= rtt;
 							i--;
 						}
 					}

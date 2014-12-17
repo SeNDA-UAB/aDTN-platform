@@ -37,11 +37,14 @@ public class PingSender extends Thread implements Runnable {
 	int ping_flags, seq_num;
 	long time;
 
+
 	PingSender(int socket, SockAddrT source, SockAddrT destination, ArgumentHandler ah) {
 		this.s = socket;
 		this.source = source;
 		this.destination = destination;
 		this.ah = ah;
+		Ping.b_sent = 0;
+		
 	}
 
 	@Override
@@ -58,7 +61,7 @@ public class PingSender extends Thread implements Runnable {
 
 			System.out.println("PING " + destination_id + " " + ah.size + " bytes of payload. " + ah.lifetime
 					+ " seconds of lifetime.");
-
+			
 			while (i != 0) {
 				byte[] data = new byte[ah.size];
 
@@ -74,6 +77,7 @@ public class PingSender extends Thread implements Runnable {
 
 				Comm.adtnSendTo(s, destination, data);
 
+				Ping.b_sent++;
 				seq_num++;
 				i--;
 
@@ -84,5 +88,4 @@ public class PingSender extends Thread implements Runnable {
 			e1.printStackTrace();
 		}
 	}
-
 }
