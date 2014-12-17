@@ -183,8 +183,12 @@ int adtn_bind(int fd, sock_addr_t *addr)
 					goto close_f;
 				}
 				src = fopen(SOCK_SPOOL, "r");
+				if (!src) {
+					break;
+				}
+
 				dest = fopen(SOCK_SPOOL".tmp", "w");
-				if (!src || !dest) {
+				if (!dest) {
 					errno = EACCES;
 					goto close_f;
 				}
@@ -201,6 +205,7 @@ int adtn_bind(int fd, sock_addr_t *addr)
 				dest = NULL;
 				remove(SOCK_SPOOL);
 				rename(SOCK_SPOOL".tmp", SOCK_SPOOL);
+				chmod(SOCK_SPOOL, 0777);
 				break;
 			}
 			++j;
@@ -250,8 +255,13 @@ int adtn_close(int fd)
 	}
 	_pid = getpid();
 	src = fopen(SOCK_SPOOL, "r");
+	if (!src) {
+		ret = 0;
+		goto end;
+	}
+
 	dest = fopen(SOCK_SPOOL".tmp", "w");
-	if (!src || !dest) {
+	if (!dest) {
 		errno = EACCES;
 		goto end;
 	}
@@ -271,6 +281,7 @@ int adtn_close(int fd)
 	dest = NULL;
 	remove(SOCK_SPOOL);
 	rename(SOCK_SPOOL".tmp", SOCK_SPOOL);
+	chmod(SOCK_SPOOL, 0777);
 	free(identifier->addr.id);
 	free(identifier->data_path);
 	HASH_DEL(sockStore, identifier);
@@ -796,7 +807,9 @@ static char *adtn_recv_base(int fd)
 	len = strlen(shm->data_path) + 1 + strlen("incoming") + 1 + 8 + 1; //8 comes from maximum adtn port identifier
 	dir_path = (char *)calloc(len, sizeof(char));
 	snprintf(dir_path, len, "%s/incoming/%d", shm->data_path, identifier->addr.adtn_port);
-	if (mkdir (dir_path, 0755) == -1 && errno != EEXIST)
+	if (mkdir (dir_path, 0775) == -1 && errno != EEXIST)
+		goto end;
+	if (chmod (dir_path, 0775) == -1)
 		goto end;
 	ifd = inotify_init();
 	if (ifd < 0) {

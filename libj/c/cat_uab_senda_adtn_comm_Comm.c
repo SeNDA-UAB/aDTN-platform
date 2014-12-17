@@ -376,6 +376,9 @@ JNIEXPORT jobject JNICALL Java_cat_uab_senda_adtn_comm_Comm_adtnGetSocketOption
 		case ENOTSUP:
 			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/OpNotSuportedException"), "[aDTN] Invalid option.");
 			break;
+		case ENOMSG:
+			(*env)->ThrowNew(env, (*env)->FindClass(env, "cat/uab/senda/adtn/comm/JNIException"), "[aDTN] Missing signatures in the message.");
+			break;
 		}
 	}
 

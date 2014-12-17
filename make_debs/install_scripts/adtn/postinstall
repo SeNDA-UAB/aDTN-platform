@@ -50,11 +50,6 @@ chmod +x /etc/init.d/$MAINSRVC
 update-rc.d $MAINSRVC defaults > /dev/null 2>&1
 #Add libraries to ldconfig
 ldconfig
-read -p "Do you want to start the adtn now? (Y/n)" var
-var=${var,,}	#var to lower case
-if [[ $var =~ (yes|y)$ ]] || [ -z $var ]; then
-  service $MAINSRVC start > /dev/null 2>&1
-fi
 echo -e "Configuration process completed!\e[39m"
 echo "Remember that you will be able to edit those"
 echo "params and others in: ${INIPATH}"

@@ -40,7 +40,7 @@
 
 #define DEFAULT_LIFETIME 30
 #define DEFAULT_PAYLOAD_SIZE 64
-#define DEFAULT_TIMEOUT 5
+#define DEFAULT_TIMEOUT 60
 #define SNPRINTF(...)                                               \
 	do{                                                             \
 		int r = snprintf(__VA_ARGS__);                              \
@@ -420,7 +420,7 @@ int main(int argc,  char *const *argv)
 			break;
 		}
 		if (sig == SIGALRM){
-			printf("Timeout expired\n");
+			printf("Stop waiting for responses after %d seconds\n", conf.timeout);
 			break;
 		}
 	}

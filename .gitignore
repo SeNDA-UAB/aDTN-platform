@@ -40,8 +40,7 @@
 ld/
 build/
 tools/bin/
-make_debs/debs/
-make_debs/jars/
+make_debs/github
 make_debs/adtn-aux/
 
 libj/doc/

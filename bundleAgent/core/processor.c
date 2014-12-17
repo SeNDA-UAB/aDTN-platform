@@ -232,7 +232,7 @@ static char *send_bundle_thread(thread_sb_data *data)
 	unsigned char digest[16] = {0};
 	struct sockaddr_in remote_nb = {0};
 	struct timeval timeout;
-	char *bundle_src_addr;
+	char *bundle_src_addr = NULL;
 
 	if (get_nb_ip_and_port(data->neighbour, &n_ip, &n_port) != 0)
 		goto end;
