@@ -21,7 +21,7 @@
 ///Starts a connection with queueManager and returns a connection identifier >0
 int queue_manager_connect(char* data_path, char *q_sockname);
 ///Close a connection with queueManager
-inline void queue_manager_disconnect(int queue_socket, char* data_path, char* queue_sockname);
+void queue_manager_disconnect(int queue_conn, char *data_path, char *q_sockname);
 /// Inserts a Bundle in the queue.
 int queue(const char *bundle_id, int queue_conn);
 /// Empty full queue

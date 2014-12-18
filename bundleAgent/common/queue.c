@@ -97,7 +97,7 @@ int queue_manager_connect(char *data_path, char *q_sockname)
 	return sock;
 }
 
-inline void queue_manager_disconnect(int queue_conn, char *data_path, char *q_sockname)
+void queue_manager_disconnect(int queue_conn, char *data_path, char *q_sockname)
 {
 	char *sockname;
 	int len;
