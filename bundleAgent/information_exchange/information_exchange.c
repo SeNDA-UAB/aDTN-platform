@@ -32,19 +32,19 @@ struct world_vars *world;
  * Cancellation clean-up handler
  * @param arg Double pointer to free
  */
-static void free_double_pointer(void **arg)
+static void free_double_pointer(void *arg)
 {
-	free(*arg);
+	free(*(void **)arg);
 }
 
 /**
  * Cancellation clean-up handler
  * @param arg Multicast socket
  */
-static void nb_monitor_cleaner(int *sock)
+static void nb_monitor_cleaner(void *sock)
 {
-	leave_multicast_group(*sock, world->multicast_group, world->platform_ip);
-	close(*sock);
+	leave_multicast_group(*(int *)sock, world->multicast_group, world->platform_ip);
+	close(*(int *)sock);
 }
 
 /**

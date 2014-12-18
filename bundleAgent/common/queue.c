@@ -22,6 +22,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <unistd.h>
 
 #include "log.h"
 #include "paths.h"
@@ -96,7 +97,7 @@ int queue_manager_connect(char *data_path, char *q_sockname)
 	return sock;
 }
 
-inline void queue_manager_disconnect(int queue_conn, char *data_path, char *q_sockname)
+void queue_manager_disconnect(int queue_conn, char *data_path, char *q_sockname)
 {
 	char *sockname;
 	int len;
@@ -149,7 +150,6 @@ char *dequeue(int queue_conn)
 int bundles_in_queue(int queue_conn)
 {
 	char msg[3] = {3};
-	char *bundle_id;
 	int nBundles;
 
 	if (queue_conn <= 0)

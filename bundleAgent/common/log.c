@@ -23,7 +23,6 @@
 
 #include "include/log.h"
 
-static int initiated = 0;
 static FILE *error_log_f;
 static FILE *info_log_f;
 static int debug_lvl = LOG__ERROR;

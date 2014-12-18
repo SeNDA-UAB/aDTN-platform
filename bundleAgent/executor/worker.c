@@ -53,20 +53,20 @@
 	} while(0);                                                                 \
 	
 /* Cleanup handlers */
-void kill_child(int *pid)
+void kill_child(void *pid)
 {
-	if (*pid != 0) {
-		LOG_MSG(LOG__INFO, false, "Child %d killed", *pid);
-		kill(*pid, SIGTERM);
+	if (*(int *)pid != 0) {
+		LOG_MSG(LOG__INFO, false, "Child %d killed", *(int *)pid);
+		kill(*(int *)pid, SIGTERM);
 	}
 }
 
-void close_socekt(int *s)
+void close_socekt(void *s)
 {
-	close(*s);
+	close(*(int *)s);
 }
 
-void clean()
+void clean(void)
 {
 	clean_all_bundle_dl();
 	exit_adtn_process();
@@ -382,7 +382,7 @@ void worker_thread(worker_params *params)
 	if (socketpair(AF_UNIX, SOCK_DGRAM, 0, sv) != 0) {
 		ret = 1;
 		LOG_MSG(LOG__ERROR, true, "socketpair()");
-		goto end;
+		pthread_exit(&ret);
 	}
 
 	pthread_cleanup_push(close_socekt, &sv[0]);
@@ -572,7 +572,6 @@ void worker_thread(worker_params *params)
 		}
 		readfds = safe;
 	}
-end:
 
 	pthread_cleanup_pop(1);
 	pthread_cleanup_pop(1);

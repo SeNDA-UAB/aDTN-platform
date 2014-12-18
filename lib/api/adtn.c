@@ -300,7 +300,7 @@ end:
 int adtn_shutdown(int fd)
 {
 	bunsock_s *identifier;
-	DIR *dir;
+	DIR *dir = NULL;
 	int len, ret = 1;
 	int shm_fd = -1;
 	struct dirent *file;
@@ -727,7 +727,7 @@ int adtn_sendto(int fd, const void *buffer, size_t buffer_l, const sock_addr_t a
 	if (!first_oc) {
 		snprintf(full_dest, ENDPOINT_LENGTH - 1, "%s:%d", addr.id, addr.adtn_port);
 	} else {
-		if ( (strlen(first_oc + 1) < 0) || (strlen(first_oc + 1) > 6) || (strtol(first_oc + 1, NULL, 10) <= 0)) {
+		if ( (strlen(first_oc + 1) == 0) || (strlen(first_oc + 1) > 6) || (strtol(first_oc + 1, NULL, 10) <= 0)) {
 			errno = EINVAL;
 			goto end;
 		}

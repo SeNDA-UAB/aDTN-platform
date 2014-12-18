@@ -350,13 +350,13 @@ int main(int argc,  char *const *argv)
 	if (conf.config_file == NULL)
 		conf.config_file = DEFAULT_CONF_FILE_PATH;
 
-	if (conf.payload_size == 0)
+	if (conf.payload_size <= 0)
 		conf.payload_size = DEFAULT_PAYLOAD_SIZE;
 
-	if (conf.ping_interval == 0)
+	if (conf.ping_interval <= 0)
 		conf.ping_interval = DEFAULT_INTERVAL;
 
-	if (conf.ping_lifetime == 0)
+	if (conf.ping_lifetime <= 0)
 		conf.ping_lifetime = DEFAULT_LIFETIME;
 
 

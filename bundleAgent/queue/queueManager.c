@@ -482,7 +482,8 @@ static int schedule(char *path)
 		len = strlen(bundle_id) + 1 + strlen(path) + 1;
 		bundle_path = (char *)calloc(len, sizeof(char));
 		snprintf(bundle_path, len, "%s/%s", path, bundle_id);
-		remove(bundle_path);
+		if (remove(bundle_path) != 0)
+			LOG_MSG(LOG__ERROR, true, "Error removing bundle %s", bundle_path);
 
 		if (del_life)
 			LOG_MSG(LOG__INFO, false, "Bundle %s removed because its lifetime expired", bundle_path);
@@ -597,8 +598,8 @@ int main(int argc, char *const argv[])
 		exit(1);
 	}
 
-	len = strlen(shm->data_path) + 1 + strlen(QUEUE_PATH);
-	path = calloc(len, sizeof(char));
+	len = strlen(shm->data_path) + strlen(QUEUE_PATH) + 1;
+	path = (char *) calloc(len, sizeof(char));
 	snprintf(path, len, "%s/"QUEUE_PATH, shm->data_path);
 	queue_init(&queue, path);
 
