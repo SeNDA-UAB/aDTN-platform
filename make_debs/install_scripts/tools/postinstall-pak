@@ -7,5 +7,9 @@ fi
 
 chown adtn:adtn /usr/bin/adtn-ping
 chmod u+s /usr/bin/adtn-ping
+chown adtn:adtn /usr/bin/adtn-traceroute
+chmod u+s /usr/bin/adtn-traceroute
+chown adtn:adtn /usr/bin/adtn-neighbours
+chmod u+s /usr/bin/adtn-neighbours
 
 exit 0;
