@@ -118,7 +118,7 @@ void get_neighbours()
 int main(int argc,  char *const *argv)
 {
     char *data_path = NULL, *rit_path = NULL;
-    int shm_fd = 0, fd = 0, sig = 0, ret = 1, err;
+    int shm_fd = 0, fd = 0, sig = 0, ret = 1;
     pthread_t get_neighbours_t;
 
     /* Check interval */

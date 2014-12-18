@@ -794,7 +794,6 @@ char *rit_getPathsByTag(const char *name, const char *value)
 {
 	cJSON *root;
 	char *paths = NULL, *rootPath, *complete_path = NULL;
-	int len;
 
 	if (value == NULL || strcmp(value, "") == 0 || name == NULL || strcmp(name, "") == 0)
 		goto ret;

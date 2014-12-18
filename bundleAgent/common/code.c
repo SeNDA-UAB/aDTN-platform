@@ -64,7 +64,7 @@ int B64_encode(unsigned char *in, int inl, unsigned char *out)
 int B64_decode(unsigned char *in, int inl, unsigned char *out)
 {
 	BIO *bio, *b64;
-	int outl, b64padding;
+	int outl;
 	FILE *stream;
 
 	outl = B64_decoded_l((char *)in, inl);

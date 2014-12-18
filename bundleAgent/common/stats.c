@@ -22,6 +22,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <float.h>
+#include <unistd.h>
 
 #include "include/log.h"
 #include "constants.h"
