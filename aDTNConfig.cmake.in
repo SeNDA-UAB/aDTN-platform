@@ -3,7 +3,6 @@ set(C_FLAG_ARCH "-m64")
 if (ARCH STREQUAL "i386")
 	set (C_FLAG_ARCH "-m32")
 endif()
-message("${C_FLAG_ARCH}")#DEBUG
 set(CMAKE_C_FLAGS_DEBUG "-Wall -ggdb ${C_FLAG_ARCH}")
 set(CMAKE_C_FLAGS_RELEASE "-O3 ${C_FLAG_ARCH}")
 
