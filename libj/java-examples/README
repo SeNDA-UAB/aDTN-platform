@@ -1,0 +1,44 @@
+ System requirements
+---------------------
+
+ - adtn-lib. Follow the installation instructions available at https://github.com/SeNDA-UAB/aDTN-platform
+ - Java SE Development Kit 6 (jdk) onwards
+ - Apache Ant 1.9 onwards
+
+
+
+ Settings
+----------
+
+For a Java application to be able to use the adtn platform for sending and/or receiving  messages, it must be launched by a user belonging to the adtn user group. Notice that to add the user alice to the adtn group you just need to execute the following command 'sudo usermod -aG adtn "alice"'. Stop and relaunch all bash terminals to ensure they are aware of your user being a member of adtn user group. 
+
+
+ Running a test using the examples
+-----------------------------------
+
+Build.xml is set to provide a task for running the Receiver and another for running the Sender and another for running the Ping. Previously you need to compile all of them with: 'ant compile'.
+
+To perform a test, run the Receiver in a platform: 'ant runReceiver'.
+
+And run the Sender in another platform (or the same platform): 'ant runSender'. 
+
+
+
+ Deploying an application using the adtn communication library
+-------------------------------------------------------------------
+
+IMPORTANT!! Inform your future users that they must belong to the adtn user group in order to use your application.
+
+ Troubleshooting
+-----------------
+
+If your application have a behaviour similar at:
+
+When you send a message this is not send.
+If a call to receive is not blocking you application when no message is received.
+If you see a segmentation fault error.
+
+Your user is not in the adtn group, you need to add it to run your application as seen in Settings section.
+
+
+For more information, contact developers@deic.uab.cat.

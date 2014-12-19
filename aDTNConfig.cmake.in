@@ -1,0 +1,23 @@
+# Build configuration
+set(C_FLAG_ARCH "-m64")
+if (ARCH STREQUAL "i386")
+	set (C_FLAG_ARCH "-m32")
+endif()
+set(CMAKE_C_FLAGS_DEBUG "-Wall -ggdb ${C_FLAG_ARCH}")
+set(CMAKE_C_FLAGS_RELEASE "-O3 ${C_FLAG_ARCH}")
+
+# Define installation prefix
+set(PREFIX "${CMAKE_INSTALL_PREFIX}")
+add_definitions(-DPREFIX="${PREFIX}")
+
+# Define configuration dir
+if (NOT DEFINED SYSCONFDIR)
+	set(SYSCONFDIR "${PREFIX}/etc" CACHE PATH "System configuration files path" FORCE)
+endif()
+add_definitions(-DSYSCONFDIR="${SYSCONFDIR}")
+
+# Define configuration subfolder
+if (NOT DEFINED ADTN_CONF_SUBDIR)
+	set(ADTN_CONF_SUBDIR adtn CACHE PATH "aDTN configuration subfolder" FORCE)
+endif()
+add_definitions(-DADTN_CONF_SUBDIR="${ADTN_CONF_SUBDIR}")

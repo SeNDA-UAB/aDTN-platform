@@ -1,52 +1,80 @@
-<project name="adtnlibj-0.1" default="compile" basedir=".">
+<project name="adtnlibj" default="dist" basedir=".">
 	<description>
         Compiles adtn library for java, generates a jar with the distribution for the current architecture,
-		and generates a zip with examples and the necessary content for a java developer to develope an app on this architecture.
+		and generates a zip with examples and the necessary content for a java developer to develop an app on this architecture.
 	</description>
 	
 	<!-- set global properties for this build -->
-	<property name="src" location="java"/>
-	<property name="examples" location="examples"/>
+	<property name="src" location="java/src"/>
+	<property name="examples" location="java-examples"/>
 	<property name="bin" location="bin"/>
 	<property name="dist"  location="dist"/>
 	<property name="doc"  location="doc"/>
-	<property name="examplesdist"  location="dist/${ant.project.name}-examples"/>
-	
-	<target name="init">
-		<mkdir dir="${bin}"/>
-		<mkdir dir="${dist}"/>
-		<mkdir dir="${doc}"/>
-	</target>
-	
+	<property name="ver" value="X.x"/>
+	<property name="gcc.includes" value="-I $default_inc -I ${java.home}/../include -I ${java.home}/../include/linux -L $default_lib -ladtnAPI"/>
+
 	<target name="clean">
 		<delete dir="${bin}"/>
 		<delete dir="${dist}"/>
 		<delete dir="${doc}"/>
 	</target>
 	
+	<target name="init" depends="clean">
+		<mkdir dir="${bin}"/>
+		<mkdir dir="${dist}"/>
+		<mkdir dir="${doc}"/>
+	</target>
+	
 	<target name="compile" depends="init">
 		<javac srcdir="${src}" destdir="${bin}"/>
-		<javah destdir="${bin}" force="yes" class="cat.uab.senda.adtn.adtnlibj.comm.PlatfComm" classpath="${bin}"/>
+		<javah destdir="${bin}" force="yes" class="cat.uab.senda.adtn.comm.Comm" classpath="${bin}"/>
+		<copy file="${bin}/cat_uab_senda_adtn_comm_Comm.h" todir="c/"/>
+		<delete file="${bin}/cat_uab_senda_adtn_comm_Comm.h"/>
+		<exec executable="gcc" dir="c">
+			<arg line=" -shared -fPIC cat_uab_senda_adtn_comm_Comm.c -o ${dist}/libNativeAdtnApi.so ${gcc.includes}"/>
+		</exec>
 	</target>
 	
-	<target name="dist">
-		<jar jarfile="${dist}/${ant.project.name}.jar" basedir="${bin}"/>
+	<target name="install" depends="compile">
+			<echo>Copying the library into /usr/lib/</echo>
+			<echo>Asking permision to do it.</echo>
+			<exec executable="sudo">
+				<arg line="cp ${dist}/libNativeAdtnApi.so /usr/lib/"/>
+			</exec>
+			<exec executable="sudo">
+				<arg line="-k"/>
+			</exec>
+			<echo>Removing cached credentials for sudo.</echo>
+		</target>
+	
+	<target name="javadoc" description="Generates javadoc for Communication classes">
+		<javadoc sourcepath="${src}" packagenames="cat.uab.senda.adtn.comm" destdir="${doc}" access="public" author="
+			true" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="
+			false" source="1.7" splitindex="true" use="true" version="true">
+				<link href="http://docs.oracle.com/javase/7/docs/api/"/>
+		</javadoc>
+	</target>
+
+	<target name="dist" depends="compile">
+		<jar jarfile="${dist}/${ant.project.name}-${ver}.jar" basedir="${bin}"/>
 	</target>
 	
-	<target name="javadoc" description="Generates javadoc for AdtnSocket classes only">
-		<javadoc sourcepath="${src}" packagenames="cat.uab.senda.adtn.adtnlibj" destdir="${doc}"/>
-	</target>
-	
-	<target name="examplesdist" depends="dist">
-		<mkdir dir="${examplesdist}"/>
-		<mkdir dir="${examplesdist}/lib"/>
-		<copy file="${dist}/${ant.project.name}.jar" todir="${examplesdist}/lib/"/>
-		<copydir src="${examples}/src" dest="${examplesdist}/src"/>
-		<copy file="${examples}/build.xml" todir="${examplesdist}/"/>
-		<copy file="${examples}/README" todir="${examplesdist}/"/>
-		<zip destfile="${dist}/${ant.project.name}-examples.zip">
-			<fileset dir="${examplesdist}" />
+	<target name="fulldist" depends="javadoc,dist">
+		<mkdir dir="${dist}/tmp"/>
+		<mkdir dir="${dist}/tmp/lib"/>
+		<mkdir dir="${dist}/tmp/src"/>
+		<copydir src="${examples}/src" dest="${dist}/tmp/src"/>
+		<copydir src="${examples}/lib" dest="${dist}/tmp/lib"/>
+		<copy file="${examples}/build.xml" todir="${dist}/tmp/"/>
+		<copy file="${dist}/${ant.project.name}-${ver}.jar" todir="${dist}/tmp/lib"/>
+		<copy file="${examples}/README" todir="${dist}/tmp/"/>
+		<zip destfile="${dist}/tmp/lib/${ant.project.name}-${ver}-doc.zip">
+			<fileset dir="${doc}" />
 		</zip>
+		<zip destfile="${dist}/${ant.project.name}-dev-environment-${ver}.zip">
+			<fileset dir="${dist}/tmp" />
+		</zip>
+		<delete dir="${dist}/tmp"/>
 	</target>
 	
 </project>

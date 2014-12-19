@@ -39,6 +39,19 @@
 ## Custom paths
 ld/
 build/
-examples/bin/
-make_debs/debs/
+tools/bin/
+make_debs/github
 make_debs/adtn-aux/
+
+libj/doc/
+libj/dist/
+libj/bin
+libj/.classpath
+libj/.project
+libj/c/*.h
+
+libj/java-examples/.classpath
+libj/java-examples/.gitignore
+libj/java-examples/.project
+libj/java-examples/lib/adtnlibj.jar
+libj/java-examples/bin/
