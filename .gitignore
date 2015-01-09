@@ -55,3 +55,6 @@ libj/java-examples/.gitignore
 libj/java-examples/.project
 libj/java-examples/lib/adtnlibj.jar
 libj/java-examples/bin/
+
+#CTags
+.tags*
