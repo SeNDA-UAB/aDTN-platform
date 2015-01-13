@@ -16,5 +16,8 @@ install(FILES include/rit.h DESTINATION include)
 install(FILES include/queue.h DESTINATION include)
 
 install(FILES ${PLATFORM_SOURCE_DIR}/common/include/bundle.h DESTINATION include)
+install(FILES ${PLATFORM_SOURCE_DIR}/common/include/constants.h DESTINATION include)
+install(FILES ${PLATFORM_SOURCE_DIR}/common/include/utils.h DESTINATION include)
+install(FILES ${PLATFORM_SOURCE_DIR}/common/include/executor.h DESTINATION include)
 install(FILES ${PLATFORM_SOURCE_DIR}/common/include/uthash.h DESTINATION include)
 install(FILES ${PLATFORM_BINARY_DIR}/common/libadtn.so PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ DESTINATION lib)
