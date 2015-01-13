@@ -27,35 +27,42 @@
 //CPP
 #include <string>
 
-/* Configuration */
 #define DYNINSTAPI_RT_LIB "/usr/local/lib64/libdyninstAPI_RT.so"
+#define PROCS_PREFIX_PATH "/home/xeri/projects/adtn/root/bin"
+#define CONF_PATH "/home/xeri/projects/adtn/test/adtn.ini"
 
+/* Puppet procs */
 #define NUM_PROCS 5
-
-enum bundleAgentProc_e {
+enum puppetProc_e {
 	INFORMATION_EXCHANGE,
 	QUEUEMANAGER,
 	PROCESSOR,
 	RECEIVER,
 	EXECUTOR
 };
-
-const char *bundleAgentProcName[NUM_PROCS] = {"information_exchange", "queueManager", "processor", "receiver", "executor"};
-
-#define PROCS_PREFIX_PATH "/home/xeri/projects/adtn/root/bin"
-#define CONF_PATH "/home/xeri/projects/adtn/test/adtn.ini"
+const char *puppetProcName[NUM_PROCS] = {"information_exchange", "queueManager", "processor", "receiver", "executor"};
 /**/
 
+/* Events */
+#define NUM_EVENTS 1
 enum event_e {
-	EMPTY,
 	TIMESTAMP
 };
+
+typedef struct eventHandler_s{
+	event_e event;
+	int (*f)(puppetProc_e, vector<BPatch_snippet *>, void*);
+} eventHandler_t;
+
+eventHandler_t eventHandlers[NUM_EVENTS];
+/**/
+
+/* Event CTX */
 
 /* Monitorized process SHM 
  * Each monitorized process can access this struct from 
  * a shm region mapped into its memory space.
  */
-
 typedef struct shmEventInfo_s {
 	event_e event;		
 	struct timespec timestamp;		
@@ -67,9 +74,8 @@ typedef struct shmEventCtx_s {
 	pthread_cond_t event_c;
 	shmEeventInfo_t info;
 } shmEventCtx_t;
-/**/
 
-/**/
+/* SHM addresses from the mutator and the mutatee */
 typedef struct eventCtx_s {
 	int init;
 
@@ -83,15 +89,17 @@ typedef struct eventCtx_s {
 } eventCtx_t;
 /**/
 
-typedef struct bundleAgentProcCtx_s {
+/* Dyninst CTX */
+typedef struct puppetProcCtx_s {
 	const char *name;
 	BPatch_addressSpace *handle;
 	eventCtx_t eventCtx;
-} bundleAgentProcCtx_t;
+} puppetProcCtx_t;
 
 typedef struct testEnv_s {
-	bundleAgentProcCtx_t procs[NUM_PROCS];
+	puppetProcCtx_t procs[NUM_PROCS];
 } testEnv_t;
+/**/
 
 using namespace std;
 
@@ -101,43 +109,40 @@ BPatch bpatch;
 // Global test environment;
 testEnv_t testEnv;
 
-int runPlatform(const char *procsPrefix ,const char *confFile)
+/* Dyninst util functions */
+vector<BPatch_point *> *getEntryPoints(puppetProc_e proc, const char *funcName)
 {
-	int i = 0, ret = 1;
-	char procCmd[PATH_MAX];
-	const char *argv[5];
+	vector<BPatch_function *> functions;
+	vector<BPatch_point *> *points = NULL;
 
-	for (i = 0; i< NUM_PROCS; i++){
-		snprintf(procCmd, PATH_MAX, "%s/%s", procsPrefix, bundleAgentProcName[i]);
-		argv[0] = procCmd;
-		argv[1] = "-c";
-		argv[2] = confFile;
-		if (i == 0){
-			argv[3] = "-f";
-			argv[4] = NULL;
-		} else {
-			argv[3] = NULL;
-		}
-
-		testEnv.procs[i].name = bundleAgentProcName[i];
-		testEnv.procs[i].handle = bpatch.processCreate(procCmd, argv);
-		if (testEnv.procs[i].handle == NULL){
-			fprintf(stderr, "Error starting %s", bundleAgentProcName[i]);
-			goto end;
-		}
-		sleep(1);
+	// Find function entry points
+	BPatch_image *appImage = testEnv.procs[proc].handle->getImage();
+	appImage->findFunction(funcName, functions);
+	if (functions.size() == 0){
+		fprintf(stderr, "Can't find function %s\n", funcName);
+		goto end;
+	} else if (functions.size() > 1) {
+		printf("Warning more than one function %s found\n", funcName);
 	}
 
-	ret = 0;
+	points = functions[0]->findPoint(BPatch_entry);
+	if (points->size() == 0){
+		fprintf(stderr, "Can't find function %s entry points\n", funcName);
+		goto end;		
+	} else if (points->size() > 1){
+		printf("Warning more than one entry point in function %s found\n", funcName);
+	}
+	
 end:
-	return ret;
-}
+	return points;
+};
+/**/
 
-/* Creates shared memory region to be shared between the monitorized and the monitorizing process.
+/* Creates a shared memory region to be shared between the monitorized and the monitorizing process.
  * Initializes structs in shm.
  * Maps this region into the two processes memory spaces.
  */
-int prepareProcMemory(bundleAgentProc_e proc)
+int prepareProcMemory(puppetProc_e proc)
 {
 	char shmName[32];
 	if (!testEnv.procs[proc].eventCtx.init){
@@ -227,42 +232,14 @@ int prepareProcMemory(bundleAgentProc_e proc)
 
 		return 0;
 	} else {
-		fprintf(stderr, "Process %s already initialized", bundleAgentProcName[proc]);
+		fprintf(stderr, "Process %s already initialized", puppetProcName[proc]);
 
 		return 1;
 	}
 }
 
-vector<BPatch_point *> *getEntryPoints(bundleAgentProc_e proc, const char *funcName)
-{
-	vector<BPatch_function *> functions;
-	vector<BPatch_point *> *points = NULL;
-
-	// Find function entry points
-	BPatch_image *appImage = testEnv.procs[proc].handle->getImage();
-	appImage->findFunction(funcName, functions);
-	if (functions.size() == 0){
-		fprintf(stderr, "Can't find function %s\n", funcName);
-		goto end;
-	} else if (functions.size() > 1) {
-		printf("Warning more than one function %s found\n", funcName);
-	}
-
-	points = functions[0]->findPoint(BPatch_entry);
-	if (points->size() == 0){
-		fprintf(stderr, "Can't find function %s entry points\n", funcName);
-		goto end;		
-	} else if (points->size() > 1){
-		printf("Warning more than one entry point in function %s found\n", funcName);
-	}
-	
-end:
-	return points;
-};
-
-
-
-int eventStartFunc(bundleAgentProc_e proc, /*out*/vector<BPatch_snippet *> &funcs)
+/* Events */
+int eventStartFunc(puppetProc_e proc, /*out*/vector<BPatch_snippet *> &funcs)
 {
 	/*
 	 * eventCtx.pthread_mutex_lock(&event_m) 
@@ -289,7 +266,7 @@ int eventStartFunc(bundleAgentProc_e proc, /*out*/vector<BPatch_snippet *> &func
 	return 0;
 }
 
-int eventEndFunc(bundleAgentProc_e proc, event_e event, /*out*/vector<BPatch_snippet *> &funcs)
+int eventEndFunc(puppetProc_e proc, event_e event, /*out*/vector<BPatch_snippet *> &funcs)
 {
 	/*
 	 *	eventInfo.event = event;
@@ -302,14 +279,16 @@ int eventEndFunc(bundleAgentProc_e proc, event_e event, /*out*/vector<BPatch_sni
 	shmEventCtx_t *shm_mAddr = (shmEventCtx_t *)testEnv.procs[proc].eventCtx.shm_m;
 
 	/* eventInfo.event = event */
-	BPatch_variableExpr *eventType = testEnv.procs[proc].handle->createVariable(Dyninst::Address(&shm_mAddr->info.event), bpatch.createScalar("event_e", sizeof(event_e)));
+	BPatch_variableExpr *eventType = testEnv.procs[proc].handle->createVariable(Dyninst::Address(&shm_mAddr->info.event), bpatch.createScalar("event", sizeof(event_e)));
 	BPatch_arithExpr *assignEvent = new BPatch_arithExpr(BPatch_assign, *eventType, BPatch_constExpr(event));
 	funcs.push_back(assignEvent);
+	free(eventType);
 
 	/* eventInfo.read = 0 */
 	BPatch_variableExpr *read = testEnv.procs[proc].handle->createVariable(Dyninst::Address(&shm_mAddr->info.read), bpatch.createScalar("read", sizeof(int)));
 	BPatch_arithExpr *assignRead = new BPatch_arithExpr(BPatch_assign, *read, BPatch_constExpr(0));
 	funcs.push_back(assignRead);	
+	free(read);
 
 	/* eventCtx.pthread_cond_signal(event_c) */
 
@@ -342,7 +321,7 @@ int eventEndFunc(bundleAgentProc_e proc, event_e event, /*out*/vector<BPatch_sni
 }
 
 
-int timestampFunc(bundleAgentProc_e proc, vector<BPatch_snippet *> &funcs)
+int timestampFunc(puppetProc_e proc, vector<BPatch_snippet *> &funcs, void *data)
 {
 	/*
 	 *	clock_gettime(CLOCK_MONOTONIC_RAW, &eventInfo.timestamp);
@@ -371,6 +350,104 @@ int timestampFunc(bundleAgentProc_e proc, vector<BPatch_snippet *> &funcs)
 
 	return 0;
 }
+/**/
+
+/* Commands */
+int initEnvironment(){
+
+	/* Initialization */
+	bzero(&testEnv, sizeof(testEnv));
+	setenv("DYNINSTAPI_RT_LIB", DYNINSTAPI_RT_LIB, 1);
+	/**/
+
+	/* Optimizations */
+	// Turn on or off trampoline recursion. By default, any snippets invoked while another snippet is active will not be executed. 
+	bpatch.setTrampRecursive(true);
+	// Turn on or off floating point saves. 
+	bpatch.setSaveFPR(false);
+	/**/
+
+	return 0;
+}
+
+int initPlatform(const char *procsPrefix ,const char *confFile)
+{
+	int i = 0, ret = 1;
+	char procCmd[PATH_MAX];
+	const char *argv[5];
+
+	for (i = 0; i< NUM_PROCS; i++){
+		snprintf(procCmd, PATH_MAX, "%s/%s", procsPrefix, puppetProcName[i]);
+		argv[0] = procCmd;
+		argv[1] = "-c";
+		argv[2] = confFile;
+		if (i == 0){
+			argv[3] = "-f";
+			argv[4] = NULL;
+		} else {
+			argv[3] = NULL;
+		}
+
+		testEnv.procs[i].name = puppetProcName[i];
+		testEnv.procs[i].handle = bpatch.processCreate(procCmd, argv);
+		if (testEnv.procs[i].handle == NULL){
+			fprintf(stderr, "Error starting %s", puppetProcName[i]);
+			goto end;
+		}
+		sleep(1);
+	}
+
+	ret = 0;
+end:
+	return ret;
+}
+
+int addEvent(puppetProc_e proc, event_e event, const char *function)
+{
+	// Prepare mutatee memory
+	if (!testEnv.procs[proc].eventCtx.init)
+		prepareProcMemory(RECEIVER);
+
+	// Find function into mutatee process
+	vector<BPatch_point *> *points = getEntryPoints(proc, function);
+	if (points->size() == 0){
+		fprintf(stderr, "Function %s not found in process %s", function, puppetProcName[proc]);
+		return 1;
+	} else if (points->size() > 1){
+		fprintf(stderr, "Warning more than one function %s found in process %s", function, puppetProcName[proc]);
+	}
+
+	// Start snippets insertion 
+	BPatch_addressSpace *app = testEnv.procs[proc].handle;
+	app->beginInsertionSet();
+
+	// Insert eventStartSnippet
+	vector<BPatch_snippet *> eventStartSnippet = vector<BPatch_snippet *>();
+	eventStartFunc(proc, eventStartSnippet);
+	app->insertSnippet(*(eventStartSnippet[0]), *points, BPatch_callBefore, BPatch_lastSnippet);
+
+	// Insert snipept
+	vector<BPatch_snippet *> eventSnippet = vector<BPatch_snippet *>();
+
+	timestampFunc(proc, eventSnippet);
+	app->insertSnippet(*(eventSnippet[0]), *points, BPatch_callBefore, BPatch_lastSnippet);
+
+	// Insert eventEnd snippet
+	vector<BPatch_snippet *> eventEndSnippet = vector<BPatch_snippet *>();
+	eventEndFunc(proc, TIMESTAMP, eventEndSnippet);
+	for(std::vector<BPatch_snippet *>::iterator it = eventEndSnippet.begin(); it != eventEndSnippet.end(); ++it) {
+		app->insertSnippet(**it, *points, BPatch_callBefore, BPatch_lastSnippet);
+	}
+
+	app->finalizeInsertionSet(true);
+
+	return 0;
+}
+
+/**/
+
+
+
 
 void *read_timestamp(void *)
 {
@@ -391,28 +468,20 @@ void *read_timestamp(void *)
 int main(int argc, char const *argv[])
 {
 
-	/* Initialization */
-	bzero(&testEnv, sizeof(testEnv));
-	setenv("DYNINSTAPI_RT_LIB", DYNINSTAPI_RT_LIB, 1);
-	/**/
+	if (initEnvironment() != 0){
+		fprintf(stderr, "Error initializing test environment.\n");
+		exit(1);		
+	}
 
-	/* Optimizations */
-	// Turn on or off trampoline recursion. By default, any snippets invoked while another snippet is active will not be executed. 
-	bpatch.setTrampRecursive(true);
-	// Turn on or off floating point saves. 
-	bpatch.setSaveFPR(false);
-	/**/
-
-	/* Start platform */
-	if (runPlatform(PROCS_PREFIX_PATH, CONF_PATH) != 0){
+	if (initPlatform(PROCS_PREFIX_PATH, CONF_PATH) != 0){
 		fprintf(stderr, "Error starting platform.\n");
 		exit(1);
 	}
-	/**/
 
-	/* Prepare proc memory */
-	prepareProcMemory(RECEIVER);
-	/**/
+
+
+
+
 
 	/* Start monitoring threads */
 	pthread_t read_timestamp_t;
@@ -420,26 +489,7 @@ int main(int argc, char const *argv[])
 
 	/**/
 
-	vector<BPatch_point *> *points = getEntryPoints(RECEIVER, "init_adtn_process");
-	BPatch_addressSpace *app = testEnv.procs[RECEIVER].handle;
-
-	// Insert eventStartSnippet
-	vector<BPatch_snippet *> eventStartSnippet = vector<BPatch_snippet *>();
-	eventStartFunc(RECEIVER, eventStartSnippet);
-	app->insertSnippet(*(eventStartSnippet[0]), *points, BPatch_callBefore, BPatch_lastSnippet);
-
-	// Insert snipept
-	vector<BPatch_snippet *> timestampSnippet = vector<BPatch_snippet *>();
-	timestampFunc(RECEIVER, timestampSnippet);
-	app->insertSnippet(*(timestampSnippet[0]), *points, BPatch_callBefore, BPatch_lastSnippet);
-
-	// Insert eventEnd snippet
-	vector<BPatch_snippet *> eventEndSnippet = vector<BPatch_snippet *>();
-	eventEndFunc(RECEIVER, TIMESTAMP, eventEndSnippet);
-	for(std::vector<BPatch_snippet *>::iterator it = eventEndSnippet.begin(); it != eventEndSnippet.end(); ++it) {
-		app->insertSnippet(**it, *points, BPatch_callBefore, BPatch_lastSnippet);
-	}
-
+	
 	BPatch_process *appProc = dynamic_cast<BPatch_process *>(app);
 	appProc->continueExecution();
 
@@ -460,21 +510,3 @@ int main(int argc, char const *argv[])
 
 	return 0;
 }
-
-
-
-// Get function entry points
-//vector<BPatch_point *> *entryPoints = getEntryPoints(proc, "pthread_mutex_lock");
-
-
-
-
-// int setHook(bundleAgentProc_e proc, hook_e hook)
-// {
-
-// 	if (hook == TIMESTAMP){
-
-// 	}
-
-// }
-
