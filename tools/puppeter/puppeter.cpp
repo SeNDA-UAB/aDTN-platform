@@ -431,7 +431,7 @@ void *eventListenerThread(void *proc_p)
 /********************/
 
 
-/********** Commands **********/
+/********** Puppeter commands **********/
 
 int initEnvironment()
 {
@@ -475,7 +475,6 @@ int initPlatform(const char *procsPrefix , const char *confFile)
 			fprintf(stderr, "Error starting %s", puppetProcName[i]);
 			goto end;
 		}
-		//sleep(1);
 	}
 
 	ret = 0;
@@ -528,41 +527,44 @@ int hookEvent(puppetProc_e proc, event_e event, void *data, const char *function
 	return 0;
 }
 
-void *endProcs(void *timeout_secs){
+void *endProcsThread(void *timeout_secs)
+{
 	int i;
 	siginfo_t si;
 	sigset_t blockedSigs = {{0}};
 	struct timespec timeout = {0};
-	timeout.tv_sec = *(int*)timeout_secs;
-	
+	timeout.tv_sec = *(int *)timeout_secs;
+
 	sigaddset(&blockedSigs, SIGINT);
 	sigaddset(&blockedSigs, SIGTERM);
-	
+
 	int sig = sigtimedwait(&blockedSigs, &si, &timeout);
-	if (sig < 0 && errno == EAGAIN) {
-		printf("Test finsihed.\n");
-	} else if (sig > 0) {
-		printf("Received end signal\n.");
+	if (sig < 0 && errno != EAGAIN) {
+		perror("sigtimedwait()");
 	}
 
-	for (i = 0; i < NUM_PROCS; i++) {
+	for (i = NUM_PROCS - 1; i >= 0; i--) {
 		dynamic_cast<BPatch_process *>(testEnv.procs[i].handle)->terminateExecution();
 	}
+
+	free(timeout_secs);
 
 	return NULL;
 }
 
-int startTest(const int timeout_secs)
+void *startTestThread(void *timeout_secs)
 {
 	BPatch_process *appProc[NUM_PROCS];
 	int ret = 0, i;
 
-	// Block signals so new threads don't catch 
+	// Block signals so new threads don't catch
 	sigset_t blockedSigs = {{0}};
 	sigaddset(&blockedSigs, SIGINT);
 	sigaddset(&blockedSigs, SIGTERM);
 	sigprocmask(SIG_BLOCK, &blockedSigs, NULL);
-	
+
+	printf("---> Test started\n");
+
 	// Start event listener threads and mutatees.
 	pthread_t threads[NUM_PROCS] = {0};
 	for (i = 0; i < NUM_PROCS; i++) {
@@ -580,23 +582,21 @@ int startTest(const int timeout_secs)
 
 	// Launch end thread
 	pthread_t endThread;
-	int *timeout_secs_p = (int *)malloc(sizeof(int));
-	*timeout_secs_p = timeout_secs;
-	if (pthread_create(&endThread, NULL, endProcs, (void *)timeout_secs_p)){
+	if (pthread_create(&endThread, NULL, endProcsThread, (void *)timeout_secs)) {
 		fprintf(stderr, "Error initializing end thread, test will never finsih.");
-				ret |= 1;
+		ret |= 1;
 	}
 
 	// Wait until all processes have been terminated
-	for(;;){
+	for (;;) {
 		int all_terminated = 1;
 		for (i = 0; i < NUM_PROCS; i++) {
-			if (!appProc[i]->isTerminated()){
+			if (!appProc[i]->isTerminated()) {
 				all_terminated = 0;
 				break;
 			}
 		}
-		if (all_terminated){
+		if (all_terminated) {
 			break;
 		} else {
 			bpatch.waitForStatusChange();
@@ -611,18 +611,37 @@ int startTest(const int timeout_secs)
 		}
 	}
 
-	return ret;
+	printf("---> Test finished\n");
+
+	return NULL;
 }
 
-int stopTest()
+int startTest(const int timeout_secs)
 {
-	// Stop test execution
-	raise(SIGINT);
+	pthread_t startTestThread_t;
 
-	return 0;
+	int *timeout_secs_p = (int *)malloc(sizeof(int));
+	*timeout_secs_p = timeout_secs;
+	if (pthread_create(&startTestThread_t, NULL, startTestThread, timeout_secs_p) != 0){
+		fprintf(stderr, "Error initializing start thread: %s", strerror(errno));
+		return 1;
+	} else {
+		return 0;
+	}
 }
 
 /********************/
+
+/********** aDTN commands **********/
+
+int sendBundle()
+{
+
+}
+
+
+/********************/
+
 
 int main(int argc, char const *argv[])
 {
@@ -655,9 +674,11 @@ int main(int argc, char const *argv[])
 		exit(1);
 	}
 
+	sleep(15);
+
 	// Show events
 	event_t *event = testEnv.eventQueue;
-	while (event != NULL){
+	while (event != NULL) {
 		printf("Event type: %d, data: %d, timestamp: %lu secs %lu nsecs\n", event->event, *event->data, event->timestamp.tv_sec, event->timestamp.tv_nsec);
 		event = event->next;
 	}
