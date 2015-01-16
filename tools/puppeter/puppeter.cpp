@@ -23,6 +23,8 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <errno.h>
+#include <sys/wait.h>
+#include <time.h>
 
 //CPP
 #include <string>
@@ -39,18 +41,25 @@
 enum puppetProc_e {
 	INFORMATION_EXCHANGE,
 	QUEUEMANAGER,
+	EXECUTOR,
 	PROCESSOR,
 	RECEIVER,
-	EXECUTOR
 };
-const char *puppetProcName[NUM_PROCS] = {"information_exchange", "queueManager", "processor", "receiver", "executor"};
+const char *puppetProcName[NUM_PROCS] = {"information_exchange", "queueManager", "executor", "processor", "receiver"};
 /**/
 
 /* Events */
-#define NUM_EVENTS 1
+#define MAX_DATA 512    // Bytes
+#define NUM_EVENTS 1    // Increase if more events are added
 enum event_e {
 	TIMESTAMP
 };
+
+enum timestamp_id_e {
+	TS_RECEIVER_START = 1,
+	TS_RECEIVER_END
+};
+
 int timestampSnippet(puppetProc_e proc, vector<BPatch_snippet *> &funcs, void *data);
 
 typedef struct eventHandler_s {
@@ -61,9 +70,9 @@ typedef struct eventHandler_s {
 typedef struct event_s {
 	event_e event;
 	struct timespec timestamp;
+	uint8_t data[MAX_DATA];
 	struct event_s *next;
 } event_t;
-
 /**/
 
 /* Event CTX */
@@ -73,6 +82,7 @@ typedef struct event_s {
 typedef struct shmEventInfo_s {
 	event_e event;
 	struct timespec timestamp;
+	uint8_t data[MAX_DATA];
 	int read;
 } shmEeventInfo_t;
 
@@ -352,16 +362,23 @@ int eventEndSnippet(puppetProc_e proc, event_e event, /*out*/vector<BPatch_snipp
 
 int timestampSnippet(puppetProc_e proc, vector<BPatch_snippet *> &funcs, void *data)
 {
-	/* clock_gettime(CLOCK_MONOTONIC_RAW, &eventInfo.timestamp); */
-
 	vector<BPatch_snippet *> args;
 	vector<BPatch_function *> targetFuncs;
 
 	BPatch_image *appImage = testEnv.procs[proc].handle->getImage();
 	shmEventCtx_t *shm_mAddr = (shmEventCtx_t *)testEnv.procs[proc].eventCtx.shm_m;
 
+
+	/* *eventInfo.data = *data; */
+	BPatch_variableExpr *BP_data = testEnv.procs[proc].handle->createVariable(Dyninst::Address(&shm_mAddr->info.data), bpatch.createScalar("data", sizeof(event_e)));
+	BPatch_arithExpr *cpData = new BPatch_arithExpr(BPatch_assign, *BP_data, BPatch_constExpr(*(timestamp_id_e *)data)); // Just copy the first byte
+	funcs.push_back(cpData);
+	free(BP_data);
+
+	/* clock_gettime(CLOCK_REALTIME, &eventInfo.timestamp); */
+
 	// Construct args
-	BPatch_constExpr clock_gettimeClkId(CLOCK_MONOTONIC_RAW);
+	BPatch_constExpr clock_gettimeClkId(CLOCK_REALTIME);
 	args.push_back(&clock_gettimeClkId);
 	BPatch_constExpr timestampAddr(&shm_mAddr->info.timestamp);
 	args.push_back(&timestampAddr);
@@ -390,15 +407,15 @@ void *eventListenerThread(void *proc_p)
 		pthread_mutex_lock((pthread_mutex_t *)&testEnv.procs[proc].eventCtx.shm->event_m);
 
 		// Wait until there is a new event
-		while (testEnv.procs[proc].eventCtx.shm->info.read == 1){
+		while (testEnv.procs[proc].eventCtx.shm->info.read == 1)
 			pthread_cond_wait((pthread_cond_t *)&testEnv.procs[proc].eventCtx.shm->event_c, (pthread_mutex_t *)&testEnv.procs[proc].eventCtx.shm->event_m);
-			printf("errno: %d\n", errno);
-		}
+
 
 		// Store event info
 		event_t *ev = (event_t *)calloc(1, sizeof(event_t));
-		ev->event = testEnv.procs[RECEIVER].eventCtx.shm->info.event;
-		ev->timestamp = testEnv.procs[RECEIVER].eventCtx.shm->info.timestamp;
+		ev->event = testEnv.procs[proc].eventCtx.shm->info.event;
+		ev->timestamp = testEnv.procs[proc].eventCtx.shm->info.timestamp;
+		ev->data[0] = testEnv.procs[proc].eventCtx.shm->info.data[0];
 		enqueueEvent(ev);
 
 		// Set event as read
@@ -458,7 +475,7 @@ int initPlatform(const char *procsPrefix , const char *confFile)
 			fprintf(stderr, "Error starting %s", puppetProcName[i]);
 			goto end;
 		}
-		sleep(1);
+		//sleep(1);
 	}
 
 	ret = 0;
@@ -470,15 +487,15 @@ int hookEvent(puppetProc_e proc, event_e event, void *data, const char *function
 {
 	// Prepare mutatee memory
 	if (!testEnv.procs[proc].eventCtx.init)
-		prepareProcMemory(RECEIVER);
+		prepareProcMemory(proc);
 
 	// Find function into mutatee process
 	vector<BPatch_point *> *points = getEntryPoints(proc, function);
-	if (points->size() == 0) {
+	if (!points) {
 		fprintf(stderr, "Function %s not found in process %s", function, puppetProcName[proc]);
 		return 1;
 	} else if (points->size() > 1) {
-		fprintf(stderr, "Warning more than one function %s found in process %s", function, puppetProcName[proc]);
+		fprintf(stderr, "Warninthung more than one function %s found in process %s", function, puppetProcName[proc]);
 	}
 
 	// Start snippets insertion
@@ -511,53 +528,86 @@ int hookEvent(puppetProc_e proc, event_e event, void *data, const char *function
 	return 0;
 }
 
+void *endProcs(void *timeout_secs){
+	int i;
+	siginfo_t si;
+	sigset_t blockedSigs = {{0}};
+	struct timespec timeout = {0};
+	timeout.tv_sec = *(int*)timeout_secs;
+	
+	sigaddset(&blockedSigs, SIGINT);
+	sigaddset(&blockedSigs, SIGTERM);
+	
+	int sig = sigtimedwait(&blockedSigs, &si, &timeout);
+	if (sig < 0 && errno == EAGAIN) {
+		printf("Test finsihed.\n");
+	} else if (sig > 0) {
+		printf("Received end signal\n.");
+	}
+
+	for (i = 0; i < NUM_PROCS; i++) {
+		dynamic_cast<BPatch_process *>(testEnv.procs[i].handle)->terminateExecution();
+	}
+
+	return NULL;
+}
+
 int startTest(const int timeout_secs)
 {
-	pthread_t threads[NUM_PROCS] = {0};
-	int ret = 0;
+	BPatch_process *appProc[NUM_PROCS];
+	int ret = 0, i;
 
-	// Block signals so the created threads inherit this signal mask
+	// Block signals so new threads don't catch 
 	sigset_t blockedSigs = {{0}};
 	sigaddset(&blockedSigs, SIGINT);
 	sigaddset(&blockedSigs, SIGTERM);
 	sigprocmask(SIG_BLOCK, &blockedSigs, NULL);
-
+	
 	// Start event listener threads and mutatees.
-	int i;
-	for (i = 0; i<NUM_PROCS; i++){
-		if (testEnv.procs[i].eventCtx.init){
+	pthread_t threads[NUM_PROCS] = {0};
+	for (i = 0; i < NUM_PROCS; i++) {
+		if (testEnv.procs[i].eventCtx.init) {
 			puppetProc_e *proc = (puppetProc_e *)malloc(sizeof(puppetProc_e));
 			*proc = (puppetProc_e)i;
-			if (pthread_create(&threads[i], NULL, eventListenerThread, (void *)proc) != 0){
+			if (pthread_create(&threads[i], NULL, eventListenerThread, (void *)proc) != 0) {
 				fprintf(stderr, "Error initializing event listener thread for process %s", puppetProcName[i]);
 				ret |= 1;
 			}
+		}
+		appProc[i] = dynamic_cast<BPatch_process *>(testEnv.procs[i].handle);
+		appProc[i]->continueExecution();
+	}
 
-			BPatch_process *appProc = dynamic_cast<BPatch_process *>(testEnv.procs[i].handle);
-			appProc->continueExecution();
+	// Launch end thread
+	pthread_t endThread;
+	int *timeout_secs_p = (int *)malloc(sizeof(int));
+	*timeout_secs_p = timeout_secs;
+	if (pthread_create(&endThread, NULL, endProcs, (void *)timeout_secs_p)){
+		fprintf(stderr, "Error initializing end thread, test will never finsih.");
+				ret |= 1;
+	}
+
+	// Wait until all processes have been terminated
+	for(;;){
+		int all_terminated = 1;
+		for (i = 0; i < NUM_PROCS; i++) {
+			if (!appProc[i]->isTerminated()){
+				all_terminated = 0;
+				break;
+			}
+		}
+		if (all_terminated){
+			break;
+		} else {
+			bpatch.waitForStatusChange();
 		}
 	}
 
-	// Wait until an end signal is received or the timeout is reached
-	siginfo_t si;
-	struct timespec timeout = {0};
-	timeout.tv_sec = timeout_secs;
-
-	int sig = sigtimedwait(&blockedSigs, &si, &timeout);
-	if (sig < 0 && errno == EAGAIN){
-		printf("Test finsihed.\n");
-	} else if (sig > 0){
-		printf("Received end signal\n.");
-	}
-
-	// Cancels threads and ends mutatees 
-	for (i = 0; i<NUM_PROCS; i++){
-		if (threads[i] != 0){
+	// Cancels threads
+	for (i = NUM_PROCS - 1; i >= 0; i--) {
+		if (threads[i] != 0) {
 			pthread_cancel(threads[i]);
 			pthread_join(threads[i], NULL);
-
-			BPatch_process *appProc = dynamic_cast<BPatch_process *>(testEnv.procs[i].handle);
-			appProc->terminateExecution();
 		}
 	}
 
@@ -572,11 +622,11 @@ int stopTest()
 	return 0;
 }
 
-
 /********************/
 
 int main(int argc, char const *argv[])
 {
+	timestamp_id_e timestamp_id;;
 
 	if (initEnvironment() != 0) {
 		fprintf(stderr, "Error initializing test environment.\n");
@@ -588,14 +638,28 @@ int main(int argc, char const *argv[])
 		exit(1);
 	}
 
-	if (hookEvent(RECEIVER, TIMESTAMP, NULL, "main") != 0) {
+	timestamp_id = TS_RECEIVER_START;
+	if (hookEvent(RECEIVER, TIMESTAMP, &timestamp_id, "main") != 0) {
 		fprintf(stderr, "Error adding event into main");
 		exit(1);
 	}
 
-	if (startTest(10) != 0){
+	timestamp_id = TS_RECEIVER_END;
+	if (hookEvent(RECEIVER, TIMESTAMP, &timestamp_id, "inotify_thread") != 0) {
+		fprintf(stderr, "Error adding event into main");
+		exit(1);
+	}
+
+	if (startTest(10) != 0) {
 		fprintf(stderr, "Error starting test");
-		exit(1);		
+		exit(1);
+	}
+
+	// Show events
+	event_t *event = testEnv.eventQueue;
+	while (event != NULL){
+		printf("Event type: %d, data: %d, timestamp: %lu secs %lu nsecs\n", event->event, *event->data, event->timestamp.tv_sec, event->timestamp.tv_nsec);
+		event = event->next;
 	}
 
 
