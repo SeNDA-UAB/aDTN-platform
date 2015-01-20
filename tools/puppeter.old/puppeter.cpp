@@ -26,6 +26,12 @@
 #include <sys/wait.h>
 #include <time.h>
 
+// aDTN
+extern "C" {
+#include "bundle.h"
+#include "utils.h"
+}
+
 //CPP
 #include <string>
 
@@ -56,8 +62,8 @@ enum event_e {
 };
 
 enum timestamp_id_e {
-	TS_RECEIVER_START = 1,
-	TS_RECEIVER_END
+	TS_RECEIVED_BUNDLE = 1,
+	TS_PROCESSED_BUNDLE
 };
 
 int timestampSnippet(puppetProc_e proc, vector<BPatch_snippet *> &funcs, void *data);
@@ -527,9 +533,11 @@ int hookEvent(puppetProc_e proc, event_e event, void *data, const char *function
 	return 0;
 }
 
+pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
+
 void *endProcsThread(void *timeout_secs)
 {
-	int i;
+	int i, sig;
 	siginfo_t si;
 	sigset_t blockedSigs = {{0}};
 	struct timespec timeout = {0};
@@ -538,30 +546,34 @@ void *endProcsThread(void *timeout_secs)
 	sigaddset(&blockedSigs, SIGINT);
 	sigaddset(&blockedSigs, SIGTERM);
 
-	int sig = sigtimedwait(&blockedSigs, &si, &timeout);
-	if (sig < 0 && errno != EAGAIN) {
-		perror("sigtimedwait()");
-	}
+	do {
+		sig = sigtimedwait(&blockedSigs, &si, &timeout);
+	} while (sig < 0 && errno == EINTR);
 
+	pthread_mutex_lock(&m);
 	for (i = NUM_PROCS - 1; i >= 0; i--) {
-		dynamic_cast<BPatch_process *>(testEnv.procs[i].handle)->terminateExecution();
+		BPatch_process *appProc = dynamic_cast<BPatch_process *>(testEnv.procs[i].handle);
+		//appProc->terminateExecution();
+		kill(appProc->getPid(), SIGKILL);
 	}
+	pthread_mutex_unlock(&m);
 
 	free(timeout_secs);
 
 	return NULL;
 }
 
-void *startTestThread(void *timeout_secs)
+
+int startTest(const int timeout_secs)
 {
 	BPatch_process *appProc[NUM_PROCS];
 	int ret = 0, i;
 
 	// Block signals so new threads don't catch
-	sigset_t blockedSigs = {{0}};
-	sigaddset(&blockedSigs, SIGINT);
-	sigaddset(&blockedSigs, SIGTERM);
-	sigprocmask(SIG_BLOCK, &blockedSigs, NULL);
+	// sigset_t blockedSigs = {{0}};
+	// sigaddset(&blockedSigs, SIGINT);
+	// sigaddset(&blockedSigs, SIGTERM);
+	// sigprocmask(SIG_BLOCK, &blockedSigs, NULL);
 
 	printf("---> Test started\n");
 
@@ -578,24 +590,39 @@ void *startTestThread(void *timeout_secs)
 		}
 		appProc[i] = dynamic_cast<BPatch_process *>(testEnv.procs[i].handle);
 		appProc[i]->continueExecution();
+		usleep(500 * 10 ^ 3);
 	}
 
 	// Launch end thread
 	pthread_t endThread;
-	if (pthread_create(&endThread, NULL, endProcsThread, (void *)timeout_secs)) {
+	int *timeout_secs_p = (int *)malloc(sizeof(int));
+	*timeout_secs_p = timeout_secs;
+	if (pthread_create(&endThread, NULL, endProcsThread, (void *)timeout_secs_p)) {
 		fprintf(stderr, "Error initializing end thread, test will never finsih.");
 		ret |= 1;
 	}
 
+	return 0;
+}
+
+int waitTestEnd()
+{
+	int i;
+	BPatch_process *appProc;
+
 	// Wait until all processes have been terminated
 	for (;;) {
 		int all_terminated = 1;
+		pthread_mutex_lock(&m);
 		for (i = 0; i < NUM_PROCS; i++) {
-			if (!appProc[i]->isTerminated()) {
+			appProc = dynamic_cast<BPatch_process *>(testEnv.procs[i].handle);
+			if (!appProc->isTerminated()) {
 				all_terminated = 0;
 				break;
 			}
 		}
+		pthread_mutex_unlock(&m);
+
 		if (all_terminated) {
 			break;
 		} else {
@@ -604,44 +631,62 @@ void *startTestThread(void *timeout_secs)
 	}
 
 	// Cancels threads
-	for (i = NUM_PROCS - 1; i >= 0; i--) {
-		if (threads[i] != 0) {
-			pthread_cancel(threads[i]);
-			pthread_join(threads[i], NULL);
-		}
-	}
+	// for (i = NUM_PROCS - 1; i >= 0; i--) {
+	//  if (threads[i] != 0) {
+	//      pthread_cancel(threads[i]);
+	//      pthread_join(threads[i], NULL);
+	//  }
+	// }
 
 	printf("---> Test finished\n");
-
-	return NULL;
-}
-
-int startTest(const int timeout_secs)
-{
-	pthread_t startTestThread_t;
-
-	int *timeout_secs_p = (int *)malloc(sizeof(int));
-	*timeout_secs_p = timeout_secs;
-	if (pthread_create(&startTestThread_t, NULL, startTestThread, timeout_secs_p) != 0){
-		fprintf(stderr, "Error initializing start thread: %s", strerror(errno));
-		return 1;
-	} else {
-		return 0;
-	}
 }
 
 /********************/
 
 /********** aDTN commands **********/
 
-int sendBundle()
+bundle_s *createBundle()
 {
+	bundle_s *b = bundle_new();
 
+	// Primary block
+	bundle_set_source(b, "local:1");
+	bundle_set_destination(b, "xeri2:1");
+	bundle_set_lifetime(b, 30);
+
+	// Payload
+	payload_block_s *p = bundle_new_payload_block();
+	bundle_set_payload(p, (uint8_t *)"TEST_BUNDLE", strlen("TEST_BUNDLE"));
+
+	// Put all together
+	bundle_add_ext_block(b, (ext_block_s *)p);
+
+	return b;
+}
+
+int sendBundle(const char *platformDataPath, bundle_s *b)
+{
+	// Create bundle
+	uint8_t *b_raw;
+	int b_l = bundle_create_raw(b , &b_raw);
+
+	// Write bundle to receiver incoming folder
+	char input_path[PATH_MAX];
+	snprintf(input_path, PATH_MAX, "%s/input", platformDataPath);
+
+	char *b_name = generate_bundle_name("local");
+	write_to(input_path, b_name, b_raw, b_l);
+
+	return 0;
 }
 
 
 /********************/
 
+double diff_time(struct timespec *start, struct timespec *end)
+{
+	return (double)(end->tv_sec - start->tv_sec) * 1.0e9 + (double)(end->tv_nsec - start->tv_nsec);
+}
 
 int main(int argc, char const *argv[])
 {
@@ -657,30 +702,41 @@ int main(int argc, char const *argv[])
 		exit(1);
 	}
 
-	timestamp_id = TS_RECEIVER_START;
-	if (hookEvent(RECEIVER, TIMESTAMP, &timestamp_id, "main") != 0) {
+	timestamp_id = TS_RECEIVED_BUNDLE;
+	if (hookEvent(RECEIVER, TIMESTAMP, &timestamp_id, "process_bundle") != 0) {
 		fprintf(stderr, "Error adding event into main");
 		exit(1);
 	}
 
-	timestamp_id = TS_RECEIVER_END;
-	if (hookEvent(RECEIVER, TIMESTAMP, &timestamp_id, "inotify_thread") != 0) {
+	timestamp_id = TS_PROCESSED_BUNDLE;
+	if (hookEvent(PROCESSOR, TIMESTAMP, &timestamp_id, "process_bundle") != 0) {
 		fprintf(stderr, "Error adding event into main");
 		exit(1);
 	}
 
-	if (startTest(10) != 0) {
+	if (startTest(60) != 0) {
 		fprintf(stderr, "Error starting test");
 		exit(1);
 	}
 
-	sleep(15);
+	if (!fork()) {
+		sleep(10);
+		int i;
+		for (i = 0; i < 30; i++) {
+			bundle_s *b = createBundle();
+			sendBundle("/home/xeri/projects/adtn/root/var/lib/adtn", b);
+			sleep(1);
+		}
+		_exit(0);
+	}
+	waitTestEnd();
+
 
 	// Show events
 	event_t *event = testEnv.eventQueue;
 	while (event != NULL) {
-		printf("Event type: %d, data: %d, timestamp: %lu secs %lu nsecs\n", event->event, *event->data, event->timestamp.tv_sec, event->timestamp.tv_nsec);
-		event = event->next;
+		printf("time: %lf\n", diff_time(&event->timestamp, &event->next->timestamp)/1.0e9);
+		event = event->next->next;
 	}
 
 
