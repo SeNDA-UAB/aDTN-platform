@@ -7,7 +7,7 @@
 // Pupeteer
 #include "include/puppeteerCommon.h"
 
-static void *puppetLibHandle;
+//static void *puppetLibHandle;
 static int puppeteerShmFd;
 static shmEventCtx_t *puppeteerShm;
 
@@ -64,7 +64,7 @@ static int puppeteerEndEvent()
 		return 1;
 	}
 
-	if (pthread_mutex_lock(&puppeteerShm->event_m) != 0){
+	if (pthread_mutex_unlock(&puppeteerShm->event_m) != 0){
 		perror("pthread_mutex_lock()");
 		return 1;
 	} 

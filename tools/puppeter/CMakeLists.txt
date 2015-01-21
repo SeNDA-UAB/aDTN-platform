@@ -8,3 +8,8 @@ add_library(puppetLib SHARED puppetLib.c)
 set_property(SOURCE puppetLib.c APPEND_STRING PROPERTY COMPILE_FLAGS "-Wno-unused-function -Wno-unused-variable")
 
 add_library(puppetMasterLib SHARED puppetMasterLib.cpp)
+
+add_executable(bundleAgentTest bundleAgentTest.cpp)
+target_link_libraries(bundleAgentTest puppetMasterLib)
+target_link_libraries(bundleAgentTest dyninstAPI)
+target_link_libraries(bundleAgentTest pthread)

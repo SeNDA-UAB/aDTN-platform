@@ -32,7 +32,7 @@
 #endif
 
 #ifndef PUPPET_LIB_PATH
-#define PUPPET_LIB_PATH "/usr/local/lib64/puppetLib.so"
+#define PUPPET_LIB_PATH "/home/xeri/projects/adtn/repo/aDTN-platform/build/tools/puppeter/libpuppetLib.so"
 #endif
 
 using namespace std;
@@ -40,49 +40,6 @@ using namespace std;
 
 // Global BPatch instance
 static BPatch bpatch;
-
-typedef struct puppetShmCtx_s {
-	int initialized;
-	int fd;
-	shmEventCtx_t *shm;
-} puppetShmCtx_t;
-
-typedef struct puppetCtx_s {
-	string name;
-	string cmd;
-	BPatch_addressSpace *handle;
-	BPatch_module *puppetLib;
-	puppetShmCtx_t shmCtx;
-	pthread_t eventListenerThreadId;
-	list<puppeteerEvent_t> eventsList;
-} puppetCtx_t;
-
-class puppeteerCtx
-{
-private:
-	map<string, puppetCtx_t *> puppets;
-
-	void preparePuppetMemory(puppetCtx_t *puppetCtx);
-	void getEntryPoints(BPatch_image *appImage, const string funcName, puppeteerEventLoc_e loc, vector<BPatch_point *> **points);
-	void getFunctions(BPatch_image *appImage, const string funcName, vector<BPatch_function *> functions);
-
-	static void *eventListenerThread(void *puppetCtx_p);
-	void launchEventListenerThread(puppetCtx_t *puppetCtx);
-	static void *endPuppetsThread(void *puppets);
-	void launchEndPuppetsThread(int secs);
-
-public:
-	puppeteerCtx();
-	int addPuppet(string puppetName, string puppetCmd);
-	int initPuppets();
-	// data must be NULL terminated
-	int addEvent(const string puppetName, const string function,
-	             const puppeteerEventLoc_e loc,
-	             const puppeteerEvent_e eventId,
-	             const char data[MAX_EVENT_DATA]);
-	int startTest(const int secs);
-	int waitTestEnd();
-};
 
 puppeteerCtx::puppeteerCtx()
 {
@@ -98,8 +55,10 @@ puppeteerCtx::puppeteerCtx()
 
 int puppeteerCtx::addPuppet(const string puppetName, const string puppetCmd)
 {
-	puppetCtx_t *puppetCtx = new puppetCtx_t;
+	puppetCtx_t *puppetCtx = new puppetCtx_t();
+
 	puppetCtx->name = puppetName;
+	puppetCtx->cmd = puppetCmd;
 
 	puppets.insert(make_pair(puppetName, puppetCtx));
 
@@ -116,16 +75,20 @@ int puppeteerCtx::initPuppets()
 		vector< string > cmdVec;
 		boost::split(cmdVec, it->second->cmd, boost::algorithm::is_any_of(" "));
 
-		const char **argv = new const char *[cmdVec.size()];
-		vector<string>::iterator it_argv = cmdVec.begin();
+		const char **argv = new const char *[cmdVec.size() - 1];
+		vector<string>::iterator it_argv = ++cmdVec.begin();
 
-		for (++it_argv; it_argv != cmdVec.end(); ++it_argv) {
-			argv[it_argv - cmdVec.begin()] = it_argv->c_str();
+		int i = 0;
+		for (; it_argv != cmdVec.end(); ++it_argv) {
+			argv[i] = it_argv->c_str();
+			i++;
 		}
+		argv[i] = NULL;
 
 		it->second->handle = bpatch.processCreate(cmdVec[0].c_str(), argv);
 
-		delete argv;
+		// TODO
+		//delete argv;
 	}
 
 	return 0;
@@ -185,10 +148,10 @@ void puppeteerCtx::preparePuppetMemory(puppetCtx_t *puppetCtx)
 			throw "Error initializing puppet shared memory";
 		/**/
 
-		//puppetCtx->eventsList = slist<puppeteerEvent_t>(2);
+		puppetCtx->shmCtx.initialized = 1;
 	}
 }
-void puppeteerCtx::getFunctions(BPatch_image *appImage, const string funcName, vector<BPatch_function *> functions)
+void puppeteerCtx::getFunctions(BPatch_image *appImage, const string funcName, vector<BPatch_function *> &functions)
 {
 	// Find function entry points
 	appImage->findFunction(funcName.c_str(), functions);
@@ -273,7 +236,7 @@ int puppeteerCtx::addEvent(const string puppetName, const string funcName,
 			getFunctions(appImage, "puppeteerEventSimple", event);
 			break;
 		}
-		getFunctions(appImage, "puppeterEndEvent", endEvent);
+		getFunctions(appImage, "puppeteerEndEvent", endEvent);
 
 	} catch (char const *err) {
 		cerr << err << endl;
@@ -292,9 +255,11 @@ int puppeteerCtx::addEvent(const string puppetName, const string funcName,
 	BPatch_constExpr eventDataArg(data);
 	eventArgs.push_back(&eventDataArg);
 	BPatch_funcCallExpr eventCall(*(event[0]), eventArgs);
+	app->insertSnippet(eventCall, *points, when, BPatch_lastSnippet);
 
 	//endEvent
 	BPatch_funcCallExpr puppeteerEndEventCall(*(endEvent[0]), noArgs);
+	app->insertSnippet(puppeteerEndEventCall, *points, when, BPatch_lastSnippet);
 
 	app->finalizeInsertionSet(true);
 	/**/
@@ -322,7 +287,7 @@ void *puppeteerCtx::eventListenerThread(void *puppetCtx_p)
 			((puppetCtx_t *)puppetCtx_p)->eventsList.push_back(*event);
 
 			//Next event
-			shmEvent->eventBufferStart = shmEvent->eventBufferStart % shmEvent->eventBufferSize;
+			shmEvent->eventBufferStart = (shmEvent->eventBufferStart + 1 )% shmEvent->eventBufferSize;
 		}
 
 		pthread_mutex_unlock((pthread_mutex_t *)&shmEvent->event_m);
@@ -344,7 +309,8 @@ void *puppeteerCtx::endPuppetsThread(void *puppets_p)
 
 	for (map<string, puppetCtx_t *>::iterator it = puppets.begin(); it != puppets.end(); ++it) {
 		BPatch_process *appProc = dynamic_cast<BPatch_process *>(it->second->handle);
-		appProc->terminateExecution();
+		//appProc->terminateExecution();
+		kill(appProc->getPid(), SIGKILL);
 	}
 
 	return NULL;
@@ -365,6 +331,42 @@ int puppeteerCtx::startTest(const int secs)
 
 		BPatch_process *appProc = dynamic_cast<BPatch_process *>(it->second->handle);
 		appProc->continueExecution();
+	}
+
+	return 0;
+}
+
+int puppeteerCtx::waitTestEnd()
+{
+	BPatch_process *appProc;
+
+	// Wait until all processes have been terminated
+	for (;;) {
+		int all_terminated = 1;
+		for (map<string, puppetCtx_t *>::iterator it = puppets.begin(); it != puppets.end(); ++it) {
+			appProc = dynamic_cast<BPatch_process *>(it->second->handle);
+			if (!appProc->isTerminated()) {
+				all_terminated = 0;
+				break;
+			}
+		}
+
+		if (all_terminated) {
+			break;
+		} else {
+			bpatch.waitForStatusChange();
+		}
+	}
+
+	return 0;
+}
+
+int puppeteerCtx::printEvents()
+{
+	for (map<string, puppetCtx_t *>::iterator it = puppets.begin(); it != puppets.end(); ++it) {\
+		for(list<puppeteerEvent_t>::iterator it_ev = it->second->eventsList.begin(); it_ev != it->second->eventsList.end(); ++it_ev){
+			cout << it_ev->eventId << ": " << it_ev->timestamp.tv_sec << " " << it_ev->data << endl;
+		}
 	}
 
 	return 0;
