@@ -11,8 +11,8 @@ enum puppeteerEvent_e {
 };
 
 typedef struct puppeteerEvent_s {
-	puppeteerEvent_e eventId;
-	uint8_t data[MAX_EVENT_DATA];
+	enum puppeteerEvent_e eventId;
+	char data[MAX_EVENT_DATA];
 	int read;
 	struct timespec timestamp;
 } puppeteerEvent_t;

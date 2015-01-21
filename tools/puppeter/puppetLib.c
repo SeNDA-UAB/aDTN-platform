@@ -1,12 +1,13 @@
 #include <stdio.h>
+#include <string.h>
 #include <sys/mman.h> /* shm_open, mmap..*/
 #include <sys/stat.h> /* For mode constants */
 #include <fcntl.h> /* For O_* constants */
-#include <string.h>
 
 // Pupeteer
 #include "include/puppeteerCommon.h"
 
+static void *puppetLibHandle;
 static int puppeteerShmFd;
 static shmEventCtx_t *puppeteerShm;
 
@@ -23,6 +24,8 @@ static int puppeteerInitShm(const char *shmName)
 		perror("mmap()");
 		return 1;
 	}
+
+	puppeteerShm->eventBufferSize = MAX_EVENT_DATA;
 
 	return 0;
 }	
@@ -44,6 +47,10 @@ static int puppeteerStoreEvent(puppeteerEvent_t *e)
 	e->read = 0;
 	clock_gettime(CLOCK_REALTIME, &e->timestamp);
 	memcpy(&puppeteerShm->eventBuffer[puppeteerShm->eventBufferEnd], e, sizeof(*e));
+	puppeteerShm->eventBufferEnd = (puppeteerShm->eventBufferEnd + 1) % MAX_EVENTS;
+	if (puppeteerShm->eventBufferEnd == puppeteerShm->eventBufferStart){
+		puppeteerShm->eventBufferStart = (puppeteerShm->eventBufferStart + 1) % MAX_EVENTS;
+	}
 
 	return 0;
 }
