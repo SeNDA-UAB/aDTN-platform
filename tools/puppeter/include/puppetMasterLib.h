@@ -17,6 +17,7 @@ typedef struct puppetShmCtx_s {
 typedef struct puppetCtx_s {
 	string name;
 	string cmd;
+	int pos;
 	BPatch_addressSpace *handle;
 	BPatch_module *puppetLib;
 	puppetShmCtx_t shmCtx;
@@ -42,12 +43,23 @@ public:
 	puppeteerCtx();
 	int addPuppet(string puppetName, string puppetCmd);
 	int initPuppets();
-	// data must be NULL terminated
 	int addEvent(const string puppetName, const string function,
 	             const puppeteerEventLoc_e loc,
 	             const puppeteerEvent_e eventId,
-	             const char data[MAX_EVENT_DATA]);
+	             const char data[MAX_EVENT_DATA]); // data must be NULL terminated
 	int startTest(const int secs);
 	int waitTestEnd();
+
+	/**/
 	int printEvents();
+	int getEvents(list<puppeteerEvent_t> &eventList);
+	double getDiffTimestamp(const puppeteerEvent_t &a, const puppeteerEvent_t &b);
+	int countEvents(list<puppeteerEvent_t> &eventList, const char data[MAX_EVENT_DATA]);
+	const puppeteerEvent_t *findNextEvent(list<puppeteerEvent_t>::const_iterator &start, const list<puppeteerEvent_t>::const_iterator &end, const char eventData[MAX_EVENT_DATA]);
+	int pairEvents( list<puppeteerEvent_t> &eventList,
+	                const char a[MAX_EVENT_DATA],
+	                const char b[MAX_EVENT_DATA],
+	                list< pair<const puppeteerEvent_t *, const puppeteerEvent_t *> > &pairedList );
+	int getPairStats(list< pair<const puppeteerEvent_t *, const puppeteerEvent_t *> > &pairedList, double &max, double &min, double &avg);
+	/**/
 };

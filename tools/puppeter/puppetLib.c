@@ -25,7 +25,7 @@ static int puppeteerInitShm(const char *shmName)
 		return 1;
 	}
 
-	puppeteerShm->eventBufferSize = MAX_EVENT_DATA;
+	puppeteerShm->eventBufferSize = MAX_EVENTS;
 
 	return 0;
 }	
@@ -47,9 +47,9 @@ static int puppeteerStoreEvent(puppeteerEvent_t *e)
 	e->read = 0;
 	clock_gettime(CLOCK_REALTIME, &e->timestamp);
 	memcpy(&puppeteerShm->eventBuffer[puppeteerShm->eventBufferEnd], e, sizeof(*e));
-	puppeteerShm->eventBufferEnd = (puppeteerShm->eventBufferEnd + 1) % MAX_EVENTS;
+	puppeteerShm->eventBufferEnd = (puppeteerShm->eventBufferEnd + 1) % puppeteerShm->eventBufferSize;
 	if (puppeteerShm->eventBufferEnd == puppeteerShm->eventBufferStart){
-		puppeteerShm->eventBufferStart = (puppeteerShm->eventBufferStart + 1) % MAX_EVENTS;
+		puppeteerShm->eventBufferStart = (puppeteerShm->eventBufferStart + 1) % puppeteerShm->eventBufferSize;
 	}
 
 	return 0;

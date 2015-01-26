@@ -20,12 +20,14 @@
 #include <boost/fusion/container/list/list_fwd.hpp>
 #include <boost/fusion/include/list_fwd.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/bind.hpp>
 
 // C
 #include <sys/mman.h>   /* shm_open, mmap..*/
 #include <sys/stat.h>   /* For mode constants */
 #include <fcntl.h>      /* For O_* constants */
-
+#include <string.h>     /* strcmp */
+#include <errno.h>
 
 #ifndef DYNINSTAPI_RT_LIB
 #define DYNINSTAPI_RT_LIB "/usr/local/lib64/libdyninstAPI_RT.so"
@@ -36,7 +38,6 @@
 #endif
 
 using namespace std;
-//using namespace boost::intrusive; // For slist
 
 // Global BPatch instance
 static BPatch bpatch;
@@ -59,24 +60,38 @@ int puppeteerCtx::addPuppet(const string puppetName, const string puppetCmd)
 
 	puppetCtx->name = puppetName;
 	puppetCtx->cmd = puppetCmd;
+	puppetCtx->pos = puppets.size();
 
 	puppets.insert(make_pair(puppetName, puppetCtx));
 
 	return 0;
 }
 
+bool cmpPuppet(puppetCtx_t *a, puppetCtx_t *b)
+{
+	return a->pos < b->pos;
+}
+
 int puppeteerCtx::initPuppets()
 {
-	for (map<string, puppetCtx_t *>::iterator it = puppets.begin();
-	     it != puppets.end();
+	// Sort puppets by position
+	vector<puppetCtx_t *> v;
+	v.reserve(puppets.size());
+	transform( puppets.begin(), puppets.end(),
+	           back_inserter(v), boost::bind(&map<string, puppetCtx_t *>::value_type::second, _1) );
+	sort(v.begin(), v.end(), cmpPuppet);
+
+	// Init puppets in insertion order
+	for (vector<puppetCtx_t *>::iterator it = v.begin();
+	     it != v.end();
 	     ++it) {
 
 		// Prepare cmd and argv array
 		vector< string > cmdVec;
-		boost::split(cmdVec, it->second->cmd, boost::algorithm::is_any_of(" "));
+		boost::split(cmdVec, (*it)->cmd, boost::algorithm::is_any_of(" "));
 
-		const char **argv = new const char *[cmdVec.size() - 1];
-		vector<string>::iterator it_argv = ++cmdVec.begin();
+		const char **argv = new const char *[cmdVec.size() + 1];
+		vector<string>::iterator it_argv = cmdVec.begin();
 
 		int i = 0;
 		for (; it_argv != cmdVec.end(); ++it_argv) {
@@ -85,7 +100,7 @@ int puppeteerCtx::initPuppets()
 		}
 		argv[i] = NULL;
 
-		it->second->handle = bpatch.processCreate(cmdVec[0].c_str(), argv);
+		(*it)->handle = bpatch.processCreate(cmdVec[0].c_str(), argv);
 
 		// TODO
 		//delete argv;
@@ -287,7 +302,7 @@ void *puppeteerCtx::eventListenerThread(void *puppetCtx_p)
 			((puppetCtx_t *)puppetCtx_p)->eventsList.push_back(*event);
 
 			//Next event
-			shmEvent->eventBufferStart = (shmEvent->eventBufferStart + 1 )% shmEvent->eventBufferSize;
+			shmEvent->eventBufferStart = (shmEvent->eventBufferStart + 1 ) % shmEvent->eventBufferSize;
 		}
 
 		pthread_mutex_unlock((pthread_mutex_t *)&shmEvent->event_m);
@@ -305,12 +320,34 @@ void *puppeteerCtx::endPuppetsThread(void *puppets_p)
 	map<string, puppetCtx_t *> puppets = *(map<string, puppetCtx_t *> *) puppets_p;
 
 	// TODO: get secs from launch thread call.
-	sleep(10);
+	int sig;
+	siginfo_t si;
+	sigset_t blockedSigs = {{0}};
+	struct timespec timeout = {0};
+	timeout.tv_sec = 60;
 
-	for (map<string, puppetCtx_t *>::iterator it = puppets.begin(); it != puppets.end(); ++it) {
-		BPatch_process *appProc = dynamic_cast<BPatch_process *>(it->second->handle);
+	// sigaddset(&blockedSigs, SIGINT);
+	// sigaddset(&blockedSigs, SIGTERM);
+
+	// do {
+	//  sig = sigtimedwait(&blockedSigs, &si, &timeout);
+	// } while (sig < 0 && errno == EINTR);
+
+	sleep(60);
+
+	vector<puppetCtx_t *> v;
+	v.reserve(puppets.size());
+	transform( puppets.begin(), puppets.end(),
+	           back_inserter(v), boost::bind(&map<string, puppetCtx_t *>::value_type::second, _1) );
+	sort(v.begin(), v.end(), cmpPuppet);
+
+	// Init puppets in insertion order
+	for (vector<puppetCtx_t *>::reverse_iterator it = v.rbegin();
+	     it != v.rend();
+	     ++it) {
+		BPatch_process *appProc = dynamic_cast<BPatch_process *>((*it)->handle);
 		//appProc->terminateExecution();
-		kill(appProc->getPid(), SIGKILL);
+		kill(appProc->getPid(), SIGINT);
 	}
 
 	return NULL;
@@ -325,6 +362,12 @@ void puppeteerCtx::launchEndPuppetsThread(int secs)
 
 int puppeteerCtx::startTest(const int secs)
 {
+	// Block all signals so they will be handled by the endPuppetsThread
+	// sigset_t blockedSigs = {{0}};
+	// sigaddset(&blockedSigs, SIGINT);
+	// sigaddset(&blockedSigs, SIGTERM);
+	// sigprocmask(SIG_BLOCK, &blockedSigs, NULL);
+
 	for (map<string, puppetCtx_t *>::iterator it = puppets.begin(); it != puppets.end(); ++it) {
 		if (it->second->shmCtx.initialized)
 			launchEventListenerThread(it->second);
@@ -332,6 +375,8 @@ int puppeteerCtx::startTest(const int secs)
 		BPatch_process *appProc = dynamic_cast<BPatch_process *>(it->second->handle);
 		appProc->continueExecution();
 	}
+
+	launchEndPuppetsThread(60);
 
 	return 0;
 }
@@ -361,13 +406,115 @@ int puppeteerCtx::waitTestEnd()
 	return 0;
 }
 
-int puppeteerCtx::printEvents()
+bool cmpEvent(puppeteerEvent_t &a, puppeteerEvent_t &b)
 {
-	for (map<string, puppetCtx_t *>::iterator it = puppets.begin(); it != puppets.end(); ++it) {\
-		for(list<puppeteerEvent_t>::iterator it_ev = it->second->eventsList.begin(); it_ev != it->second->eventsList.end(); ++it_ev){
-			cout << it_ev->eventId << ": " << it_ev->timestamp.tv_sec << " " << it_ev->data << endl;
-		}
+	if (a.timestamp.tv_sec != b.timestamp.tv_sec) {
+		return a.timestamp.tv_sec < b.timestamp.tv_sec;
+	} else {
+		return a.timestamp.tv_nsec < b.timestamp.tv_nsec;
+	}
+}
+
+int puppeteerCtx::getEvents(list<puppeteerEvent_t> &eventList)
+{
+	for (map<string, puppetCtx_t *>::iterator it = puppets.begin(); it != puppets.end(); ++it) {
+		eventList.merge(it->second->eventsList, cmpEvent);
 	}
 
 	return 0;
+}
+
+int puppeteerCtx::printEvents()
+{
+	// Merge events
+	list<puppeteerEvent_t> eventList;
+	getEvents(eventList);
+
+	for (list<puppeteerEvent_t>::iterator it_ev = eventList.begin(); it_ev != eventList.end(); ++it_ev) {
+		cout << it_ev->eventId << ": " << it_ev->timestamp.tv_sec << "." << it_ev->timestamp.tv_nsec << "s " << it_ev->data << endl;
+	}
+
+	return 0;
+}
+
+double diff_time(const struct timespec &start, const struct timespec &end)
+{
+	return (double)(end.tv_sec - start.tv_sec) * 1.0e9 + (double)(end.tv_nsec - start.tv_nsec);
+}
+
+double puppeteerCtx::getDiffTimestamp(const puppeteerEvent_t &a, const puppeteerEvent_t &b)
+{
+	return diff_time(a.timestamp, b.timestamp);
+}
+
+int puppeteerCtx::countEvents(list<puppeteerEvent_t> &eventList, const char data[MAX_EVENT_DATA])
+{
+	int count = 0;
+	for (list<puppeteerEvent_t>::iterator it_ev = eventList.begin(); it_ev != eventList.end(); ++it_ev) {
+		if (strcmp(it_ev->data, data) == 0)
+			count++;
+	}
+
+	return count;
+}
+
+const puppeteerEvent_t *puppeteerCtx::findNextEvent(list<puppeteerEvent_t>::const_iterator &start, const list<puppeteerEvent_t>::const_iterator &end, const char eventData[MAX_EVENT_DATA])
+{
+	for (; start != end; ++start) {
+		if (strcmp(start->data, eventData) == 0) {
+			return &(*start);
+		}
+	}
+	return NULL;
+}
+
+int puppeteerCtx::pairEvents(list<puppeteerEvent_t> &eventList, const char a[MAX_EVENT_DATA], const char b[MAX_EVENT_DATA], list< pair<const puppeteerEvent_t *, const puppeteerEvent_t *> > &pairedList)
+{
+	int count = 0;
+
+	list<puppeteerEvent_t>::const_iterator lastEventB = eventList.cbegin();
+	for (list<puppeteerEvent_t>::iterator it_ev = eventList.begin(); it_ev != eventList.end(); ++it_ev) {
+		// Find a
+		if (strcmp(it_ev->data, a) == 0) {
+			// Find next b
+			const puppeteerEvent_t *eventB = findNextEvent(lastEventB, eventList.cend(), b);
+			++lastEventB;
+			pair<const puppeteerEvent_t *, const puppeteerEvent_t *> new_pair = make_pair(&(*it_ev), eventB);
+			pairedList.push_back(new_pair);
+			count++;
+		}
+	}
+
+	return count;
+}
+
+int puppeteerCtx::getPairStats(list< pair<const puppeteerEvent_t *, const puppeteerEvent_t *> > &pairedList, double &max, double &min, double &avg)
+{
+	int count = 0;
+
+	min = -1;
+	max = -1;
+	avg = 0;
+
+	for (list< pair<const puppeteerEvent_t *, const puppeteerEvent_t *> >::const_iterator it = pairedList.cbegin(); it != pairedList.cend(); ++it) {
+		double diff = diff_time(it->first->timestamp, it->second->timestamp) ;
+
+		// Initialization
+		if (min == -1)
+			min = diff;
+		if (max == -1)
+			max = diff;
+
+		// Update
+		if (diff < min)
+			min = diff;
+		else if (diff > max)
+			max = diff;
+		avg += diff;
+
+		count++;
+	}
+
+	avg = avg / count;
+
 }
