@@ -134,6 +134,11 @@ static char *get_compile_routing_cmd(const char *code_path, const char *so_path)
 	return command;
 }
 
+double diff_time(struct timespec *start, struct timespec *end)
+{
+	return (double)(end->tv_sec - start->tv_sec) * 1.0e9 + (double)(end->tv_nsec - start->tv_nsec);
+}
+
 static int compile_routing_code(const char *code_name, const char *code)
 {
 	int ret = 0, code_ready_l = 0;
@@ -156,10 +161,16 @@ static int compile_routing_code(const char *code_name, const char *code)
 
 	cmd = get_compile_routing_cmd(code_path, so_path);
 
+	struct timespec start, end;
+	clock_gettime(CLOCK_REALTIME, &start);
+
 	if (execute_compile_cmd(cmd) != 0) {
 		ret = 1;
 		goto end;
 	}
+
+	clock_gettime(CLOCK_REALTIME, &end);
+	printf("---- execute_compile_cmd: %lf\n", diff_time(&start, &end)/1.0e9);
 
 	remove_code_from_disk(code_path);
 

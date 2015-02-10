@@ -15,3 +15,12 @@ target_link_libraries(bundleAgentTest adtn)
 target_link_libraries(bundleAgentTest puppetMasterLib)
 target_link_libraries(bundleAgentTest dyninstAPI)
 target_link_libraries(bundleAgentTest pthread)
+
+add_executable(executorTest executorTest.cpp)
+target_link_libraries(executorTest adtn)
+target_link_libraries(executorTest puppetMasterLib)
+target_link_libraries(executorTest dyninstAPI)
+target_link_libraries(executorTest pthread)
+
+add_executable(sendBundles sendBundles.c)
+target_link_libraries(sendBundles adtn)

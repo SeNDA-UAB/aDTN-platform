@@ -2,7 +2,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <unistd.h>
 
 #include "include/puppetMasterLib.h"
 
@@ -18,83 +17,7 @@ double diff_time(struct timespec *start, struct timespec *end)
 }
 
 /********** aDTN commands **********/
-
-int launchPlatform(char *const conf_file)
-{
-	// Launch information_exchange
-	char *const informationExchangeArgs[] = {
-		"information_exchange",
-		"-f",
-		"-c", conf_file,
-		NULL
-	};
-	if (!fork()) {
-		execve("/home/xeri/projects/adtn/root/bin/information_exchange", informationExchangeArgs, NULL);
-	}
-
-	// Launch queueManager
-	char *const queueManagerArgs[] = {
-		"queueManager",
-		"-c", conf_file,
-		NULL
-	};
-	if (!fork()) {
-		execve("/home/xeri/projects/adtn/root/bin/queueManager", queueManagerArgs, NULL);
-	}
-
-	// Launch processor
-	char *const processorArgs[] = {
-		"processor",
-		"-c", conf_file,
-		NULL
-	};
-	if (!fork()) {
-		execve("/home/xeri/projects/adtn/root/bin/processor", processorArgs, NULL);
-	}
-
-	// Launch receiver
-	char *const receiverArgs[] = {
-		"receiver",
-		"-c", conf_file,
-		NULL
-	};
-	if (!fork()) {
-		execve("/home/xeri/projects/adtn/root/bin/receiver", receiverArgs, NULL);
-	}
-
-	// Launch executor
-	char *const executorArgs[] = {
-		"executor",
-		"-c", conf_file,
-		NULL
-	};
-	if (!fork()) {
-		execve("/home/xeri/projects/adtn/root/bin/executor", executorArgs, NULL);
-	}
-
-	return 0;
-}
-
 bundle_s *createBundle()
-{
-	bundle_s *b = bundle_new();
-
-	// Primary block
-	bundle_set_source(b, "local:1");
-	bundle_set_destination(b, "xeri2:1");
-	bundle_set_lifetime(b, 30);
-
-	// Payload
-	payload_block_s *p = bundle_new_payload_block();
-	bundle_set_payload(p, (uint8_t *)"TEST_BUNDLE", strlen("TEST_BUNDLE"));
-
-	// Put all together
-	bundle_add_ext_block(b, (ext_block_s *)p);
-
-	return b;
-}
-
-bundle_s *createBundleWithUniqueForwardingCode()
 {
 	static int i = 0; // Dummy variable to force executor compile the routing code each time.
 
@@ -113,32 +36,6 @@ bundle_s *createBundleWithUniqueForwardingCode()
 	mmeb_s *mmeb = bundle_new_mmeb();
 	char r_code[512];
 	snprintf(r_code, sizeof(r_code), "int i=%d; if (nbs.has_next()){ add_hop(nbs.next());} return 0;", i++);
-	bundle_add_mmeb_code(mmeb, ROUTING_CODE, 0x01, strlen(r_code), (uint8_t *)r_code);
-
-	// Put all together
-	bundle_add_ext_block(b, (ext_block_s *)p);
-	bundle_add_ext_block(b, (ext_block_s *)mmeb);
-
-	return b;
-}
-
-bundle_s *createBundleWithForwardingCode()
-{
-	bundle_s *b = bundle_new();
-
-	// Primary block
-	bundle_set_source(b, "local:1");
-	bundle_set_destination(b, "xeri2:1");
-	bundle_set_lifetime(b, 30);
-
-	// Payload
-	payload_block_s *p = bundle_new_payload_block();
-	bundle_set_payload(p, (uint8_t *)"TEST_BUNDLE", strlen("TEST_BUNDLE"));
-
-	// MMEB
-	mmeb_s *mmeb = bundle_new_mmeb();
-	char r_code[512];
-	snprintf(r_code, sizeof(r_code), "if (nbs.has_next()){ add_hop(nbs.next());} return 0;");
 	bundle_add_mmeb_code(mmeb, ROUTING_CODE, 0x01, strlen(r_code), (uint8_t *)r_code);
 
 	// Put all together
@@ -240,8 +137,6 @@ int executeCode(const char *platformDataPath, const char *b_name)
 
 int main(int argc, char const *argv[])
 {
-	printf("---- Starting receiving platform\n");
-	launchPlatform("/home/xeri/projects/adtn/test/platforms/adtn2.ini");
 
 	printf("---- Starting tested platform\n");
 	puppeteerCtx testPlat;
@@ -249,45 +144,52 @@ int main(int argc, char const *argv[])
 	testPlat.addPuppet(string("queueManager"), string("/home/xeri/projects/adtn/root/bin/queueManager -c /home/xeri/projects/adtn/test/platforms/adtn.ini"));
 	testPlat.addPuppet(string("processor"), string("/home/xeri/projects/adtn/root/bin/processor -c /home/xeri/projects/adtn/test/platforms/adtn.ini"));
 	testPlat.addPuppet(string("receiver"), string("/home/xeri/projects/adtn/root/bin/receiver -c /home/xeri/projects/adtn/test/platforms/adtn.ini"));
-	char *const executorArgs[] = {
-		"executor",
-		"-c", "/home/xeri/projects/adtn/test/platforms/adtn.ini",
-		NULL
-	};
-	if (!fork()) {
-		execve("/home/xeri/projects/adtn/root/bin/executor", executorArgs, NULL);
-	}
-	//testPlat.addPuppet(string("executor"), string("/home/xeri/projects/adtn/root/bin/executor -c /home/xeri/projects/adtn/test/platforms/adtn.ini"));
-
+	testPlat.addPuppet(string("executor"), string("/home/xeri/projects/adtn/root/bin/executor -c /home/xeri/projects/adtn/test/platforms/adtn.ini"));
 
 	testPlat.initPuppets();
-	testPlat.addEvent(string("receiver"),       string("load_and_process_bundle"),  true, puppeteerEventLoc::puppeteerEventLocBefore,     puppeteerEventSimpleId,     "Bundle received");
-	testPlat.addEvent(string("receiver"),       string("queue"),                    true, puppeteerEventLoc::puppeteerEventLocAfter,  	puppeteerEventSimpleId,     "Bundle enqueued");
-	testPlat.addEvent(string("processor"),      string("process_bundle"),           true, puppeteerEventLoc::puppeteerEventLocBefore,     puppeteerEventSimpleId,     "Bundle dequeued");
-	testPlat.addEvent(string("processor"),      string("send_bundle"),              true, puppeteerEventLoc::puppeteerEventLocAfter,  	puppeteerEventSimpleId,     "Bundle sent");
-	
+	testPlat.addEvent(string("executor"),  		string("execute_compile_cmd"),  puppeteerEventLocBefore, 	puppeteerEventSimpleId, 	"Compilation started");
+	testPlat.addEvent(string("executor"),  		string("execute_compile_cmd"),  puppeteerEventLocAfter, 	puppeteerEventSimpleId, 	"Compilation ended");
+	testPlat.startTest(60);
 
-	testPlat.addAction(5, [&] {
-			int i;
-			for (i = 0; i < 10; i++) {
-				bundle_s *b = createBundle();
-				char *b_name;
-				sendBundle("/home/xeri/projects/adtn/root/var/lib/adtn/", b, &b_name);
-				if (i < 3 ) {
-					sleep(2);
-				} else {
-					usleep(500000);
-				}
+	if (!fork()) {
 
-			}
+		// Wait until nb is discovered
+		sleep(10);
+		int i;
+		for (i = 0; i < 10; i++) {
+			bundle_s *b = createBundle();
+			char *b_name;
+			sendBundle("/home/xeri/projects/adtn/root/var/lib/adtn/", b, &b_name);
+			sleep(2);
 		}
+		_exit(0);
+	}
 
-	);
+	testPlat.waitTestEnd();
 
-	testPlat.startTest(10, true, true);
+	list<puppeteerEvent_t> eventList;
+	testPlat.getEvents(eventList);
 
-	// Temp
-	testPlat.printEvents();
+	printf("Number of events: %ld\n", eventList.size());
+	printf("Bundles received: %d\n", testPlat.countEvents(eventList, "Compilation started"));
+	printf("Bundles enqueued: %d\n", testPlat.countEvents(eventList, "Compilation ended"));
+	printf("\n");
+
+	list< pair<const puppeteerEvent_t *, const puppeteerEvent_t *> > compilationTime;
+	testPlat.pairEvents(eventList, "Compilation started", "Compilation ended",  compilationTime);
+	list< pair<const puppeteerEvent_t *, const puppeteerEvent_t *> >::const_iterator it_compilationTime = compilationTime.cbegin();
+
+	int i = 0;
+	for (; it_compilationTime != compilationTime.cend(); ++it_compilationTime){
+		printf("Compilation time %d:\t %lf\n", i, testPlat.getDiffTimestamp(*it_compilationTime->first, *it_compilationTime->second)/1.0e9);
+		i++;
+	}
+	double min, max, avg;
+	testPlat.getPairStats(compilationTime, max, min, avg);
+	printf("Compilation time stats: min: %lfs, max: %lfs, avg: %lfs\n", min/1.0e9, max/1.0e9, avg/1.0e9);
+
+	printf("Total time: %lf\n", testPlat.getDiffTimestamp(*eventList.begin(), *(--eventList.end()))/1.0e9 );
+
 
 	return 0;
 }

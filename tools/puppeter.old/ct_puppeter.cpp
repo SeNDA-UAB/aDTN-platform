@@ -568,13 +568,13 @@ void *endProcsThread(void *timeout_secs)
 		sig = sigtimedwait(&blockedSigs, &si, &timeout);
 	} while (sig < 0 && errno == EINTR);
 
-	pthread_mutex_lock(&m);
+	//pthread_mutex_lock(&m);
 	for (i = NUM_PROCS - 1; i >= 0; i--) {
 		BPatch_process *appProc = dynamic_cast<BPatch_process *>(testEnv.procs[i].handle);
 		//appProc->terminateExecution();
 		kill(appProc->getPid(), SIGINT);
 	}
-	pthread_mutex_unlock(&m);
+	//pthread_mutex_unlock(&m);
 
 	free(timeout_secs);
 
@@ -631,7 +631,7 @@ int waitTestEnd()
 	// Wait until all processes have been terminated
 	for (;;) {
 		int all_terminated = 1;
-		pthread_mutex_lock(&m);
+		//pthread_mutex_lock(&m);
 		for (i = 0; i < NUM_PROCS; i++) {
 			appProc = dynamic_cast<BPatch_process *>(testEnv.procs[i].handle);
 			if (!appProc->isTerminated()) {
@@ -639,7 +639,7 @@ int waitTestEnd()
 				break;
 			}
 		}
-		pthread_mutex_unlock(&m);
+		//pthread_mutex_unlock(&m);
 
 		if (all_terminated) {
 			break;

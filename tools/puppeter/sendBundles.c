@@ -1,16 +1,16 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <time.h>
 
-#include "include/puppetMasterLib.h"
-
-extern "C" {
 #include "bundle.h"
 #include "utils.h"
 #include "executor.h"
-}
 
 double diff_time(struct timespec *start, struct timespec *end)
 {
@@ -236,58 +236,16 @@ int executeCode(const char *platformDataPath, const char *b_name)
 	return 0;
 }
 
-/********************/
-
 int main(int argc, char const *argv[])
 {
-	printf("---- Starting receiving platform\n");
-	launchPlatform("/home/xeri/projects/adtn/test/platforms/adtn2.ini");
-
-	printf("---- Starting tested platform\n");
-	puppeteerCtx testPlat;
-	testPlat.addPuppet(string("information_exchange"), string("/home/xeri/projects/adtn/root/bin/information_exchange -f -c /home/xeri/projects/adtn/test/platforms/adtn.ini"));
-	testPlat.addPuppet(string("queueManager"), string("/home/xeri/projects/adtn/root/bin/queueManager -c /home/xeri/projects/adtn/test/platforms/adtn.ini"));
-	testPlat.addPuppet(string("processor"), string("/home/xeri/projects/adtn/root/bin/processor -c /home/xeri/projects/adtn/test/platforms/adtn.ini"));
-	testPlat.addPuppet(string("receiver"), string("/home/xeri/projects/adtn/root/bin/receiver -c /home/xeri/projects/adtn/test/platforms/adtn.ini"));
-	char *const executorArgs[] = {
-		"executor",
-		"-c", "/home/xeri/projects/adtn/test/platforms/adtn.ini",
-		NULL
-	};
-	if (!fork()) {
-		execve("/home/xeri/projects/adtn/root/bin/executor", executorArgs, NULL);
+	int i;
+	for (i = 0; i < 50; i++) {
+		bundle_s *b = createBundle();
+		char *b_name;
+		sendBundle("/home/xeri/projects/adtn/root/var/lib/adtn/", b, &b_name);
 	}
-	//testPlat.addPuppet(string("executor"), string("/home/xeri/projects/adtn/root/bin/executor -c /home/xeri/projects/adtn/test/platforms/adtn.ini"));
 
-
-	testPlat.initPuppets();
-	testPlat.addEvent(string("receiver"),       string("load_and_process_bundle"),  true, puppeteerEventLoc::puppeteerEventLocBefore,     puppeteerEventSimpleId,     "Bundle received");
-	testPlat.addEvent(string("receiver"),       string("queue"),                    true, puppeteerEventLoc::puppeteerEventLocAfter,  	puppeteerEventSimpleId,     "Bundle enqueued");
-	testPlat.addEvent(string("processor"),      string("process_bundle"),           true, puppeteerEventLoc::puppeteerEventLocBefore,     puppeteerEventSimpleId,     "Bundle dequeued");
-	testPlat.addEvent(string("processor"),      string("send_bundle"),              true, puppeteerEventLoc::puppeteerEventLocAfter,  	puppeteerEventSimpleId,     "Bundle sent");
-	
-
-	testPlat.addAction(5, [&] {
-			int i;
-			for (i = 0; i < 10; i++) {
-				bundle_s *b = createBundle();
-				char *b_name;
-				sendBundle("/home/xeri/projects/adtn/root/var/lib/adtn/", b, &b_name);
-				if (i < 3 ) {
-					sleep(2);
-				} else {
-					usleep(500000);
-				}
-
-			}
-		}
-
-	);
-
-	testPlat.startTest(10, true, true);
-
-	// Temp
-	testPlat.printEvents();
+	sleep(60);
 
 	return 0;
 }
