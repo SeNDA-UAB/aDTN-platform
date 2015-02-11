@@ -3,6 +3,8 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <signal.h>
 
 #include "include/puppetMasterLib.h"
 
@@ -261,33 +263,37 @@ int main(int argc, char const *argv[])
 
 
 	testPlat.initPuppets();
-	testPlat.addEvent(string("receiver"),       string("load_and_process_bundle"),  true, puppeteerEventLoc::puppeteerEventLocBefore,     puppeteerEventSimpleId,     "Bundle received");
-	testPlat.addEvent(string("receiver"),       string("queue"),                    true, puppeteerEventLoc::puppeteerEventLocAfter,  	puppeteerEventSimpleId,     "Bundle enqueued");
-	testPlat.addEvent(string("processor"),      string("process_bundle"),           true, puppeteerEventLoc::puppeteerEventLocBefore,     puppeteerEventSimpleId,     "Bundle dequeued");
-	testPlat.addEvent(string("processor"),      string("send_bundle"),              true, puppeteerEventLoc::puppeteerEventLocAfter,  	puppeteerEventSimpleId,     "Bundle sent");
-	
+	testPlat.addEvent("receiver",       "load_and_process_bundle",  true, puppeteerEventLoc::puppeteerEventLocBefore,     puppeteerEventSimpleId,     "Bundle received");
+	testPlat.addEvent("receiver",       "queue",                    true, puppeteerEventLoc::puppeteerEventLocAfter,    puppeteerEventSimpleId,     "Bundle enqueued");
+	testPlat.addEvent("processor",      "process_bundle",           true, puppeteerEventLoc::puppeteerEventLocBefore,     puppeteerEventSimpleId,     "Bundle dequeued");
+	testPlat.addEvent("processor",      "send_bundle",              true, puppeteerEventLoc::puppeteerEventLocAfter,    puppeteerEventSimpleId,     "Bundle sent");
+
 
 	testPlat.addAction(5, [&] {
-			int i;
-			for (i = 0; i < 10; i++) {
-				bundle_s *b = createBundle();
-				char *b_name;
-				sendBundle("/home/xeri/projects/adtn/root/var/lib/adtn/", b, &b_name);
-				if (i < 3 ) {
-					sleep(2);
-				} else {
-					usleep(500000);
-				}
-
-			}
+		int i;
+		for (i = 0; i < 100; i++)
+		{
+			bundle_s *b = createBundleWithUniqueForwardingCode();
+			char *b_name;
+			sendBundle("/home/xeri/projects/adtn/root/var/lib/adtn/", b, &b_name);
+			//sleep(1);
+			// if (i < 3 ) {
+			// 	sleep(2);
+			// } else {
+			// 	usleep(500000);
+			// }
 		}
+	}
 
-	);
+	                  );
 
-	testPlat.startTest(10, true, true);
+	testPlat.startTest(30, true, true);
 
 	// Temp
-	testPlat.printEvents();
+	testPlat.printStats();
+
+	// Kill all forked processes
+	kill(-getpgrp(), SIGINT);
 
 	return 0;
 }

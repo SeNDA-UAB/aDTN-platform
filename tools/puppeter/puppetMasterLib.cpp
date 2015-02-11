@@ -34,7 +34,7 @@ struct PuppetCtx {
 	BPatch_addressSpace *handle;
 	BPatch_module *puppetLib;
 	PuppetShmCtx shmCtx;
-	list<puppeteerEvent_t> eventsList;
+	vector<puppeteerEvent_t> eventsList;
 };
 
 /* Exceptions */
@@ -59,8 +59,13 @@ class puppeteerCtx::impl
 {
 private:
 	bool puppetsInitialized;
-
+	vector<PuppetCtx> puppets;
 	multimap<int, function<void()>> actions;
+
+	/* Launched as threads */
+	void eventListener(PuppetCtx &puppet);
+	void launchActions();
+	/**/
 
 	vector<PuppetCtx>::iterator findPuppet(const string puppetName);
 	void preparePuppetMemory(PuppetCtx &p);
@@ -72,13 +77,8 @@ private:
 	                                        const string function,
 	                                        const bool multiple,
 	                                        const puppeteerEventLoc loc );
-	/* Launched as threads */
-	void eventListener(PuppetCtx &puppet);
-	void launchActions();
-	/**/
 
 public:
-	vector<PuppetCtx> puppets;	
 	void addPuppet(string puppetName, string puppetCmd);
 	void initPuppets();
 	void addEvent(  const string puppetName,
@@ -86,11 +86,12 @@ public:
 	                const bool multiple,
 	                const puppeteerEventLoc loc,
 	                const puppeteerEvent_e eventId,
-	                const char data[MAX_EVENT_DATA]   ); // data must be NULL terminated
+	                const char data[MAX_EVENT_DATA]   );
 	void addAction(const int delay, const function<void()> a);
 	void startTest(const int secs, const bool waitEnd, const bool forceEnd);
 	void waitTestEnd(const int secs);
 	void endTest(const int secs, const bool force);
+	void getMergedEvents(multimap<struct timespec, puppeteerEvent_t, puppeteerCtx::eventCmp> &);
 };
 /**/
 
@@ -277,6 +278,9 @@ puppeteerCtx::impl::addEvent(  const string puppetName,
                                const puppeteerEvent_e eventId,
                                const char data[MAX_EVENT_DATA] )
 {
+	if (!puppetsInitialized)
+		initPuppets();
+
 	vector<PuppetCtx>::iterator it = findPuppet(puppetName);
 
 	/* Initialize puppet */
@@ -436,8 +440,8 @@ void puppeteerCtx::impl::startTest(const int secs, const bool waitEnd, const boo
 	vector<thread> eventListenerThreads;
 	for (auto &p : puppets) {
 		if (p.shmCtx.initialized) {
-			eventListenerThreads.push_back(thread([&] { eventListener(p); }));
-			(*--eventListenerThreads.end()).detach();
+			eventListenerThreads.emplace(eventListenerThreads.end(), thread {&puppeteerCtx::impl::eventListener, this, ref(p)});
+			eventListenerThreads.back().detach();
 		}
 
 		BPatch_process *appProc = dynamic_cast<BPatch_process *>(p.handle);
@@ -446,21 +450,28 @@ void puppeteerCtx::impl::startTest(const int secs, const bool waitEnd, const boo
 	}
 
 	// Launch actions and wait until all actions are performed.
-	thread launchActionsThread {[&] { launchActions(); }};
-	//launchActionsThread.join();
+	thread launchActionsThread {&puppeteerCtx::impl::launchActions, this};
+	launchActionsThread.join();
 
 	if (waitEnd) {
 		// Launch endTest thread.
-		thread endTestThread {[&] {endTest(secs, forceEnd); }};
-		// Wait until all processes are terminated.
+		thread endTestThread {&puppeteerCtx::impl::endTest, this, secs, forceEnd};
+		// Wait until all processes have terminated.
 		waitTestEnd(secs);
 
 		endTestThread.join();
 	}
-
-	launchActionsThread.join();
 }
 
+void puppeteerCtx::impl::getMergedEvents(multimap<struct timespec, puppeteerEvent_t, eventCmp> &mergedEventList)
+{
+	for (auto &p : puppets) {
+		for (auto &e: p.eventsList){
+			mergedEventList.insert(pair<struct timespec, puppeteerEvent_t> {e.timestamp, e});
+		}
+	}
+}
+/**/
 
 /* Function used as Dyninst callback */
 void
@@ -544,27 +555,24 @@ puppeteerCtx::endTest(const int secs, const bool force)
 	pimpl->endTest(secs, force);
 }
 
-// Temp
-bool cmpEvent(puppeteerEvent_t &a, puppeteerEvent_t &b)
-{
-	if (a.timestamp.tv_sec != b.timestamp.tv_sec) {
-		return a.timestamp.tv_sec < b.timestamp.tv_sec;
-	} else {
-		return a.timestamp.tv_nsec < b.timestamp.tv_nsec;
-	}
-}
-
-void puppeteerCtx::printEvents()
+void puppeteerCtx::printStats()
 {
 	// Merge events
-	list<puppeteerEvent_t> eventList;
-	for(auto &p: pimpl->puppets){
-		eventList.merge(p.eventsList, cmpEvent);
+	multimap<struct timespec, puppeteerEvent_t, puppeteerCtx::eventCmp> eventList;
+	pimpl->getMergedEvents(eventList);
+
+	int received_bundles = 0, sent_bundles = 0;
+	for (auto &e: eventList){
+		if (strncmp(e.second.data, "Bundle received", strlen("Bundle received")) == 0)
+			received_bundles++;
+		if (strncmp(e.second.data, "Bundle sent", strlen("Bundle sent")) == 0)
+			sent_bundles++;
+		cout << e.second.eventId << ": " << e.second.timestamp.tv_sec << "." << e.second.timestamp.tv_nsec << "s " << e.second.data << endl;
 	}
 
-	for (list<puppeteerEvent_t>::iterator it_ev = eventList.begin(); it_ev != eventList.end(); ++it_ev) {
-		cout << it_ev->eventId << ": " << it_ev->timestamp.tv_sec << "." << it_ev->timestamp.tv_nsec << "s " << it_ev->data << endl;
-	}
+	printf("Received bundles %d\n", received_bundles);
+	printf("Sent bundles %d\n", sent_bundles);
+
 }
 
 /**/

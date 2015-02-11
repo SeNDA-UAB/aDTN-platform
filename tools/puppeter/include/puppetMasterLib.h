@@ -68,14 +68,23 @@ public:
 	                const bool multiple,
 	                const puppeteerEventLoc loc,
 	                const puppeteerEvent_e eventId,
-	                const char data[MAX_EVENT_DATA]   ); // data must be NULL terminated
+	                const char data[MAX_EVENT_DATA]   );
 	void addAction(const int delay, const function<void()> a);
 	void startTest(const int secs, const bool waitEnd, const bool forceEnd);
 	void waitTestEnd(const int secs);
 	void endTest(const int secs, const bool force);
 
-	// Test
-	void printEvents();
+	struct eventCmp {
+		bool operator() (const struct timespec &a, const struct timespec &b)
+		{
+			if (a.tv_sec != b.tv_sec) {
+				return a.tv_sec < b.tv_sec;
+			} else {
+				return a.tv_nsec < b.tv_nsec;
+			}
+		}
+	};
+	void printStats();
 
 private:
 	// http://herbsutter.com/gotw/_100/
