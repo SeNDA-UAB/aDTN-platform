@@ -3,6 +3,7 @@
 
 #include <string>
 #include <thread>
+#include <map>
 
 #include "puppeteerCommon.h"
 
@@ -74,18 +75,10 @@ public:
 	void waitTestEnd(const int secs);
 	void endTest(const int secs, const bool force);
 
-	struct eventCmp {
-		bool operator() (const struct timespec &a, const struct timespec &b)
-		{
-			if (a.tv_sec != b.tv_sec) {
-				return a.tv_sec < b.tv_sec;
-			} else {
-				return a.tv_nsec < b.tv_nsec;
-			}
-		}
+	class eventCmp{
+		bool operator() (const struct timespec &a, const struct timespec &b);
 	};
-	void printStats();
-
+	void getMergedEvents(multimap<struct timespec, puppeteerEvent_t, puppeteerCtx::eventCmp> &);
 private:
 	// http://herbsutter.com/gotw/_100/
 	class impl;

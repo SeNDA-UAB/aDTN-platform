@@ -353,7 +353,6 @@ puppeteerCtx::impl::addEvent(  const string puppetName,
 	/**/
 
 }
-/**/
 
 void puppeteerCtx::impl::addAction(const int delay, const function<void()> a)
 {
@@ -466,12 +465,13 @@ void puppeteerCtx::impl::startTest(const int secs, const bool waitEnd, const boo
 void puppeteerCtx::impl::getMergedEvents(multimap<struct timespec, puppeteerEvent_t, eventCmp> &mergedEventList)
 {
 	for (auto &p : puppets) {
-		for (auto &e: p.eventsList){
+		for (auto &e : p.eventsList) {
 			mergedEventList.insert(pair<struct timespec, puppeteerEvent_t> {e.timestamp, e});
 		}
 	}
 }
 /**/
+
 
 /* Function used as Dyninst callback */
 void
@@ -483,6 +483,7 @@ detachThread(   BPatch_thread *parent,
 	childProc->detach(1);
 }
 /**/
+
 
 /* Public interface */
 puppeteerCtx::puppeteerCtx() : pimpl { new impl} {
@@ -555,24 +556,14 @@ puppeteerCtx::endTest(const int secs, const bool force)
 	pimpl->endTest(secs, force);
 }
 
-void puppeteerCtx::printStats()
+bool
+puppeteerCtx::eventCmp::operator() (   const struct timespec &a,
+                                       const struct timespec &b    )
 {
-	// Merge events
-	multimap<struct timespec, puppeteerEvent_t, puppeteerCtx::eventCmp> eventList;
-	pimpl->getMergedEvents(eventList);
-
-	int received_bundles = 0, sent_bundles = 0;
-	for (auto &e: eventList){
-		if (strncmp(e.second.data, "Bundle received", strlen("Bundle received")) == 0)
-			received_bundles++;
-		if (strncmp(e.second.data, "Bundle sent", strlen("Bundle sent")) == 0)
-			sent_bundles++;
-		cout << e.second.eventId << ": " << e.second.timestamp.tv_sec << "." << e.second.timestamp.tv_nsec << "s " << e.second.data << endl;
+	if (a.tv_sec != b.tv_sec) {
+		return a.tv_sec < b.tv_sec;
+	} else {
+		return a.tv_nsec < b.tv_nsec;
 	}
-
-	printf("Received bundles %d\n", received_bundles);
-	printf("Sent bundles %d\n", sent_bundles);
-
 }
-
 /**/
