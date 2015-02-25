@@ -3,7 +3,7 @@
 
 #include <string>
 #include <thread>
-#include <map>
+#include <vector>
 
 #include "puppeteerCommon.h"
 
@@ -44,7 +44,6 @@ public:
 	PuppeteerError(): logic_error("Internal error.") {};
 	PuppeteerError(string errMsg): logic_error(errMsg) {};
 }; 
-
 /**/
 
 constexpr char dyninst_platform[] {"x86_64-unknown-linux2.4"};
@@ -71,14 +70,9 @@ public:
 	                const puppeteerEvent_e eventId,
 	                const char data[MAX_EVENT_DATA]   );
 	void addAction(const int delay, const function<void()> a);
-	void startTest(const int secs, const bool waitEnd, const bool forceEnd);
-	void waitTestEnd(const int secs);
+	void startTest(const int secs, const bool endTest, const bool forceEnd);
 	void endTest(const int secs, const bool force);
-
-	class eventCmp{
-		bool operator() (const struct timespec &a, const struct timespec &b);
-	};
-	void getMergedEvents(multimap<struct timespec, puppeteerEvent_t, puppeteerCtx::eventCmp> &);
+	vector<puppeteerEvent_t> getEvents(const string puppetName);
 private:
 	// http://herbsutter.com/gotw/_100/
 	class impl;

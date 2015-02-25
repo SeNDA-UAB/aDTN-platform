@@ -19,23 +19,10 @@
 #include <sys/stat.h>   /* For mode constants */
 #include <fcntl.h>      /* For O_* constants */
 
-#include "include/puppetMasterLib.h"
+#include "include/puppetMasterLib.hpp"
 
 /**/
-struct PuppetShmCtx {
-	int initialized;
-	int fd;
-	shmEventCtx_t *shm;
-};
 
-struct PuppetCtx {
-	string name;
-	string cmd;
-	BPatch_addressSpace *handle;
-	BPatch_module *puppetLib;
-	PuppetShmCtx shmCtx;
-	vector<puppeteerEvent_t> eventsList;
-};
 
 /* Exceptions */
 class ErrorInitializingPuppetMemory: public logic_error
@@ -58,6 +45,21 @@ public:
 class puppeteerCtx::impl
 {
 private:
+	struct PuppetShmCtx {
+		int initialized;
+		int fd;
+		shmEventCtx_t *shm;
+	};
+
+	struct PuppetCtx {
+		string name;
+		string cmd;
+		BPatch_addressSpace *handle;
+		BPatch_module *puppetLib;
+		PuppetShmCtx shmCtx;
+		vector<puppeteerEvent_t> eventsList;
+	};
+
 	bool puppetsInitialized;
 	vector<PuppetCtx> puppets;
 	multimap<int, function<void()>> actions;
@@ -77,10 +79,10 @@ private:
 	                                        const string function,
 	                                        const bool multiple,
 	                                        const puppeteerEventLoc loc );
-
+	void waitTestEnd(const int secs);
 public:
 	void addPuppet(string puppetName, string puppetCmd);
-	void initPuppets();
+	void initPuppets();	
 	void addEvent(  const string puppetName,
 	                const string function,
 	                const bool multiple,
@@ -88,10 +90,9 @@ public:
 	                const puppeteerEvent_e eventId,
 	                const char data[MAX_EVENT_DATA]   );
 	void addAction(const int delay, const function<void()> a);
-	void startTest(const int secs, const bool waitEnd, const bool forceEnd);
-	void waitTestEnd(const int secs);
+	void startTest(const int secs, const bool endTest, const bool forceEnd);
 	void endTest(const int secs, const bool force);
-	void getMergedEvents(multimap<struct timespec, puppeteerEvent_t, puppeteerCtx::eventCmp> &);
+	vector<puppeteerEvent_t> getEvents(const string puppetName);
 };
 /**/
 
@@ -99,7 +100,7 @@ public:
 static BPatch bpatch;
 
 /* Private members */
-vector<PuppetCtx>::iterator
+vector<puppeteerCtx::impl::PuppetCtx>::iterator
 puppeteerCtx::impl::findPuppet(const string puppetName)
 {
 	for (vector<PuppetCtx>::iterator it = puppets.begin(); it != puppets.end(); ++it) {
@@ -390,7 +391,7 @@ void puppeteerCtx::impl::eventListener(PuppetCtx &puppet)
 void puppeteerCtx::impl::launchActions()
 {
 	for (auto &a : actions) {
-		chrono::milliseconds next_action(a.first);
+		chrono::seconds next_action(a.first);
 		this_thread::sleep_for(next_action);
 		a.second();
 	}
@@ -404,6 +405,8 @@ void puppeteerCtx::impl::waitTestEnd(const int secs)
 		for (auto &p : puppets) {
 			BPatch_process *appProc = dynamic_cast<BPatch_process *>(p.handle);
 			if (!appProc->isTerminated()) {
+				// Just in case the puppet has automatically stopped (it should not happen ever)
+				appProc->continueExecution();
 				all_terminated = false;
 				break;
 			}
@@ -433,7 +436,16 @@ void puppeteerCtx::impl::endTest(const int secs, const bool force)
 	}
 }
 
-void puppeteerCtx::impl::startTest(const int secs, const bool waitEnd, const bool forceEnd)
+vector<puppeteerEvent_t> puppeteerCtx::impl::getEvents(const string puppetName)
+{
+	vector<PuppetCtx>::iterator it = findPuppet(puppetName);
+	PuppetCtx p = *it;
+
+	return p.eventsList;
+}
+
+
+void puppeteerCtx::impl::startTest(const int secs, const bool endTest, const bool forceEnd)
 {
 	// Launch event listener threads
 	vector<thread> eventListenerThreads;
@@ -445,30 +457,19 @@ void puppeteerCtx::impl::startTest(const int secs, const bool waitEnd, const boo
 
 		BPatch_process *appProc = dynamic_cast<BPatch_process *>(p.handle);
 		appProc->continueExecution();
-		sleep(1);
 	}
 
 	// Launch actions and wait until all actions are performed.
 	thread launchActionsThread {&puppeteerCtx::impl::launchActions, this};
-	launchActionsThread.join();
-
-	if (waitEnd) {
+	
+	waitTestEnd(secs);
+	if (endTest) {
 		// Launch endTest thread.
 		thread endTestThread {&puppeteerCtx::impl::endTest, this, secs, forceEnd};
-		// Wait until all processes have terminated.
-		waitTestEnd(secs);
-
 		endTestThread.join();
 	}
-}
 
-void puppeteerCtx::impl::getMergedEvents(multimap<struct timespec, puppeteerEvent_t, eventCmp> &mergedEventList)
-{
-	for (auto &p : puppets) {
-		for (auto &e : p.eventsList) {
-			mergedEventList.insert(pair<struct timespec, puppeteerEvent_t> {e.timestamp, e});
-		}
-	}
+	launchActionsThread.join();
 }
 /**/
 
@@ -516,11 +517,13 @@ puppeteerCtx::addPuppet(    const string puppetName,
 	pimpl->addPuppet(puppetName, puppetCmd);
 }
 
-void
+void 
 puppeteerCtx::initPuppets()
 {
 	pimpl->initPuppets();
 }
+
+
 void
 puppeteerCtx::addEvent(  const string puppetName,
                          const string function,
@@ -539,15 +542,9 @@ puppeteerCtx::addAction(const int delay, const function<void()> a)
 }
 
 void
-puppeteerCtx::startTest(const int secs, const bool waitEnd, const bool forceEnd)
+puppeteerCtx::startTest(const int secs, const bool endTest, const bool forceEnd)
 {
-	pimpl->startTest(secs, waitEnd, forceEnd);
-}
-
-void
-puppeteerCtx::waitTestEnd(const int secs)
-{
-	pimpl->waitTestEnd(secs);
+	pimpl->startTest(secs, endTest, forceEnd);
 }
 
 void
@@ -556,14 +553,10 @@ puppeteerCtx::endTest(const int secs, const bool force)
 	pimpl->endTest(secs, force);
 }
 
-bool
-puppeteerCtx::eventCmp::operator() (   const struct timespec &a,
-                                       const struct timespec &b    )
+vector<puppeteerEvent_t> 
+puppeteerCtx::getEvents(const string puppetName)
 {
-	if (a.tv_sec != b.tv_sec) {
-		return a.tv_sec < b.tv_sec;
-	} else {
-		return a.tv_nsec < b.tv_nsec;
-	}
+	return pimpl->getEvents(puppetName);
 }
+
 /**/

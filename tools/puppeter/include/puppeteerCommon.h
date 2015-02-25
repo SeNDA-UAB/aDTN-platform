@@ -1,3 +1,6 @@
+#ifndef PUPPETEER_COMMON_H_
+#define PUPPETEER_COMMON_H_
+
 #include <time.h> //struct timespec
 #include <stdint.h> //uint8_t
 #include <pthread.h> //pthread_*
@@ -31,3 +34,5 @@ typedef struct shmEventCtx_s {
 	puppeteerEvent_t eventBuffer[MAX_EVENTS];
 	/**/
 } shmEventCtx_t;
+
+#endif
