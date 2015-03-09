@@ -53,6 +53,9 @@
 #define P_HEADER "int p(void){\n"
 #define P_FOOTER "}\n"
 
+// Dest
+#define D_HEADER "int d(const char *rit_path){\n"
+#define D_FOOTER "}\n"
 
 static char *get_code_path(const char *name, const code_type_e type)
 {
@@ -378,6 +381,11 @@ static int compile_no_helpers_code(code_type_e code_type, const char *code_name,
 		code_ready = (char *)malloc(code_ready_l * sizeof(char));	
 		snprintf(code_ready, code_ready_l, "%s%s%s", P_HEADER, code, P_FOOTER);		
 		break;
+	case DEST_CODE:
+		code_ready_l = strlen(D_HEADER) + strlen(code) + strlen(D_FOOTER) + 1;
+		code_ready = (char *)malloc(code_ready_l * sizeof(char));	
+		snprintf(code_ready, code_ready_l, "%s%s%s", D_HEADER, code, D_FOOTER);		
+		break;
 	case ROUTING_CODE:
 	default:
 		goto end;
@@ -423,6 +431,7 @@ static void *load_no_helpers_dl(code_type_e code_type, const char *so_name)
 	int (**main_funct)(void) = NULL;
 	prio_dl_s *prio_dl = NULL;
 	life_dl_s *life_dl = NULL;
+	dest_dl_s *dest_dl = NULL;
 
 	switch (code_type) {
 	case PRIO_CODE:
@@ -439,6 +448,13 @@ static void *load_no_helpers_dl(code_type_e code_type, const char *so_name)
 		main_funct_name = "l";
 		ret_p = (void *)life_dl;
 		break;
+	case DEST_CODE:
+		dest_dl = (dest_dl_s *)calloc(1, sizeof(dest_dl_s));
+		handler = &dest_dl->handler;
+		main_funct = &dest_dl->d;
+		main_funct_name = "d";
+		ret_p = (void *)dest_dl;
+		break;	
 	default :
 		ret = 1;
 		LOG_MSG(LOG__ERROR, false, "Error: load_no_helpers_dl() the type of the code to laod is not recognized");
@@ -490,10 +506,12 @@ int prepare_no_helpers_code(code_type_e code_type, const char *bundle_id, bundle
 
 	prio_code_dl_s *prio_code_dl = NULL;
 	life_code_dl_s *life_code_dl = NULL;
+	dest_code_dl_s *dest_code_dl = NULL;
 	void **code_dl = NULL;
 
 	prio_dl_s *prio_dl = NULL;
 	life_dl_s *life_dl = NULL;
+	dest_dl_s *dest_dl = NULL;
 	void **dl = NULL;
 
 	void *(*code_dl_find)(const char *);
@@ -514,6 +532,10 @@ int prepare_no_helpers_code(code_type_e code_type, const char *bundle_id, bundle
 			if (target_bundle_dl->dls.prio == NULL)
 				check_code = 1;
 			break;
+		case DEST_CODE:
+			if (target_bundle_dl->dls.dest == NULL)
+				check_code = 1;
+			break;		
 		default:
 			LOG_MSG(LOG__ERROR, false, "prepare_no_helpers_code(): Code to prepare not recognized");
 			goto end;
@@ -539,6 +561,12 @@ int prepare_no_helpers_code(code_type_e code_type, const char *bundle_id, bundle
 			code_dl_find = (void *(*)(const char *))prio_code_dl_find;
 			code_dl_add = (void *(*)(const char *, void *))prio_code_dl_add;
 			break;
+		case DEST_CODE:
+			code_dl = (void **)&dest_code_dl;
+			dl = (void **)&dest_dl;
+			code_dl_find = (void *(*)(const char *))dest_code_dl_find;
+			code_dl_add = (void *(*)(const char *, void *))dest_code_dl_add;
+			break;		
 		default:
 			LOG_MSG(LOG__ERROR, false, "prepare_no_helpers_code(): Code to prepare not recognized");
 			ret = -1;
@@ -571,6 +599,10 @@ int prepare_no_helpers_code(code_type_e code_type, const char *bundle_id, bundle
 			target_bundle_dls.prio = prio_code_dl;
 			target_bundle_dls.prio ->refs++;
 			break;
+		case DEST_CODE:
+			target_bundle_dls.dest = dest_code_dl;
+			target_bundle_dls.dest ->refs++;
+			break;		
 		default:
 			LOG_MSG(LOG__ERROR, false, "prepare_no_helpers_code(): Code to prepare not recognized");
 			ret = -1;
@@ -596,6 +628,10 @@ end:
 		if (target_bundle_dl == NULL || target_bundle_dl->dls.prio == NULL)
 			ret = -1;
 		break;
+	case DEST_CODE:
+		if (target_bundle_dl == NULL || target_bundle_dl->dls.dest == NULL)
+			ret = -1;
+		break;		
 	default:
 		ret = -1;
 		break;
@@ -607,7 +643,7 @@ end:
 	return ret;
 }
 
-int execute_no_helpers_code(code_type_e code_type, void *code_dl, /*OUT*/ int *result)
+int execute_no_helpers_code(code_type_e code_type, void *code_dl, const exec_ctx *ctx, /*OUT*/ int *result)
 {
 	int ret = 0;
 
@@ -618,6 +654,9 @@ int execute_no_helpers_code(code_type_e code_type, void *code_dl, /*OUT*/ int *r
 	case PRIO_CODE:
 		*result = ((prio_dl_s *)code_dl)->p();
 		break;
+	case DEST_CODE:
+		*result = ((dest_dl_s *)code_dl)->d(ctx->rit_branch);
+		break;	
 	default:
 		LOG_MSG(LOG__ERROR, false, "execute_no_helpers_code(): Code type to executo not recognized");
 		goto end;

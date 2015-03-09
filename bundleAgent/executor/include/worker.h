@@ -22,6 +22,7 @@
 
 #include "modules/include/hash.h"
 #include "common/include/bundle.h"
+#include "common/include/executor.h"
 
 typedef struct _worker_params {
 	int thread_num;
@@ -60,6 +61,11 @@ struct _child_exec_petition {
 	/* code_type == LIFETIME || code_type == PRIO*/
 	prio_dl_s *prio_dl;
 	life_dl_s *life_dl;
+	/**/
+
+	/* code_type == DEST */
+	dest_dl_s *dest_dl;
+	exec_ctx ctx;
 	/**/
 };
 

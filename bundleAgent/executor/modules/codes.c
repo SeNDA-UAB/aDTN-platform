@@ -164,7 +164,7 @@ ssize_t get_default_code(code_type_e code_type, char **code)
 	static char def_forwarding_code[PATH_MAX] = {0};
 	static char def_life_code[PATH_MAX] = {0};
 	static char def_priority_code[PATH_MAX] = {0};
-
+	static char def_dest_code[PATH_MAX] = {0};
 
 	switch (code_type) {
 	case ROUTING_CODE:
@@ -194,6 +194,16 @@ ssize_t get_default_code(code_type_e code_type, char **code)
 			}
 		}
 		ret = load_code_from_file(def_priority_code, code);
+		break;
+
+	case DEST_CODE:
+		if (*def_dest_code ==  '\0') {
+			if (ini_gets("executor", "def_dest_code", "", def_dest_code, PATH_MAX, world.shm->config_file) == 0) {
+				LOG_MSG(LOG__ERROR, false, "Default destination code (def_dest_code) is not specified in the config file %s", world.shm->config_file);
+				goto end;
+			}
+		}
+		ret = load_code_from_file(def_dest_code, code);
 		break;
 
 	}

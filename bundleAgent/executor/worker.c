@@ -110,6 +110,16 @@ int clean_bundle_dl(bundle_code_dl_s *b_dl)
 			free(b_dl->dls.prio);
 		}
 	}
+	if (b_dl->dls.dest != NULL) {
+		b_dl->dls.dest->refs--;
+		if (b_dl->dls.dest->refs == 0) {
+			dest_code_dl_remove(b_dl->dls.dest);
+			free((char *)b_dl->dls.dest->code);
+			dlclose(b_dl->dls.dest->dl->handler);
+			free(b_dl->dls.dest->dl);
+			free(b_dl->dls.dest);
+		}
+	}
 	free((char *)b_dl->bundle_id);
 
 	return 0;
@@ -203,14 +213,19 @@ void executor_process(int sv)
 			break;
 		case LIFE_CODE: // Simple responses
 		case PRIO_CODE:
+		case DEST_CODE:
 			switch (p.code_type) {
 			case LIFE_CODE:
 				LOG_MSG(LOG__INFO, false, "Child %u: Executing bundle %s with code_dl loaded in address %p", pid, p.bundle_id, p.life_dl);
-				ret_tmp = execute_no_helpers_code(p.code_type, p.life_dl, &n_result);
+				ret_tmp = execute_no_helpers_code(p.code_type, p.life_dl, &p.ctx, &n_result);
 				break;
 			case PRIO_CODE:
 				LOG_MSG(LOG__INFO, false, "Child %u: Executing bundle %s with code_dl loaded in address %p", pid, p.bundle_id, p.prio_dl);
-				ret_tmp = execute_no_helpers_code(p.code_type, p.prio_dl, &n_result);
+				ret_tmp = execute_no_helpers_code(p.code_type, p.prio_dl, &p.ctx, &n_result);
+				break;
+			case DEST_CODE:
+				LOG_MSG(LOG__INFO, false, "Child %u: Executing bundle %s with code_dl loaded in address %p", pid, p.bundle_id, p.dest_dl);
+				ret_tmp = execute_no_helpers_code(p.code_type, p.dest_dl, &p.ctx, &n_result);
 				break;
 			default:
 				goto end;
@@ -311,6 +326,7 @@ ssize_t load_code(const char *bundle_id, code_type_e code_type, /*OUT*/ bundle_c
 		break;
 	case PRIO_CODE:
 	case LIFE_CODE:
+	case DEST_CODE:	
 		ret = prepare_no_helpers_code(code_type, bundle_id, bundle_code_dl);
 		break;
 	default:
@@ -460,6 +476,7 @@ void worker_thread(worker_params *params)
 
 					break;
 				case LOAD_CODE:
+					// Load code to process memory
 					pthread_mutex_lock(params->preparing_exec);
 					ret = load_code(p.header.bundle_id, p.header.code_type, &bundle_code_dl);
 					pthread_mutex_unlock(params->preparing_exec);
@@ -518,45 +535,32 @@ void worker_thread(worker_params *params)
 						exec_p.life_dl = bundle_code_dl->dls.life->dl;
 						code_dl = bundle_code_dl->dls.life->dl;
 						break;
+					case DEST_CODE:
+						exec_p.dest_dl = bundle_code_dl->dls.dest->dl;
+						exec_p.ctx = p.ctx;
+						code_dl = bundle_code_dl->dls.dest->dl;
+						break;						
 					}
 
 					if (send(sv[1], &exec_p, sizeof(exec_p), 0) != sizeof(exec_p)) {
 						LOG_MSG(LOG__ERROR, true, "Thread %d: send()", params->thread_num);
 					} else {
 						LOG_MSG(LOG__INFO, false, "Thread %d: Petition for executing bundle %s with code_dl in address %p sent", params->thread_num, p.header.bundle_id, code_dl);
-
-						// Wait for child to pause or terminate
-						//waitpid(child_pid, &status, WUNTRACED);
 					}
 
-					//if (WIFSTOPPED(status)) { // Child has executed the code correctly and it is still alive. Response is ready to be read.
-						bzero(&r, sizeof(r));
-						recv_l = recv(sv[1], &r, sizeof(r), 0);
-						if (recv_l < 0){
-							LOG_MSG(LOG__ERROR, false, "Thread %d: Error reading response from executor process.", params->thread_num);
-							state = EXEC_ERROR;
-						} else if (recv_l == 0) {
-							LOG_MSG(LOG__ERROR, false, "Thread %d: Error executing code. Child has terminated.", params->thread_num);
-							SET_RESPAWN_NOTIFICATION(params->thread_num);
-							state = EXEC_ERROR;
-						} else {
-							LOG_MSG(LOG__INFO, false, "Thread %d: Result received from child", params->thread_num);
-							state = EXEC_OK;
-						}
-					//	kill(child_pid, SIGCONT); // Continue child execution
-					//} else if (WIFSIGNALED(status)) {
-					// 	LOG_MSG(LOG__ERROR, false, "Thread %d: Error executing code. Child has terminated.", params->thread_num);
-
-					// 	SET_RESPAWN_NOTIFICATION(params->thread_num);
-
-					// 	state = EXEC_ERROR;
-					// } else {
-					// 	LOG_MSG(LOG__ERROR, false, "Thread %d: Error executing code. Uknown error", params->thread_num);
-
-					// 	SET_RESPAWN_NOTIFICATION(params->thread_num);
-
-					// 	state = EXEC_ERROR;
-					// }
+					bzero(&r, sizeof(r));
+					recv_l = recv(sv[1], &r, sizeof(r), 0);
+					if (recv_l < 0){
+						LOG_MSG(LOG__ERROR, false, "Thread %d: Error reading response from executor process.", params->thread_num);
+						state = EXEC_ERROR;
+					} else if (recv_l == 0) {
+						LOG_MSG(LOG__ERROR, false, "Thread %d: Error executing code. Child has terminated.", params->thread_num);
+						SET_RESPAWN_NOTIFICATION(params->thread_num);
+						state = EXEC_ERROR;
+					} else {
+						LOG_MSG(LOG__INFO, false, "Thread %d: Result received from child", params->thread_num);
+						state = EXEC_OK;
+					}
 					break;
 				case EXEC_OK:
 					memcpy(&r, &p, response_header_l);

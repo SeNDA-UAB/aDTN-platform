@@ -30,6 +30,7 @@ static bundle_code_dl_s *g_bundle_code_dl_ht = NULL;
 static routing_code_dl_s *g_routing_code_dl_ht = NULL;
 static prio_code_dl_s *g_prio_code_dl_ht = NULL;
 static life_code_dl_s *g_life_code_dl_ht = NULL;
+static dest_code_dl_s *g_dest_code_dl_ht = NULL;
 
 // Helpers
 bundle_code_dl_s *bundle_dl_add(const char *id, bundle_info_s *info, dl_s *dls)
@@ -133,6 +134,13 @@ static void *code_add_dl(const char *code, void *dl, const code_type_e code_type
 			memcpy(&l_dl->dl, dl, sizeof(l_dl->dl));
 		HASH_ADD_KEYPTR(hh, g_life_code_dl_ht, l_dl->code, strlen(l_dl->code), l_dl);
 		ret = (void *)l_dl;
+	} else if (code_type == DEST_CODE) {
+		dest_code_dl_s *d_dl = (dest_code_dl_s *)calloc(1, sizeof(dest_code_dl_s));
+		d_dl->code = strdup(code);
+		if (dl)
+			memcpy(&d_dl->dl, dl, sizeof(d_dl->dl));
+		HASH_ADD_KEYPTR(hh, g_dest_code_dl_ht, d_dl->code, strlen(d_dl->code), d_dl);
+		ret = (void *)d_dl;
 	}
 end:
 
@@ -154,6 +162,11 @@ prio_dl_s *prio_code_dl_add(const char *code, prio_dl_s *dl)
 	return (prio_dl_s *) code_add_dl(code, dl, PRIO_CODE);
 }
 
+dest_dl_s *dest_code_dl_add(const char *code, dest_dl_s *dl)
+{
+	return (dest_dl_s *) code_add_dl(code, dl, DEST_CODE);
+}
+
 static void *code_dl_find(const char *code, const code_type_e code_type)
 {
 	void *ret = NULL;
@@ -172,6 +185,10 @@ static void *code_dl_find(const char *code, const code_type_e code_type)
 		life_code_dl_s *l_dl = NULL;
 		HASH_FIND(hh, g_life_code_dl_ht, code, strlen(code), l_dl);
 		ret = l_dl;
+	} else if (code_type == DEST_CODE) {
+		dest_code_dl_s *d_dl = NULL;
+		HASH_FIND(hh, g_dest_code_dl_ht, code, strlen(code), d_dl);
+		ret = d_dl;
 	}
 end:
 
@@ -193,12 +210,18 @@ life_code_dl_s *life_code_dl_find(const char *code)
 	return (life_code_dl_s *) code_dl_find(code, LIFE_CODE);
 }
 
+dest_code_dl_s *dest_code_dl_find(const char *code)
+{
+	return (dest_code_dl_s *) code_dl_find(code, DEST_CODE);
+}
+
 static int code_dl_remove(void *code_dl, const code_type_e code_type)
 {
 	int ret = 0;
 	routing_code_dl_s *routing_code_dl = NULL;
 	prio_code_dl_s *prio_code_dl = NULL;
 	life_code_dl_s *life_code_dl = NULL;
+	dest_code_dl_s *dest_code_dl = NULL;
 
 	if (code_dl == NULL)
 		goto end;
@@ -211,6 +234,9 @@ static int code_dl_remove(void *code_dl, const code_type_e code_type)
 	} else if (code_type == LIFE_CODE) {
 		life_code_dl = (life_code_dl_s *)code_dl;
 		HASH_DELETE(hh, g_life_code_dl_ht, life_code_dl);
+	} else if (code_type == DEST_CODE) {
+		dest_code_dl = (dest_code_dl_s *)code_dl;
+		HASH_DELETE(hh, g_dest_code_dl_ht, dest_code_dl);
 	}
 end:
 
@@ -232,3 +258,7 @@ int prio_code_dl_remove(void *code_dl)
 	return code_dl_remove(code_dl, PRIO_CODE);
 }
 
+int dest_code_dl_remove(void *code_dl)
+{
+	return code_dl_remove(code_dl, DEST_CODE);
+}

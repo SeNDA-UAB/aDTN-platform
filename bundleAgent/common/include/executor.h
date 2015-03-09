@@ -42,8 +42,13 @@ struct _p_header {
 };
 
 /* Petittions */
+typedef struct _exec_ctx {
+        char rit_branch[MAX_RIT_PATH];
+} exec_ctx;
+
 struct _petition {
         struct _p_header header;
+        exec_ctx ctx;
 };
 
 /* Responses */

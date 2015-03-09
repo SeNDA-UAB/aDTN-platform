@@ -42,6 +42,11 @@ typedef struct _life_dl {
 	void *handler;
 	int (*l)(void);
 } life_dl_s;
+
+typedef struct _dest_dl {
+	void *handler;
+	int (*d)(const char *rit_path);
+} dest_dl_s;
 /**/
 
 /* Hash tables structs*/
@@ -69,10 +74,19 @@ typedef struct _life_code_dl_s {
 	UT_hash_handle hh;
 } life_code_dl_s;
 
+typedef struct _dest_code_dl_s {
+	const char *code; // Key
+	int refs;
+	dest_dl_s *dl;
+	pthread_mutex_t exec;
+	UT_hash_handle hh;
+} dest_code_dl_s;
+
 typedef struct _dl_s {
 	routing_code_dl_s *routing;
 	prio_code_dl_s *prio;
 	life_code_dl_s *life;
+	dest_code_dl_s *dest;
 } dl_s;
 
 typedef struct _bundle_info_s {
@@ -96,13 +110,16 @@ int del_map_bundle_dl_table( int (*f)(bundle_code_dl_s *));
 routing_code_dl_s *routing_code_dl_add(const char *code, routing_dl_s *dl);
 life_dl_s *life_code_dl_add(const char *code, life_dl_s *dl);
 prio_dl_s *prio_code_dl_add(const char *code, prio_dl_s *dl);
+dest_dl_s *dest_code_dl_add(const char *code, dest_dl_s *dl);
 
 routing_code_dl_s *routing_code_dl_find(const char *code);
 life_code_dl_s *life_code_dl_find(const char *code);
 prio_code_dl_s *prio_code_dl_find(const char *code);
+dest_code_dl_s *dest_code_dl_find(const char *code);
 
 int routing_code_dl_remove(void *code_dl);
 int life_code_dl_remove(void *code_dl);
 int prio_code_dl_remove(void *code_dl);
+int dest_code_dl_remove(void *code_dl);
 
 #endif
