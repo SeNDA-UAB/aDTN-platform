@@ -5,7 +5,7 @@ message("-- Starting tools build configuration")
 
 include(../aDTNConfig.cmake.in)
 
-add_subdirectory(puppeter)
+add_subdirectory(puppeteer)
 
 find_package( Threads )
 
