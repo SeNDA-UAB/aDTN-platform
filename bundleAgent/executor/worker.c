@@ -121,12 +121,21 @@ int clean_all_bundle_dl(void)
 }
 /**/
 
+int *sv_global;
+void sigsegv_handler(void)
+{
+	write(*sv_global, "", 0);
+	_exit(1);
+}
+
 void executor_process(int sv)
 {
 	size_t response_header_l = 0;
 	pid_t pid = getpid();
 	response_header_l = sizeof(struct _p_header);
 	sigset_t unblocked_sigs = {{0}};
+
+	sv_global = &sv;
 
 	// Allow termination of the process
 	if (sigaddset(&unblocked_sigs, SIGTERM) != 0)
@@ -137,6 +146,13 @@ void executor_process(int sv)
 
 	// if (signal(SIGTERM, clean) == SIG_ERR)
 	//  err_msg(true, "signal()");
+
+	struct sigaction sigIntHandler;
+
+	sigIntHandler.sa_handler = sigsegv_handler;
+	sigemptyset(&sigIntHandler.sa_mask);
+	sigIntHandler.sa_flags = 0;
+	sigaction(SIGSEGV, &sigIntHandler, NULL);
 
 	for (;;) {
 		ssize_t ret_tmp = 0;
@@ -227,8 +243,9 @@ end:
 		}
 
 		// Wait until parent resumes execution
-		if (raise(SIGSTOP) != 0)
-			LOG_MSG(LOG__ERROR, true, "raise()");
+		//if (raise(SIGSTOP) != 0)
+		//	LOG_MSG(LOG__ERROR, true, "raise()");
+		
 	}
 }
 
@@ -509,33 +526,37 @@ void worker_thread(worker_params *params)
 						LOG_MSG(LOG__INFO, false, "Thread %d: Petition for executing bundle %s with code_dl in address %p sent", params->thread_num, p.header.bundle_id, code_dl);
 
 						// Wait for child to pause or terminate
-						waitpid(child_pid, &status, WUNTRACED);
+						//waitpid(child_pid, &status, WUNTRACED);
 					}
 
-					if (WIFSTOPPED(status)) { // Child has executed the code correctly and it is still alive. Response is ready to be read.
+					//if (WIFSTOPPED(status)) { // Child has executed the code correctly and it is still alive. Response is ready to be read.
 						bzero(&r, sizeof(r));
 						recv_l = recv(sv[1], &r, sizeof(r), 0);
-						if (recv_l <= 0 || recv_l != sizeof(r)) {
+						if (recv_l < 0){
 							LOG_MSG(LOG__ERROR, false, "Thread %d: Error reading response from executor process.", params->thread_num);
+							state = EXEC_ERROR;
+						} else if (recv_l == 0) {
+							LOG_MSG(LOG__ERROR, false, "Thread %d: Error executing code. Child has terminated.", params->thread_num);
+							SET_RESPAWN_NOTIFICATION(params->thread_num);
 							state = EXEC_ERROR;
 						} else {
 							LOG_MSG(LOG__INFO, false, "Thread %d: Result received from child", params->thread_num);
 							state = EXEC_OK;
 						}
-						kill(child_pid, SIGCONT); // Continue child execution
-					} else if (WIFSIGNALED(status)) {
-						LOG_MSG(LOG__ERROR, false, "Thread %d: Error executing code. Child has terminated.", params->thread_num);
+					//	kill(child_pid, SIGCONT); // Continue child execution
+					//} else if (WIFSIGNALED(status)) {
+					// 	LOG_MSG(LOG__ERROR, false, "Thread %d: Error executing code. Child has terminated.", params->thread_num);
 
-						SET_RESPAWN_NOTIFICATION(params->thread_num);
+					// 	SET_RESPAWN_NOTIFICATION(params->thread_num);
 
-						state = EXEC_ERROR;
-					} else {
-						LOG_MSG(LOG__ERROR, false, "Thread %d: Error executing code. Uknown error", params->thread_num);
+					// 	state = EXEC_ERROR;
+					// } else {
+					// 	LOG_MSG(LOG__ERROR, false, "Thread %d: Error executing code. Uknown error", params->thread_num);
 
-						SET_RESPAWN_NOTIFICATION(params->thread_num);
+					// 	SET_RESPAWN_NOTIFICATION(params->thread_num);
 
-						state = EXEC_ERROR;
-					}
+					// 	state = EXEC_ERROR;
+					// }
 					break;
 				case EXEC_OK:
 					memcpy(&r, &p, response_header_l);

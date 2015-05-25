@@ -631,8 +631,8 @@ int main(int argc, char *const argv[])
 	pthread_attr_init(&tattr);
 	if (pthread_create(&proc_thread, &tattr, process_thread, NULL) != 0)
 		LOG_MSG(LOG__WARNING, true, "pthread_create()");
-	if(pthread_create(&sche_thread, &tattr, scheduler_thread, (void *)path) != 0)
-		LOG_MSG(LOG__WARNING, true, "pthread_create()");
+	//if(pthread_create(&sche_thread, &tattr, scheduler_thread, (void *)path) != 0)
+	//	LOG_MSG(LOG__WARNING, true, "pthread_create()");
 
 	//Wait synchronously for signals.
 	//SIGINT and SIGTERM exit the program nicely

@@ -1,18 +1,18 @@
 /*
 * Copyright (c) 2014 SeNDA
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
-* 
+*
 *     http://www.apache.org/licenses/LICENSE-2.0
-* 
+*
 * Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-* 
+*
 */
 
 #include "common/include/uthash.h"
@@ -734,7 +734,6 @@ int adtn_sendto(int fd, const void *buffer, size_t buffer_l, const sock_addr_t a
 		snprintf(full_dest, ENDPOINT_LENGTH - 1, "%s:%d", addr.id, addr.adtn_port);
 	}
 	snprintf(full_src, ENDPOINT_LENGTH - 1, "%s:%d", identifier->addr.id, identifier->addr.adtn_port);
-
 	bundle = bundle_new();
 	if (identifier->sopt.dest) {
 		bundle_set_destination(bundle, identifier->sopt.dest);
@@ -758,20 +757,18 @@ int adtn_sendto(int fd, const void *buffer, size_t buffer_l, const sock_addr_t a
 	if (bundle_add_codes(bundle, identifier) != 0) {
 		goto end;
 	}
-
 	bundle_name = generate_bundle_name(shm->platform_id);
 	if (delegate_bundle(bundle_name, bundle, shm->data_path, identifier) != 0) {
 		goto end;
 	}
 	free(bundle_name);
-
 	ret = buffer_l;
 end:
+
 	if (shm_fd != -1)
-		close(fd);
+		close(shm_fd);
 	if (bundle)
 		bundle_free(bundle);
-
 	return ret;
 }
 

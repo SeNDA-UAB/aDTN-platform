@@ -1,9 +1,11 @@
 cmake_minimum_required (VERSION 2.8.2)
-project(EXAMPLES C)
+project(TOOLS C)
 
 message("-- Starting tools build configuration")
 
 include(../aDTNConfig.cmake.in)
+
+add_subdirectory(puppeteer)
 
 find_package( Threads )
 
