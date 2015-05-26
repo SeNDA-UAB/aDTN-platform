@@ -11,5 +11,7 @@ chown adtn:adtn /usr/bin/adtn-traceroute
 chmod u+s /usr/bin/adtn-traceroute
 chown adtn:adtn /usr/bin/adtn-neighbours
 chmod u+s /usr/bin/adtn-neighbours
+chown adtn:adtn /usr/bin/adtn-sender
+chmod u+s /usr/bin/adtn-sender
 
 exit 0;
