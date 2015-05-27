@@ -299,6 +299,13 @@ int main(int argc, char *argv[])
 	world->platform_port = shm->platform_port;
 	world->shm = shm;
 
+	// Load platform information into the RIT
+	rit_set("this/platform/ip", world->platform_ip);
+	rit_set("this/platform/id", world->platform_id);
+	char platform_port_s[6];
+	snprintf(platform_port_s, sizeof(platform_port_s), "%d", world->platform_port);
+	rit_set("this/platform/port", platform_port_s);
+
 	//Init sender socket
 	world->sender_sock = create_and_bind_socket(0, world->platform_ip, 0);
 

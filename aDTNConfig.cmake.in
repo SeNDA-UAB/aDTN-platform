@@ -1,7 +1,10 @@
 # Build configuration
-set(C_FLAG_ARCH "-m64")
+# By default architecture is 64 bits
+set (C_FLAG_ARCH "-m64")
 if (ARCH STREQUAL "i386")
 	set (C_FLAG_ARCH "-m32")
+elseif (ARCH STREQUAL "armhf")
+	set (C_FLAG_ARCH " ")
 endif()
 set(CMAKE_C_FLAGS_DEBUG "-Wall -ggdb ${C_FLAG_ARCH}")
 set(CMAKE_C_FLAGS_RELEASE "-O3 ${C_FLAG_ARCH}")
