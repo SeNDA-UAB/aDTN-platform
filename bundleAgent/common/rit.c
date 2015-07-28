@@ -23,6 +23,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 
+#include "constants.h"
 #include "cJSON.h"
 #include "rit.h"
 #include "config.h"

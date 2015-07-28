@@ -18,8 +18,6 @@
 #ifndef INC_COMMON_RIT
 #define INC_COMMON_RIT
 
-#include "constants.h"
-
 //rit.h
 
 typedef struct{
