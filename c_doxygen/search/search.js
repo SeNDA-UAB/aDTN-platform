@@ -7,10 +7,10 @@
 
 var indexSectionsWithContent =
 {
-  0: "ais",
+  0: "airs",
   1: "s",
-  2: "a",
-  3: "a",
+  2: "ar",
+  3: "ar",
   4: "ai"
 };
 

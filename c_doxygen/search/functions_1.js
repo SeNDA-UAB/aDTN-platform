@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['rit_2eh',['rit.h',['../rit_8h.html',1,'']]],
   ['rit_5fgettag',['rit_getTag',['../rit_8h.html#ad8db5d9f666df9172e6733b140ec17a2',1,'rit.h']]],
   ['rit_5fgetvalue',['rit_getValue',['../rit_8h.html#a488337d0b1f90030a70bed2af3f61695',1,'rit.h']]],
   ['rit_5fset',['rit_set',['../rit_8h.html#aeb98627b14d3c588a8381cfbf9e5bb8a',1,'rit.h']]],
