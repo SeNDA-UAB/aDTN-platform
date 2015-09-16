@@ -1,0 +1,157 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module adtn</title>
+<meta charset="utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>adtn</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/root/Desktop/trafficLightTest/adtn.py">/root/Desktop/trafficLightTest/adtn.py</a></font></td></tr></table>
+    <p><tt>aDTN&nbsp;python&nbsp;wrapper.<br>
+&nbsp;<br>
+This&nbsp;module&nbsp;is&nbsp;a&nbsp;wrapper&nbsp;of&nbsp;the&nbsp;aDTN&nbsp;API.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="ConfigParser.html">ConfigParser</a><br>
+</td><td width="25%" valign=top><a href="ctypes.html">ctypes</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="__builtin__.html#object">__builtin__.object</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="adtn.html#adtnSocket">adtnSocket</a>
+</font></dt></dl>
+</dd>
+<dt><font face="helvetica, arial"><a href="_ctypes.html#Structure">_ctypes.Structure</a>(_ctypes._CData)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="adtn.html#adtnSocketAddress">adtnSocketAddress</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="adtnSocket">class <strong>adtnSocket</strong></a>(<a href="__builtin__.html#object">__builtin__.object</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>This&nbsp;class&nbsp;holds&nbsp;an&nbsp;aDTN&nbsp;socket&nbsp;and&nbsp;functions&nbsp;to&nbsp;interact&nbsp;with&nbsp;it.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="adtnSocket-__del__"><strong>__del__</strong></a>(self)</dt><dd><tt>Close&nbsp;the&nbsp;open&nbsp;aDTN&nbsp;socket.</tt></dd></dl>
+
+<dl><dt><a name="adtnSocket-__init__"><strong>__init__</strong></a>(self, config)</dt><dd><tt>aDTN&nbsp;socket.<br>
+&nbsp;<br>
+This&nbsp;will&nbsp;fill&nbsp;the&nbsp;node&nbsp;name,&nbsp;and&nbsp;the&nbsp;RIT&nbsp;path&nbsp;from&nbsp;the&nbsp;configuration<br>
+file.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;config&nbsp;(str):&nbsp;Path&nbsp;to&nbsp;the&nbsp;configuration&nbsp;file.</tt></dd></dl>
+
+<dl><dt><a name="adtnSocket-bind"><strong>bind</strong></a>(self, port)</dt><dd><tt>Bind&nbsp;the&nbsp;socket&nbsp;to&nbsp;the&nbsp;given&nbsp;port.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;port&nbsp;(int):&nbsp;Port&nbsp;to&nbsp;bind&nbsp;the&nbsp;aDTN&nbsp;socket.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;bool:&nbsp;True&nbsp;if&nbsp;successful,&nbsp;False&nbsp;otherwise.</tt></dd></dl>
+
+<dl><dt><a name="adtnSocket-recv"><strong>recv</strong></a>(self)</dt><dd><tt>Recive&nbsp;a&nbsp;message.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;str:&nbsp;The&nbsp;received&nbsp;message.</tt></dd></dl>
+
+<dl><dt><a name="adtnSocket-ritSet"><strong>ritSet</strong></a>(self, path, value)</dt><dd><tt>Set&nbsp;a&nbsp;value&nbsp;in&nbsp;the&nbsp;RIT.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;path&nbsp;(str):&nbsp;Path&nbsp;for&nbsp;the&nbsp;value.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;value&nbsp;(str):&nbsp;Value&nbsp;to&nbsp;save.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;bool:&nbsp;True&nbsp;if&nbsp;successful,&nbsp;False&nbsp;otherwise</tt></dd></dl>
+
+<dl><dt><a name="adtnSocket-send"><strong>send</strong></a>(self, message, who)</dt><dd><tt>Send&nbsp;a&nbsp;message&nbsp;to&nbsp;a&nbsp;node.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;message&nbsp;(str):&nbsp;Message&nbsp;to&nbsp;send.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;who&nbsp;(<a href="#adtnSocketAddress">adtnSocketAddress</a>):&nbsp;aDTNSocketAddress&nbsp;with&nbsp;the&nbsp;destination.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;bool:&nbsp;True&nbsp;if&nbsp;successful,&nbsp;False&nbsp;otherwise.</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="adtnSocketAddress">class <strong>adtnSocketAddress</strong></a>(<a href="_ctypes.html#Structure">_ctypes.Structure</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>This&nbsp;class&nbsp;contains&nbsp;the&nbsp;structure&nbsp;used&nbsp;to&nbsp;identify&nbsp;a&nbsp;node.<br>
+&nbsp;<br>
+Attributes:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;adtn_port&nbsp;(int):&nbsp;Port&nbsp;of&nbsp;the&nbsp;application.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;id&nbsp;(str):&nbsp;Identifier&nbsp;of&nbsp;the&nbsp;node.<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="adtn.html#adtnSocketAddress">adtnSocketAddress</a></dd>
+<dd><a href="_ctypes.html#Structure">_ctypes.Structure</a></dd>
+<dd>_ctypes._CData</dd>
+<dd><a href="__builtin__.html#object">__builtin__.object</a></dd>
+</dl>
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>adtn_port</strong></dt>
+<dd><tt>Structure/Union&nbsp;member</tt></dd>
+</dl>
+<dl><dt><strong>id</strong></dt>
+<dd><tt>Structure/Union&nbsp;member</tt></dd>
+</dl>
+<hr>
+Methods inherited from <a href="_ctypes.html#Structure">_ctypes.Structure</a>:<br>
+<dl><dt><a name="adtnSocketAddress-__init__"><strong>__init__</strong></a>(...)</dt><dd><tt>x.<a href="#adtnSocketAddress-__init__">__init__</a>(...)&nbsp;initializes&nbsp;x;&nbsp;see&nbsp;help(type(x))&nbsp;for&nbsp;signature</tt></dd></dl>
+
+<hr>
+Data and other attributes inherited from <a href="_ctypes.html#Structure">_ctypes.Structure</a>:<br>
+<dl><dt><strong>__new__</strong> = &lt;built-in method __new__ of _ctypes.PyCStructType object&gt;<dd><tt>T.<a href="#adtnSocketAddress-__new__">__new__</a>(S,&nbsp;...)&nbsp;-&gt;&nbsp;a&nbsp;new&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;with&nbsp;type&nbsp;S,&nbsp;a&nbsp;subtype&nbsp;of&nbsp;T</tt></dl>
+
+<hr>
+Methods inherited from _ctypes._CData:<br>
+<dl><dt><a name="adtnSocketAddress-__ctypes_from_outparam__"><strong>__ctypes_from_outparam__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="adtnSocketAddress-__hash__"><strong>__hash__</strong></a>(...)</dt><dd><tt>x.<a href="#adtnSocketAddress-__hash__">__hash__</a>()&nbsp;&lt;==&gt;&nbsp;hash(x)</tt></dd></dl>
+
+<dl><dt><a name="adtnSocketAddress-__reduce__"><strong>__reduce__</strong></a>(...)</dt></dl>
+
+<dl><dt><a name="adtnSocketAddress-__setstate__"><strong>__setstate__</strong></a>(...)</dt></dl>
+
+</td></tr></table></td></tr></table>
+</body></html>
