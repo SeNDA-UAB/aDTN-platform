@@ -68,6 +68,8 @@ The `adtn-lib` provides a `C` and a `Java` library to develop over the platform.
 
 [JavaDoc](http://senda-uab.github.io/aDTN-platform/java_doc/index.html "JavaDoc")
 
+[Pydoc](http://senda-uab.github.io/aDTN-platform/python_doc/adtn.html "Pydoc")
+
 ## Example of installation and usage
 
 This example shows how alice installs a single adtn platform in her machine using adtn-tools.
