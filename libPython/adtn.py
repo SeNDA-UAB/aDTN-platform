@@ -75,6 +75,8 @@ class adtnSocket(object):
         self.rit.rit_var_tag.restype = ctypes.c_int
         self.rit.rit_var_untag.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
         self.rit.rit_var_untag.restype = ctypes.c_int
+        self.rit.rit_getValue.argtypes = [ctypes.c_char_p]
+        self.rit.rit_getValue.restype = ctypes.c_char_p
         # Class Variables
         self.__sockInfo = adtnSocketAddress()
         self.__config = config
@@ -210,6 +212,18 @@ class adtnSocket(object):
         """
         self.rit.rit_changePath(self.__ritPath)
         return self.rit.rit_var_untag(path, tag) == 0
+
+    def ritGetValue(self, path):
+        """Get the value of the given path.
+
+        Args:
+            path (str): Path to get the value.
+
+        Returns:
+            str: Value in the path, or None if not found.
+        """
+        self.rit.rit_changePath(self.__ritPath)
+        return self.rit.rit_getValue(path)
 
     def __del__(self):
         """Close the open aDTN socket."""
