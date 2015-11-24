@@ -70,6 +70,14 @@ The `adtn-lib` provides a `C` and a `Java` library to develop over the platform.
 
 [Pydoc](http://senda-uab.github.io/aDTN-platform/python_doc/adtn.html "Pydoc")
 
+## aDTN python module
+
+To install the aDTN python module you can copy the adtn.py file to the folder or run the following command:
+```bash
+sudo pip install http://tao.uab.es/adtn/adtn/adtn-0.1.4-py2-none-any.whl
+```
+This requires to have pip and wheel installed.
+
 ## Example of installation and usage
 
 This example shows how alice installs a single adtn platform in her machine using adtn-tools.
