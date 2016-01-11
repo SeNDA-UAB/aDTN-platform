@@ -71,12 +71,20 @@ Args:<br>
 Returns:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;bool:&nbsp;True&nbsp;if&nbsp;successful,&nbsp;False&nbsp;otherwise.</tt></dd></dl>
 
-<dl><dt><a name="adtnSocket-recv"><strong>recv</strong></a>(self)</dt><dd><tt>Recive&nbsp;a&nbsp;message.<br>
+<dl><dt><a name="adtnSocket-recv"><strong>recv</strong></a>(self, size<font color="#909090">=2048</font>)</dt><dd><tt>Recive&nbsp;a&nbsp;message.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;(int):&nbsp;Size&nbsp;of&nbsp;the&nbsp;message&nbsp;to&nbsp;recive,&nbsp;default&nbsp;2048&nbsp;(Change<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;only&nbsp;if&nbsp;the&nbsp;entire&nbsp;message&nbsp;is&nbsp;not&nbsp;received)<br>
 &nbsp;<br>
 Returns:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;str:&nbsp;The&nbsp;received&nbsp;message.</tt></dd></dl>
 
-<dl><dt><a name="adtnSocket-recvFrom"><strong>recvFrom</strong></a>(self)</dt><dd><tt>Recive&nbsp;a&nbsp;message&nbsp;and&nbsp;the&nbsp;sender&nbsp;info.<br>
+<dl><dt><a name="adtnSocket-recvFrom"><strong>recvFrom</strong></a>(self, size<font color="#909090">=2048</font>)</dt><dd><tt>Recive&nbsp;a&nbsp;message&nbsp;and&nbsp;the&nbsp;sender&nbsp;info.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;(int):&nbsp;Size&nbsp;of&nbsp;the&nbsp;message&nbsp;to&nbsp;recive,&nbsp;default&nbsp;2048&nbsp;(Change<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;only&nbsp;if&nbsp;the&nbsp;entire&nbsp;message&nbsp;is&nbsp;not&nbsp;received)<br>
 &nbsp;<br>
 Returns:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;(str,&nbsp;<a href="#adtnSocketAddress">adtnSocketAddress</a>):&nbsp;The&nbsp;received&nbsp;message&nbsp;and&nbsp;the&nbsp;sender.</tt></dd></dl>
