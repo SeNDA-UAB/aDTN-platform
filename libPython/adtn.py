@@ -112,25 +112,33 @@ class adtnSocket(object):
         r = self.adtn.adtn_sendto(self._sock, message, len(message), who) != -1
         return r
 
-    def recv(self):
+    def recv(self, size=2048):
         """Recive a message.
+
+        Args:
+            size (int): Size of the message to recive, default 2048 (Change
+                only if the entire message is not received)
 
         Returns:
             str: The received message.
         """
-        buff = ctypes.create_string_buffer('\000' * 512)
-        self.adtn.adtn_recv(self._sock, buff, 512)
+        buff = ctypes.create_string_buffer('\000' * size)
+        self.adtn.adtn_recv(self._sock, buff, size)
         return buff.value
 
-    def recvFrom(self):
+    def recvFrom(self, size=2048):
         """Recive a message and the sender info.
+
+        Args:
+            size (int): Size of the message to recive, default 2048 (Change
+                only if the entire message is not received)
 
         Returns:
             (str, adtnSocketAddress): The received message and the sender.
         """
-        buff = ctypes.create_string_buffer('\000' * 512)
+        buff = ctypes.create_string_buffer('\000' * size)
         node = adtnSocketAddress()
-        self.adtn.adtn_recvfrom(self._sock, buff, 512, node)
+        self.adtn.adtn_recvfrom(self._sock, buff, size, node)
         return (buff.value, node)
 
     def setCode(self, codeType, code, isFile=False, replace=False):
