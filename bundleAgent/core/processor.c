@@ -224,7 +224,7 @@ end:
 
 static char *send_bundle_thread(thread_sb_data *data)
 {
-	int n_port, n, ret = 0;
+	int n_port, n, *ret;
 	int sock  = 0;
 	int st = 0;
 	uint16_t bundle_l;
@@ -233,6 +233,8 @@ static char *send_bundle_thread(thread_sb_data *data)
 	struct sockaddr_in remote_nb = {0};
 	struct timeval timeout;
 	char *bundle_src_addr = NULL;
+	ret = (int *)malloc(sizeof(int));
+	*ret = 0;
 
 	if (get_nb_ip_and_port(data->neighbour, &n_ip, &n_port) != 0)
 		goto end;
@@ -303,7 +305,7 @@ static char *send_bundle_thread(thread_sb_data *data)
 
 	// add_contact((char*)digest, n_ip);
 
-	ret = 1;
+	*ret = 1;
 end:
 	if (n_ip)
 		free(n_ip);
@@ -311,7 +313,7 @@ end:
 		close(sock);
 	free(data->raw_bundle);
 	free(data);
-	pthread_exit(&ret);
+	pthread_exit(ret);
 }
 
 static int send_bundle(char *bundle_name, char **neighbours, int n_hops, int *keep)
@@ -348,6 +350,7 @@ static int send_bundle(char *bundle_name, char **neighbours, int n_hops, int *ke
 	for (i = 0; i < wait_for; ++i) {
 		pthread_join(id_Threads[i], (void **)&t_ret);
 		ret += *t_ret;  //t_ret = 0 everything ok, neighbours++
+		free(t_ret);
 	}
 	LOG_MSG(LOG__INFO, false, "The bundle has been sent to %d neighbours", ret);
 	free(id_Threads);
