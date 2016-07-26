@@ -496,7 +496,8 @@ int bundle_add_mmeb_code(mmeb_s *block, uint16_t alg_type, uint16_t fwk, size_t 
 	(*new_code) = (mmeb_code_s *)calloc(1, sizeof(mmeb_code_s));
 	(*new_code)->fwk = fwk;
 	(*new_code)->sw_length = sw_length;
-	(*new_code)->sw_code = (uint8_t *) strdup((char *) sw_code);
+	(*new_code)->sw_code = (uint8_t *) malloc(sw_length * sizeof(uint8_t));
+	memcpy((*new_code)->sw_code, sw_code, sw_length);
 
 	// Update alg_length
 	(*body)->alg_length += sizeof((*new_code)->fwk);

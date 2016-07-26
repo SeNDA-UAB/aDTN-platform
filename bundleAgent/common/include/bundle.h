@@ -103,14 +103,18 @@ typedef struct _adm_record_s {
 typedef enum {
 	ROUTING_CODE = 0x01,
 	PRIO_CODE = 0x02,
-	LIFE_CODE = 0x03
+	LIFE_CODE = 0x03,
+	DELIVERY_CODE = 0x04,
+	CODE_STATE = 0x05
 } code_type_e;
 
 __attribute__ ((unused)) static char *code_type_e_name[] = {
 	"",
 	"ROUTING_CODE",
 	"PRIO_CODE",
-	"LIFE_CODE"
+	"LIFE_CODE",
+	"DELIVERY_CODE",
+	"CODE_STATE"
 };
 
 typedef enum {
