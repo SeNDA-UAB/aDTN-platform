@@ -29,14 +29,19 @@
 #include <sys/time.h>
 #include <sys/inotify.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <linux/limits.h>
 
 #include "common/include/common.h"
 #include "common/include/init.h"
 #include "common/include/queue.h"
 #include "common/include/utils.h"
+#include "common/include/executor.h"
 
-#define QUEUE_SOCKNAME "/rec-queue.sock"
+#define EXEC_SOCKNAME "/executor.sock"
+#define QUEUE_SOCKNAME "/proc-queue.sock"
+#define PROC_SOCKNAME "/proc-executor.sock"
 #define INOTIFY_EVENT_SIZE  ( sizeof (struct inotify_event) + NAME_MAX + 1)
 #define INOTIFY_EVENT_BUF (1*INOTIFY_EVENT_SIZE)
 
@@ -53,6 +58,9 @@ typedef struct {
 	char *platform_ip;
 	char *platform_id;
 	int platform_port;
+	int proc_socket;
+	struct sockaddr_un exec_addr;
+	struct common *shm;
 } global_vars;
 
 global_vars g_vars;
@@ -217,6 +225,89 @@ end:
 
 	return ret;
 }
+
+static int process_code(int *deliver, char *bundle_id)
+{
+	int ret = 1;
+	int recv_l;
+	struct _petition p = {.header = {0}};
+	union _response r;
+
+	p.header.petition_type = EXE;
+	p.header.code_type = DELIVERY_CODE;
+
+	strncpy(p.header.bundle_id, bundle_id, NAME_MAX);
+	LOG_MSG(LOG__INFO, false, "Executing delivery code for bundle: %s", bundle_id);
+	if (sendto(g_vars.proc_socket, &p, sizeof(p), 0, (struct sockaddr *)&g_vars.exec_addr, (socklen_t)sizeof(g_vars.exec_addr)) < 0) {
+		LOG_MSG(LOG__ERROR, true, "Unable to connect with executor");
+		goto end;
+	}
+	recv_l = recv(g_vars.proc_socket, &r, sizeof(r), 0);
+	if (recv_l <= 0) {
+		LOG_MSG(LOG__ERROR, true, "Unable to get executor response");
+		goto end;
+	}
+	if (r.exec_r.correct == 1) {
+		LOG_MSG(LOG__INFO, false, "Code correctly executed, the mssg should be send to %d nbs", r.exec_r.num_hops);
+		*deliver = r.simple.result;
+	} else {
+		goto end;
+	}
+	
+	ret = 0;
+end:
+
+	return ret;
+}
+
+static int connect_executor()
+{
+	int ret = 0;
+	char *sockname = NULL;
+	char sockname_l = 0;
+	char *exec_sockname = NULL;
+	int exec_sockname_l = 0;
+	struct sockaddr_un local_addr = {0};
+
+	g_vars.proc_socket = socket(AF_UNIX, SOCK_DGRAM, 0);
+	local_addr.sun_family = AF_UNIX;
+	sockname_l = strlen(g_vars.shm->data_path) + strlen(PROC_SOCKNAME) + 1;
+	sockname = (char *)calloc(sockname_l, sizeof(char));
+	snprintf(sockname, sockname_l, "%s%s", g_vars.shm->data_path, PROC_SOCKNAME);
+	unlink(sockname);
+	strncpy(local_addr.sun_path, sockname, sizeof(local_addr.sun_path) - 1);
+
+	if (bind(g_vars.proc_socket, (struct sockaddr *)&local_addr, sizeof(struct sockaddr_un)) == -1) {
+		LOG_MSG(LOG__ERROR, true, "[Processor] Creating executor socket");
+		ret = 1;
+		goto end;
+	}
+
+	g_vars.exec_addr.sun_family = AF_UNIX;
+	exec_sockname_l = strlen(g_vars.shm->data_path) + strlen(EXEC_SOCKNAME) + 1;
+	exec_sockname = (char *) calloc(exec_sockname_l, sizeof(char));
+	snprintf(exec_sockname, exec_sockname_l, "%s%s", g_vars.shm->data_path, EXEC_SOCKNAME);
+	strncpy(g_vars.exec_addr.sun_path, exec_sockname, sizeof(g_vars.exec_addr.sun_path) - 1);
+	free(exec_sockname);
+end:
+	free(sockname);
+
+	return ret;
+}
+
+static void disconnect_executor()
+{
+	char *sockname = NULL;
+	int sockname_l = 0;
+
+	sockname_l = strlen(g_vars.shm->data_path) + strlen(PROC_SOCKNAME) + 1;
+	sockname = (char *)calloc(sockname_l, sizeof(char));
+	snprintf(sockname, sockname_l, "%s%s", g_vars.shm->data_path, PROC_SOCKNAME);
+
+	close(g_vars.proc_socket);
+	unlink(sockname);
+	free(sockname);
+}
 /***************/
 
 /******* DELEGATE BUNDLE ********/
@@ -372,9 +463,10 @@ end:
 /******* BUNDLE PROCESSING ********/
 int process_bundle(const char *origin, const uint8_t *raw_bundle, const int raw_bundle_l)
 {
-	int ret = 1;
+	int ret = 1, deliver = 0;
 	char *full_dest = NULL, *bundle_name = NULL;
 	endpoint_s ep = {0};
+	
 
 	if (bundle_raw_check(raw_bundle, raw_bundle_l) != 0) {
 		LOG_MSG(LOG__ERROR, false, "Bundle has errors");
@@ -406,8 +498,9 @@ int process_bundle(const char *origin, const uint8_t *raw_bundle, const int raw_
 			goto end;
 		}
 
-	} else if (subscribed_to(ep.id)) {
-		// If the destination is a multicast address delegate bundle to application and put it into the queue
+	} else if (process_code(&deliver, bundle_name) == 0 && deliver == 1) {
+		// If the delivery code executes correctly and decides to deliver the code, delegate
+		// bundle to application
 
 		LOG_MSG(LOG__INFO, false, "The bundle is destined to a multicast id which we are subscribed");
 
@@ -785,6 +878,7 @@ int main(int argc, char *argv[])
 		goto end;
 	}
 
+	g_vars.shm = shm;
 	g_vars.platform_ip = strdup(shm->iface_ip);
 	g_vars.platform_id = strdup(shm->platform_id);
 	g_vars.platform_port = shm->platform_port;
@@ -801,6 +895,10 @@ int main(int argc, char *argv[])
 	}
 	// End reading from shm
 
+	if (connect_executor() != 0) {
+		LOG_MSG(LOG__ERROR, true, "Can't connect with executor");
+		goto end;
+	}
 	/**/
 
 	/* Main threads */
@@ -843,6 +941,7 @@ end:
 	free(g_vars.platform_ip);
 	free(g_vars.platform_id);
 	queue_manager_disconnect(g_vars.queue_conn, shm->data_path, QUEUE_SOCKNAME);
+	disconnect_executor();
 	exit_adtn_process();
 	/**/
 
