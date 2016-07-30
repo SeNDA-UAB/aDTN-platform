@@ -9,7 +9,7 @@ add_subdirectory(common)
 add_subdirectory(information_exchange)
 add_subdirectory(core)
 add_subdirectory(queue)
-add_subdirectory(executor)
+add_subdirectory(executor_ebpf)
 
 # Configure adtnd script: Installation prefix and default configuration file path.
 file(READ "${PLATFORM_SOURCE_DIR}/adtnd/adtnd.sh" FILE_CONTENT)
